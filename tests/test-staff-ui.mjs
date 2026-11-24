@@ -180,6 +180,55 @@ async function loadPreview() {
   assert('undo voids the walk-in sale',
     !window.__staff.getState().walkins.filter((w) => !w.voided).some((w) => w.walkinId === newId));
 
+  // ---- cart: per-pill steppers, many cakes in one sale ----
+  const DATES = 'Dates & Carrot Pudding (700g)';
+  const PLUM = 'Rich Plum Cake (400g)';
+  const pillOf = (name) => Array.from(document.querySelectorAll('#item-grid [data-item]')).find((el) => el.getAttribute('data-item') === name);
+  const tap = (name, act) => { const all = pillOf(name).querySelectorAll('[data-act="' + act + '"]'); all[all.length - 1].click(); };
+  const flat = (el) => el.textContent.replace(/[\s,]/g, '');
+  window.__staff.setItem(DATES); window.__staff.setQty(0); // clear the cart
+  assert('cart starts empty: Record disabled and preview prompts',
+    document.getElementById('record-sale').disabled === true && document.getElementById('live-summary').textContent.includes('Pick a cake to start'));
+  assert('every cake pill has its own - and + buttons and a quantity (>=48px targets)',
+    Array.from(document.querySelectorAll('#item-grid [data-item]')).every((el) =>
+      el.querySelector('[data-act="dec"]') && el.querySelector('[data-act="inc"]') && el.querySelector('.item-qty') &&
+      el.querySelector('[data-act="dec"]').className.includes('size-12') && Array.from(el.querySelectorAll('[data-act="inc"]')).pop().className.includes('size-12')));
+  assert('- is disabled while a cake is at 0', pillOf(DATES).querySelector('[data-act="dec"]').disabled === true);
+  tap(DATES, 'inc'); tap(DATES, 'inc'); tap(PLUM, 'inc');
+  assert('tapping + on two cakes puts both in the sale',
+    window.__staff.getCart().length === 2 && pillOf(DATES).querySelector('.item-qty').textContent === '2' && pillOf(DATES).getAttribute('data-on') === 'true',
+    JSON.stringify(window.__staff.getCart()));
+  const prev = document.getElementById('live-summary').textContent;
+  assert('preview lists every line and the total is the sum',
+    prev.includes('2 × ' + DATES) && prev.includes('1 × ' + PLUM) && flat(document.getElementById('live-amount')).includes('1650'), prev);
+  tap(PLUM, 'dec');
+  assert('- takes a cake all the way back to 0 and out of the sale',
+    window.__staff.getCart().length === 1 && pillOf(PLUM).getAttribute('data-on') === 'false' && pillOf(PLUM).querySelector('[data-act="dec"]').disabled === true);
+  tap(DATES, 'dec'); tap(DATES, 'dec');
+  assert('removing every cake empties the sale and disables Record',
+    window.__staff.getCart().length === 0 && document.getElementById('record-sale').disabled === true);
+  const emptyTry = await window.__staff.addWalkin();
+  assert('recording an empty cart does nothing', emptyTry.ok === false);
+
+  tap(DATES, 'inc'); tap(PLUM, 'inc'); tap(PLUM, 'inc');
+  const cust2 = document.getElementById('walkin-customer');
+  cust2.value = 'Ravi';
+  cust2.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert('preview shows customer, payment and Mass for the whole sale',
+    /UPI · .*Mass · for Ravi/.test(document.getElementById('live-meta').textContent), document.getElementById('live-meta').textContent);
+  const beforeCart = window.__staff.getState().walkins.filter((w) => !w.voided).length;
+  document.getElementById('record-sale').click();
+  await waitFor(() => window.__staff.getState().walkins.filter((w) => !w.voided).length === beforeCart + 2);
+  const cartRows = window.__staff.getState().walkins.filter((w) => w.customer === 'Ravi');
+  assert('Record posts one walk-in per cake line with unique ids',
+    cartRows.length === 2 && new Set(cartRows.map((w) => w.walkinId)).size === 2 &&
+    cartRows.some((w) => w.item === DATES && w.qty === 1) && cartRows.some((w) => w.item === PLUM && w.qty === 2), JSON.stringify(cartRows));
+  assert('both lines share the same payment and customer', cartRows.every((w) => w.payment === 'UPI' && w.customer === 'Ravi'));
+  assert('sale is cleared after recording (cart and customer)',
+    window.__staff.getCart().length === 0 && cust2.value === '' && document.getElementById('record-sale').disabled === true);
+  await waitFor(() => document.getElementById('toasts').textContent.includes('items recorded'));
+  assert('a toast says how many items were recorded', document.getElementById('toasts').textContent.includes('2 items recorded'), document.getElementById('toasts').textContent);
+
   page.dom.window.close();
 }
 
@@ -296,6 +345,21 @@ async function loadPreview() {
   await sleep(30);
   assert('queued walk-in is sent with the customer name', store.walkins.some((w) => w.customer === 'Joseph'), JSON.stringify(store.walkins));
 
+  // multi-cake sale recorded offline: every line is queued once, then sent exactly once
+  failNetwork = true;
+  window.__staff.setItem('Rich Plum Cake (400g)');
+  window.__staff.setLineQty('Butterscotch Pudding (350g)', 2);
+  await window.__staff.addWalkin({ customer: 'Offline Olga' });
+  const queued2 = window.__staff.getState().outbox.filter((e) => e.type === 'walkin' && e.payload.customer === 'Offline Olga');
+  assert('offline multi-cake sale queues one outbox entry per line with unique ids',
+    queued2.length === 2 && new Set(queued2.map((e) => e.payload.walkinId)).size === 2, JSON.stringify(queued2));
+  assert('the cart is cleared once the lines are safely queued (no double-recording)', window.__staff.getCart().length === 0);
+  failNetwork = false;
+  await window.__staff.flushOutbox({ force: true });
+  await sleep(30);
+  const sent2 = store.walkins.filter((w) => w.customer === 'Offline Olga');
+  assert('queued lines are each sent once when back online', sent2.length === 2 && new Set(sent2.map((w) => w.walkinId)).size === 2, JSON.stringify(sent2));
+
   window.__staff.logout();
   assert('Lock clears the session PIN and shows the gate again',
     window.sessionStorage.getItem('poppinsStaffPin') == null &&
@@ -310,8 +374,10 @@ async function loadPreview() {
   assert('desktop layout: wide container at 720px+', html.includes('min-[720px]:max-w-[1100px]'));
   assert('desktop layout: order cards grid 2 then 3 columns',
     /id="order-list"/.test(html) && html.includes('min-[720px]:grid-cols-2') && html.includes('min-[1000px]:grid-cols-3'));
-  assert('desktop layout: walk-in form and list columns',
-    /walkin-form">[\s\S]*id="record-sale"[\s\S]*<\/div>\s*<div class="walkin-side">[\s\S]*id="walkin-list"/.test(html));
+  assert('desktop layout: cake grid on the left, sticky preview + recent list on the right',
+    /walkin-form">[\s\S]*id="item-grid"[\s\S]*<div class="walkin-side [^"]*min-\[720px\]:sticky[^"]*">[\s\S]*id="live-summary"[\s\S]*id="record-sale"[\s\S]*id="walkin-list"/.test(html));
+  assert('single global Quantity control is gone (steppers live on the cake pills)',
+    !html.includes('id="qty"') && !html.includes('id="qty-plus"') && !html.includes('id="qty-minus"'));
 }
 
 const failed = results.filter((r) => !r.ok);

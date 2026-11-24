@@ -52,21 +52,14 @@
         <div class="flex flex-col gap-[0.7rem] min-[720px]:grid min-[720px]:grid-cols-2 min-[720px]:items-start min-[720px]:gap-[0.9rem] min-[1000px]:grid-cols-3" id="order-list"></div>
       </section>
       <section id="panel-walkin" role="tabpanel" aria-labelledby="tab-walkin" hidden>
-        <div class="min-[720px]:grid min-[720px]:grid-cols-2 min-[720px]:items-start min-[720px]:gap-[1.6rem]">
+        <div class="min-[720px]:grid min-[720px]:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] min-[720px]:items-start min-[720px]:gap-[1.6rem]">
         <div class="walkin-form">
         <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="walkin-date-chips" aria-label="Sale date"></div>
-        <div class="mb-[0.85rem] grid grid-cols-2 gap-2 min-[720px]:grid-cols-3" id="item-grid"></div>
+        <p class="mb-2 text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Tap + to add cakes, − to remove</p>
+        <div class="mb-4 grid grid-cols-2 gap-2 min-[1000px]:grid-cols-3" id="item-grid"></div>
         <div class="relative mb-4">
           <input class="peer block min-h-14 w-full py-2 rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder-transparent" id="walkin-customer" type="text" maxlength="60" autocomplete="off" placeholder=" " aria-label="Customer name (optional)">
           <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem]" for="walkin-customer">Customer name (optional)</label>
-        </div>
-        <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
-          <span class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Quantity</span>
-          <div class="flex items-center gap-[0.35rem]">
-            <button type="button" class="size-12 rounded-full bg-m3-primary text-[1.4rem] leading-none font-medium text-m3-on-primary shadow-m3-1 hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="qty-minus" aria-label="Decrease quantity">−</button>
-            <input class="h-12 w-14 text-center text-[1.1rem] font-medium rounded-m3-xs border border-m3-outline bg-transparent px-1 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary" id="qty" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Quantity">
-            <button type="button" class="size-12 rounded-full bg-m3-primary text-[1.4rem] leading-none font-medium text-m3-on-primary shadow-m3-1 hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="qty-plus" aria-label="Increase quantity">+</button>
-          </div>
         </div>
         <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
           <label class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase" for="walkin-mass">Mass</label>
@@ -83,12 +76,18 @@
             <button type="button" class="-ml-px rounded-r-full min-h-12 min-w-[84px] border border-m3-outline px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface hover:bg-m3-on-surface/8 aria-pressed:bg-m3-tertiary-container aria-pressed:text-m3-on-tertiary-container aria-pressed:before:mr-1.5 aria-pressed:before:content-['✓']" id="pay-upi" aria-pressed="false">UPI</button>
           </div>
         </div>
-        <p class="mt-[0.2rem] mb-[0.35rem] min-h-[2.6rem] rounded-m3-md bg-m3-surface-container-high px-4 py-2 text-center text-[0.875rem] font-medium text-m3-on-surface" id="live-summary" role="status" aria-live="polite">Pick a cake to start</p>
-        <p class="mt-[0.2rem] mb-[0.85rem] text-center text-[2.25rem] leading-11 font-normal text-m3-primary" id="live-amount">₹0</p>
-        <button type="button" class="w-full bg-m3-primary text-m3-on-primary shadow-m3-1 hover:shadow-m3-2 min-[720px]:max-w-[360px] min-h-12 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] disabled:cursor-not-allowed disabled:opacity-[0.38] hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="record-sale">Record sale</button>
         </div>
-        <div class="walkin-side">
-        <p class="mt-4 mb-[0.7rem] text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant min-[720px]:mt-0" id="walkin-updated">Recent walk-ins</p>
+        <div class="walkin-side mt-2 min-[720px]:sticky min-[720px]:top-4 min-[720px]:mt-0 min-[720px]:max-h-[calc(100vh-2rem)] min-[720px]:overflow-y-auto">
+        <section class="rounded-m3-lg bg-m3-surface-container p-4 shadow-m3-1" id="walkin-preview" aria-label="Sale preview">
+          <h2 class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Sale preview</h2>
+          <div class="mt-2 min-h-[2.6rem] text-[0.875rem] font-medium text-m3-on-surface" id="live-summary" role="status" aria-live="polite">
+            <ul class="flex flex-col gap-1" id="live-lines"></ul>
+            <p class="mt-2 text-[0.75rem] font-medium text-m3-on-surface-variant" id="live-meta"></p>
+          </div>
+          <p class="mt-[0.4rem] mb-[0.85rem] text-center text-[2.25rem] leading-11 font-normal text-m3-primary" id="live-amount">₹0</p>
+          <button type="button" class="w-full bg-m3-primary text-m3-on-primary shadow-m3-1 hover:shadow-m3-2 min-h-12 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] disabled:cursor-not-allowed disabled:opacity-[0.38] hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="record-sale">Record sale</button>
+        </section>
+        <p class="mt-4 mb-[0.7rem] text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant" id="walkin-updated">Recent walk-ins</p>
         <div class="flex flex-col gap-[0.7rem]" id="walkin-list"></div>
         </div>
         </div>
@@ -149,9 +148,15 @@
     btnMore: 'min-w-12 border border-m3-outline bg-transparent px-0 text-m3-on-surface-variant hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]',
     menu: 'absolute right-0 bottom-[calc(100%+6px)] z-6 hidden min-w-40 rounded-m3-xs bg-m3-surface-container py-2 shadow-m3-2 [&.is-open]:block',
     menuBtn: 'block min-h-12 w-full bg-transparent px-3 py-[0.4rem] text-left text-[1rem] font-normal text-m3-on-surface hover:bg-m3-on-surface/8 focus-visible:bg-m3-on-surface/12',
-    itemBtn: 'min-h-[72px] rounded-m3-md border border-m3-outline-variant bg-m3-surface px-3 py-[0.65rem] text-left text-m3-on-surface shadow-m3-1 hover:bg-m3-on-surface/8 aria-pressed:border-m3-primary aria-pressed:bg-m3-primary-container aria-pressed:text-m3-on-primary-container',
+    itemBtn: 'flex min-h-[116px] flex-col justify-between rounded-m3-md border border-m3-outline-variant bg-m3-surface p-2 text-left text-m3-on-surface shadow-m3-1 data-[on=true]:border-m3-primary data-[on=true]:bg-m3-primary-container data-[on=true]:text-m3-on-primary-container',
+    pillMain: 'min-h-12 w-full rounded-m3-sm px-1 text-left hover:bg-m3-on-surface/8',
     iname: 'block text-[0.875rem] leading-5 font-medium tracking-[0.1px]',
     iprice: 'mt-[0.2rem] block text-[0.875rem] font-medium text-m3-primary',
+    stepRow: 'mt-1 flex items-center justify-between gap-1',
+    stepMinus: 'size-12 rounded-full border border-m3-outline text-[1.4rem] leading-none font-medium text-m3-on-surface hover:bg-m3-on-surface/8 active:bg-m3-on-surface/12 disabled:cursor-not-allowed disabled:opacity-[0.38]',
+    stepPlus: 'size-12 rounded-full bg-m3-primary text-[1.4rem] leading-none font-medium text-m3-on-primary shadow-m3-1 hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]',
+    stepQty: 'min-w-8 text-center text-[1.25rem] font-medium',
+    liveLine: 'flex justify-between gap-2',
     amount: 'font-medium text-m3-primary',
     undo: 'min-h-12 min-w-[72px] rounded-full px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-primary hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]',
     toast: 'pointer-events-none flex min-h-12 items-center rounded-m3-xs bg-ink px-4 py-3 text-[0.875rem] leading-5 text-white shadow-m3-3',
@@ -217,7 +222,7 @@
     dates: DEFAULT_DATES.slice(),
     counts: { toCollect: 0, toCollectAmount: 0, pickedUp: 0, pending: 0, total: 0 },
     item: '',
-    qty: 1,
+    cart: {},
     walkinMass: '8:30 AM Mass',
     payment: 'Cash',
     customer: '',
@@ -553,24 +558,74 @@
     return '<div class="menu ' + CLS.menu + '" id="menu-' + o.orderId + '">' + opts.join('') + '</div>';
   }
 
+  function cartLines() {
+    return MENU.filter(function (m) { return (state.cart[m.name] || 0) > 0; }).map(function (m) {
+      return { item: m.name, qty: state.cart[m.name], price: m.price };
+    });
+  }
+
+  function clampQty(n) {
+    return Math.max(0, Math.min(99, Math.floor(Number(n) || 0)));
+  }
+
+  /** Set one cake's quantity in the sale. 0 removes it. */
+  function setLineQty(name, n) {
+    if (!MENU.some(function (m) { return m.name === name; })) return;
+    const q = clampQty(n);
+    if (q > 0) { state.cart[name] = q; state.item = name; } else { delete state.cart[name]; }
+    renderWalkinForm();
+  }
+
   function renderWalkinForm() {
-    $('item-grid').innerHTML = MENU.map(function (m) {
-      const pressed = state.item === m.name ? 'true' : 'false';
-      return '<button type="button" class="item-btn ' + CLS.itemBtn + '" data-item="' + escapeAttr(m.name) + '" aria-pressed="' + pressed + '">' +
+    const grid = $('item-grid');
+    const active = document.activeElement;
+    let focusKey = null;
+    if (active && grid.contains(active) && active.getAttribute('data-act')) {
+      const pill = active.closest('[data-item]');
+      if (pill) focusKey = { item: pill.getAttribute('data-item'), act: active.getAttribute('data-act') };
+    }
+    grid.innerHTML = MENU.map(function (m) {
+      const q = state.cart[m.name] || 0;
+      const on = q > 0 ? 'true' : 'false';
+      return '<div class="item-btn ' + CLS.itemBtn + '" role="group" data-item="' + escapeAttr(m.name) + '" data-on="' + on + '" aria-label="' + escapeAttr(m.name) + '">' +
+        '<button type="button" class="' + CLS.pillMain + '" data-act="inc" aria-label="Add one ' + escapeAttr(m.name) + '">' +
         '<span class="' + CLS.iname + '">' + escapeHtml(m.short) + '</span>' +
-        '<span class="' + CLS.iprice + '">' + rupee(m.price) + '</span></button>';
+        '<span class="' + CLS.iprice + '">' + rupee(m.price) + '</span></button>' +
+        '<div class="' + CLS.stepRow + '">' +
+        '<button type="button" class="' + CLS.stepMinus + '" data-act="dec" aria-label="Remove one ' + escapeAttr(m.name) + '"' + (q === 0 ? ' disabled' : '') + '>−</button>' +
+        '<span class="item-qty ' + CLS.stepQty + '" aria-live="polite">' + q + '</span>' +
+        '<button type="button" class="' + CLS.stepPlus + '" data-act="inc" aria-label="Add one ' + escapeAttr(m.name) + '">+</button>' +
+        '</div></div>';
     }).join('');
-    $('qty').value = String(state.qty);
+    if (focusKey) {
+      const pills = grid.querySelectorAll('[data-item]');
+      for (let k = 0; k < pills.length; k++) {
+        if (pills[k].getAttribute('data-item') !== focusKey.item) continue;
+        let target = pills[k].querySelector('[data-act="' + focusKey.act + '"]:not(:disabled)');
+        if (!target) {
+          const incs = pills[k].querySelectorAll('[data-act="inc"]');
+          target = incs[incs.length - 1];
+        }
+        if (target) target.focus();
+        break;
+      }
+    }
     if ($('walkin-customer').value !== state.customer) $('walkin-customer').value = state.customer;
     $('walkin-mass').value = state.walkinMass;
     $('pay-cash').setAttribute('aria-pressed', state.payment === 'Cash' ? 'true' : 'false');
     $('pay-upi').setAttribute('aria-pressed', state.payment === 'UPI' ? 'true' : 'false');
-    const amount = state.item ? itemPrice(state.item) * state.qty : 0;
-    $('live-amount').textContent = rupee(amount);
-    $('live-summary').textContent = state.item
-      ? state.qty + ' × ' + state.item + ' · ' + rupee(itemPrice(state.item)) + ' each · ' + state.payment + ' · ' + state.walkinMass + (state.customer.trim() ? ' · for ' + state.customer.trim() : '')
-      : 'Pick a cake to start';
-    $('record-sale').disabled = !state.item;
+    const lines = cartLines();
+    const total = lines.reduce(function (sum, l) { return sum + l.price * l.qty; }, 0);
+    $('live-amount').textContent = rupee(total);
+    $('live-lines').innerHTML = lines.length
+      ? lines.map(function (l) {
+        return '<li class="' + CLS.liveLine + '"><span>' + l.qty + ' × ' + escapeHtml(l.item) + '</span><span>' + rupee(l.price * l.qty) + '</span></li>';
+      }).join('')
+      : '<li class="text-m3-on-surface-variant">Pick a cake to start</li>';
+    $('live-meta').textContent = lines.length
+      ? state.payment + ' · ' + state.walkinMass + (state.customer.trim() ? ' · for ' + state.customer.trim() : '')
+      : '';
+    $('record-sale').disabled = !lines.length;
   }
 
   function renderWalkins() {
@@ -782,66 +837,108 @@
     return 'WI-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
   }
 
+  /**
+   * Records the whole cart: one staff_add_walkin per cake line (each with its
+   * own walkinId, so every line is idempotent). Lines are queued in the outbox
+   * first, so nothing is lost if the phone is offline. opts.item records a
+   * single explicit line instead of the cart (used by tests/older callers).
+   */
   async function addWalkin(opts) {
     opts = opts || {};
-    if (!state.item) {
+    const fromCart = !opts.item;
+    let lines;
+    if (fromCart) {
+      lines = cartLines();
+    } else {
+      const q = clampQty(opts.qty != null ? opts.qty : (state.cart[opts.item] || 1)) || 1;
+      lines = [{ item: opts.item, qty: q }];
+    }
+    if (!lines.length) {
       toast('Choose an item first.', 'error');
       return { ok: false, error: 'Choose an item first.' };
     }
-    const qty = Math.max(1, Math.floor(Number(opts.qty != null ? opts.qty : state.qty) || 1));
-    const payload = {
-      walkinId: opts.walkinId || newWalkinId(),
-      date: state.pickupDate,
-      mass: opts.mass || state.walkinMass,
-      item: opts.item || state.item,
-      qty: qty,
-      payment: opts.payment || state.payment,
-      customer: String(opts.customer != null ? opts.customer : state.customer).trim().slice(0, 60),
-      notes: opts.notes || ''
-    };
-    const price = itemPrice(payload.item);
-    const local = {
-      walkinId: payload.walkinId,
-      date: payload.date,
-      mass: payload.mass,
-      item: payload.item,
-      qty: payload.qty,
-      price: price,
-      amount: price * payload.qty,
-      payment: payload.payment,
-      customer: payload.customer,
-      notes: payload.notes,
-      voided: false,
-      _queued: true
-    };
-    state.walkins = [local].concat(state.walkins);
-    renderWalkins();
-    upsertOutbox({
-      id: payload.walkinId,
-      type: 'walkin',
-      payload: payload,
-      walkinId: payload.walkinId,
-      queuedAt: Date.now(),
-      attempts: 0,
-      nextAttemptAt: 0
+    const customer = String(opts.customer != null ? opts.customer : state.customer).trim().slice(0, 60);
+    const entries = lines.map(function (line) {
+      const payload = {
+        walkinId: (opts.walkinId && lines.length === 1) ? opts.walkinId : newWalkinId(),
+        date: state.pickupDate,
+        mass: opts.mass || state.walkinMass,
+        item: line.item,
+        qty: line.qty,
+        payment: opts.payment || state.payment,
+        customer: customer,
+        notes: opts.notes || ''
+      };
+      const price = itemPrice(payload.item);
+      const local = {
+        walkinId: payload.walkinId,
+        date: payload.date,
+        mass: payload.mass,
+        item: payload.item,
+        qty: payload.qty,
+        price: price,
+        amount: price * payload.qty,
+        payment: payload.payment,
+        customer: payload.customer,
+        notes: payload.notes,
+        voided: false,
+        _queued: true
+      };
+      return { payload: payload, local: local };
     });
-    try {
-      const res = await staffPost(Object.assign({ action: 'staff_add_walkin' }, payload));
-      if (res && res.ok) {
-        removeOutbox(payload.walkinId);
-        local._queued = false;
-        if (res.amount) local.amount = res.amount;
-        if (opts.customer == null) { state.customer = ''; renderWalkinForm(); }
-        renderWalkins();
-        if (!opts.silent) toast('Recorded ' + rupee(local.amount) + ' ' + local.payment + '.', 'ok');
-        return res;
+    state.walkins = entries.map(function (e) { return e.local; }).concat(state.walkins);
+    entries.forEach(function (e) {
+      upsertOutbox({
+        id: e.payload.walkinId,
+        type: 'walkin',
+        payload: e.payload,
+        walkinId: e.payload.walkinId,
+        queuedAt: Date.now(),
+        attempts: 0,
+        nextAttemptAt: 0
+      });
+    });
+    // Every line is now safely stored on this phone, so clear the sale right
+    // away: tapping Record again can't double-record it.
+    if (fromCart) state.cart = {};
+    if (opts.customer == null) state.customer = '';
+    renderWalkinForm();
+    renderWalkins();
+
+    const results = [];
+    let allOk = true;
+    for (let k = 0; k < entries.length; k++) {
+      const e = entries[k];
+      let res;
+      try {
+        res = await staffPost(Object.assign({ action: 'staff_add_walkin' }, e.payload));
+      } catch (err) {
+        res = null;
       }
-      toast('Saved on this phone — will retry when online.', 'error');
-      return res || { ok: false, queued: true };
-    } catch (err) {
-      toast('Saved on this phone — will retry when online.', 'error');
-      return { ok: false, queued: true };
+      if (res && res.ok) {
+        removeOutbox(e.payload.walkinId);
+        e.local._queued = false;
+        if (res.amount) e.local.amount = res.amount;
+        results.push(res);
+      } else {
+        allOk = false;
+        results.push(res || { ok: false, queued: true });
+        break; // remaining lines stay in the outbox and retry together
+      }
     }
+    renderWalkins();
+    if (!allOk) {
+      toast('Saved on this phone — will retry when online.', 'error');
+    } else if (!opts.silent) {
+      if (entries.length === 1) {
+        toast('Recorded ' + rupee(entries[0].local.amount) + ' ' + entries[0].local.payment + '.', 'ok');
+      } else {
+        const sum = entries.reduce(function (t, e) { return t + e.local.amount; }, 0);
+        toast(entries.length + ' items recorded · ' + rupee(sum) + ' ' + entries[0].local.payment + '.', 'ok');
+      }
+    }
+    if (entries.length === 1) return results[0];
+    return { ok: allOk, queued: !allOk, count: entries.length, results: results };
   }
 
   async function voidWalkin(walkinId, opts) {
@@ -1028,25 +1125,15 @@
     });
 
     $('item-grid').addEventListener('click', function (ev) {
-      const btn = ev.target.closest('[data-item]');
-      if (!btn) return;
-      state.item = btn.getAttribute('data-item');
-      renderWalkinForm();
+      const btn = ev.target.closest('[data-act]');
+      const pill = btn && btn.closest('[data-item]');
+      if (!btn || !pill) return;
+      const name = pill.getAttribute('data-item');
+      const cur = state.cart[name] || 0;
+      setLineQty(name, btn.getAttribute('data-act') === 'inc' ? cur + 1 : cur - 1);
     });
     $('walkin-customer').addEventListener('input', function () {
       state.customer = $('walkin-customer').value.slice(0, 60);
-      renderWalkinForm();
-    });
-    $('qty-minus').addEventListener('click', function () {
-      state.qty = Math.max(1, state.qty - 1);
-      renderWalkinForm();
-    });
-    $('qty-plus').addEventListener('click', function () {
-      state.qty = Math.min(99, state.qty + 1);
-      renderWalkinForm();
-    });
-    $('qty').addEventListener('change', function () {
-      state.qty = Math.max(1, Math.min(99, Math.floor(Number($('qty').value) || 1)));
       renderWalkinForm();
     });
     $('walkin-mass').addEventListener('change', function () {
@@ -1103,7 +1190,8 @@
       await login('0000');
       if (state.tab === 'walkin') {
         state.item = MENU[0].name;
-        state.qty = 1;
+        state.cart = {};
+        state.cart[MENU[0].name] = 1;
         state.payment = 'Cash';
         renderWalkinForm();
       }
@@ -1135,8 +1223,15 @@
     setStatus: setStatus,
     addWalkin: addWalkin,
     voidWalkin: voidWalkin,
-    setItem: function (name) { state.item = name; renderWalkinForm(); },
-    setQty: function (n) { state.qty = n; renderWalkinForm(); },
+    setItem: function (name) {
+      state.cart = {};
+      state.item = name;
+      if (MENU.some(function (m) { return m.name === name; })) state.cart[name] = 1;
+      renderWalkinForm();
+    },
+    setQty: function (n) { if (state.item) setLineQty(state.item, n); },
+    setLineQty: setLineQty,
+    getCart: function () { return cartLines(); },
     setPayment: function (p) { state.payment = p; renderWalkinForm(); },
     flushOutbox: flushOutbox,
     getState: function () {
@@ -1151,7 +1246,8 @@
         walkins: applyOutboxToWalkins(state.walkins),
         counts: state.counts,
         item: state.item,
-        qty: state.qty,
+        qty: state.cart[state.item] || 0,
+        cart: Object.assign({}, state.cart),
         payment: state.payment,
         customer: state.customer,
         walkinMass: state.walkinMass,
