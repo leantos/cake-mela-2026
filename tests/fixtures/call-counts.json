@@ -48,7 +48,7 @@
   },
   "after": {
     "saved": {
-      "spreadsheet": 32,
+      "spreadsheet": 31,
       "reads": 4,
       "writes": 1,
       "style": 0,
@@ -57,13 +57,13 @@
       "clearContents": 0,
       "getLastRow": 4,
       "getLastColumn": 5,
-      "getRange": 9,
+      "getRange": 8,
       "getValues": 4,
       "setValues": 1,
       "setValue": 0
     },
     "warm": {
-      "spreadsheet": 25,
+      "spreadsheet": 24,
       "reads": 3,
       "writes": 1,
       "style": 0,
@@ -72,13 +72,13 @@
       "clearContents": 0,
       "getLastRow": 3,
       "getLastColumn": 3,
-      "getRange": 8,
+      "getRange": 7,
       "getValues": 3,
       "setValues": 1,
       "setValue": 0
     },
     "insuff": {
-      "spreadsheet": 32,
+      "spreadsheet": 31,
       "reads": 4,
       "writes": 1,
       "style": 0,
@@ -87,7 +87,7 @@
       "clearContents": 0,
       "getLastRow": 4,
       "getLastColumn": 5,
-      "getRange": 9,
+      "getRange": 8,
       "getValues": 4,
       "setValues": 1,
       "setValue": 0

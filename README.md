@@ -1,4 +1,4 @@
-# Vailankanni Parish Youth × Poppins Bakers — Christmas cake pre-orders
+# Vailankanni Matha Youth × Poppins Bakers — Christmas cake pre-orders
 
 Static order page + Netlify Functions queue + Google Sheets (Apps Script).
 

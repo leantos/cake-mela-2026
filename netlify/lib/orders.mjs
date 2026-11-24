@@ -69,8 +69,7 @@ export function validateOrder(raw) {
   if (!/^[6-9]\d{9}$/.test(phone)) errors.push('phone');
   const pickupDate = str(raw.pickupDate, 20);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(pickupDate)) errors.push('pickupDate');
-  const mass = str(raw.mass, 10);
-  if (!/^\d{2}:\d{2}$/.test(mass)) errors.push('mass');
+  // Mass time is no longer collected; legacy raw.mass / raw.massLabel are ignored.
 
   const items = [];
   if (!Array.isArray(raw.items) || raw.items.length === 0 || raw.items.length > 30) {
@@ -112,8 +111,6 @@ export function validateOrder(raw) {
       pickupDate,
       pickupDateLabel: str(raw.pickupDateLabel, 40),
       pickupDateShort: str(raw.pickupDateShort, 40),
-      mass,
-      massLabel: str(raw.massLabel, 40),
       items,
       totalItems,
       totalAmount

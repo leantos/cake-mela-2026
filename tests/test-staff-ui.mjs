@@ -139,10 +139,14 @@ async function loadPreview() {
     JSON.stringify(listed.map((o) => o.name)));
   await window.__staff.search('');
 
-  await window.__staff.setMass('06:30');
-  assert('mass filter keeps 6:30 AM orders',
-    window.__staff.getState().orders.every((o) => o.mass === '06:30'));
-  await window.__staff.setMass('');
+  assert('no Mass filter chips and no Mass select exist',
+    !document.getElementById('mass-chips') && !document.getElementById('walkin-mass') &&
+    typeof window.__staff.setMass === 'undefined' && !('mass' in window.__staff.getState()));
+  assert('order cards no longer show a Mass time', !/Mass/.test(document.getElementById('order-list') ? document.getElementById('order-list').textContent : document.body.textContent));
+  assert('page is branded Vailankanni Matha Youth (title, heading, logo alt)',
+    document.title.includes('Vailankanni Matha Youth') && !document.documentElement.outerHTML.includes('Parish Youth') &&
+    document.querySelector('h1').textContent.includes('Vailankanni Matha Youth') &&
+    document.querySelector('header img').alt.includes('Vailankanni Matha Youth'));
 
   await window.__staff.setTab('walkin');
   assert('walk-in tab is shown', document.getElementById('panel-walkin').hidden === false);
@@ -155,8 +159,8 @@ async function loadPreview() {
     document.getElementById('live-amount').textContent.includes('1300'),
     document.getElementById('live-amount').textContent);
   const liveSum = document.getElementById('live-summary').textContent;
-  assert('live summary shows qty, item, payment and mass',
-    liveSum.includes('2 ×') && liveSum.includes('Dates & Carrot Pudding (700g)') && liveSum.includes('UPI') && liveSum.includes('Mass'), liveSum);
+  assert('live summary shows qty, item and payment (no Mass)',
+    liveSum.includes('2 ×') && liveSum.includes('Dates & Carrot Pudding (700g)') && liveSum.includes('UPI') && !liveSum.includes('Mass'), liveSum);
 
   const custInput = document.getElementById('walkin-customer');
   assert('customer name field is an optional text input (maxlength 60, autocomplete off)',
@@ -252,8 +256,8 @@ async function loadPreview() {
   const cust2 = document.getElementById('walkin-customer');
   cust2.value = 'Ravi';
   cust2.dispatchEvent(new window.Event('input', { bubbles: true }));
-  assert('preview shows customer, payment and Mass for the whole sale',
-    /UPI · .*Mass · for Ravi/.test(document.getElementById('live-meta').textContent), document.getElementById('live-meta').textContent);
+  assert('preview shows payment and customer for the whole sale (no Mass)',
+    /UPI · for Ravi/.test(document.getElementById('live-meta').textContent), document.getElementById('live-meta').textContent);
   const beforeCart = window.__staff.getState().walkins.filter((w) => !w.voided).length;
   document.getElementById('record-sale').click();
   await waitFor(() => window.__staff.getState().walkins.filter((w) => !w.voided).length === beforeCart + 2);
@@ -275,8 +279,8 @@ async function loadPreview() {
   const store = {
     pin: '2468',
     orders: [
-      { row: 2, orderId: 'PB-1', name: 'Anita DSouza', phone: '9876543210', mass: '06:30', pickupDate: '2026-11-29', items: '1 × Plum 400g', total: 350, status: 'Pending' },
-      { row: 3, orderId: 'PB-2', name: 'Cyril Martin', phone: '7204017793', mass: '08:30', pickupDate: '2026-11-29', items: '1 × Dates 700g', total: 650, status: 'Paid' }
+      { row: 2, orderId: 'PB-1', name: 'Anita DSouza', phone: '9876543210', pickupDate: '2026-11-29', items: '1 × Plum 400g', total: 350, status: 'Pending' },
+      { row: 3, orderId: 'PB-2', name: 'Cyril Martin', phone: '7204017793', pickupDate: '2026-11-29', items: '1 × Dates 700g', total: 650, status: 'Paid' }
     ],
     walkins: []
   };
@@ -307,7 +311,7 @@ async function loadPreview() {
     }
     if (body.action === 'staff_walkins') return { ok: true, date: '2026-11-29', walkins: store.walkins.slice() };
     if (body.action === 'staff_add_walkin') {
-      const row = { walkinId: body.walkinId, date: body.date, mass: body.mass, item: body.item, qty: body.qty, amount: 650, payment: body.payment, customer: body.customer || '', voided: false };
+      const row = { walkinId: body.walkinId, date: body.date, item: body.item, qty: body.qty, amount: 650, payment: body.payment, customer: body.customer || '', voided: false };
       store.walkins.unshift(row);
       return Object.assign({ ok: true }, row);
     }
@@ -503,7 +507,7 @@ async function loadPreview() {
 }
 
 
-// ---- auto date default from the browser clock (Mass select untouched) ----
+// ---- auto date default from the browser clock ----
 {
   const D = (y, m, d, h = 10, mi = 0) => new Date(y, m - 1, d, h, mi, 0);
   async function boot(search, now) {
@@ -534,8 +538,8 @@ async function loadPreview() {
   pg.window.close();
 
   pg = await boot('', D(2026, 12, 6, 6, 0));
-  assert('the Walk-in Mass select is NOT changed by the clock (stays as before)',
-    pg.window.__staff.getState().walkinMass === '8:30 AM Mass' && pg.document.getElementById('walkin-mass').value === '8:30 AM Mass');
+  assert('there is no Mass select for the clock to change',
+    !pg.document.getElementById('walkin-mass') && !('walkinMass' in pg.window.__staff.getState()));
   pg.window.close();
 
   // a manual date pick is not overridden when the tab becomes visible on a new day

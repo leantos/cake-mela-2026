@@ -352,7 +352,7 @@ function seed(world, extra = {}) {
 }
 
 // ---- static source checks ----
-assert('version is 2026-11-24.2', /var SCRIPT_VERSION = '2026-11-24.2'/.test(src));
+assert('version is 2026-11-24.3', /var SCRIPT_VERSION = '2026-11-24.3'/.test(src));
 assert('doPost routes staff actions without using processOrder_ first',
   /isStaffAction_\(data\.action\)/.test(src) &&
   /handleStaffAction_\(data\)/.test(src));
@@ -457,8 +457,10 @@ assert('void walk-ins are skipped in the summary',
   const byId = staffOrdersFromValues_(values, { dates: DATES, now, pickupDate: '2026-11-29', q: 'PB-4' });
   assert('search matches order ID', byId.orders.length === 1 && byId.orders[0].name.indexOf('Maria') === 0);
   const massed = staffOrdersFromValues_(values, { dates: DATES, now, pickupDate: '2026-11-29', mass: '06:30' });
-  assert('mass filter keeps 6:30 orders only',
-    massed.orders.length === 2 && massed.orders.every((o) => o.mass === '06:30'),
+  const unfiltered = staffOrdersFromValues_(values, { dates: DATES, now, pickupDate: '2026-11-29' });
+  assert('a legacy mass option is ignored and orders carry no mass field',
+    massed.orders.length === unfiltered.orders.length && massed.orders.length > 0 &&
+    massed.orders.every((o) => !('mass' in o)) && !('mass' in massed),
     JSON.stringify(massed.orders.map((o) => o.mass)));
   const withTest = staffOrdersFromValues_(values, { dates: DATES, now, pickupDate: '2026-11-29', includeTest: true });
   assert('includeTest returns the TEST ORDER row',
@@ -515,7 +517,7 @@ assert('void walk-ins are skipped in the summary',
     pin: '2468',
     clientToken: 'deviceTokenE5'
   });
-  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-24.2');
+  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-24.3');
 
   const listed = world.ctx.handleStaffAction_({
     action: 'staff_orders',
@@ -627,7 +629,6 @@ assert('void walk-ins are skipped in the summary',
     world.sheets['Orders'].data,
     DATES,
     MENU,
-    ['06:30', '08:30'],
     new Date('2026-11-23T12:00:00+05:30'),
     tab.data
   );
@@ -647,7 +648,7 @@ assert('void walk-ins are skipped in the summary',
     postData: { contents: JSON.stringify({ action: 'staff_login', pin: '2468', clientToken: 'deviceTokenF6' }) }
   });
   const staffBody = JSON.parse(staffRes.body);
-  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-24.2');
+  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-24.3');
 
   const beforeRows = world.sheets['Orders'].data.length;
   const order = {

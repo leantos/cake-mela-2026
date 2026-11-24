@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#7a0a10">
-  <meta name="description" content="Staff desk for the Vailankanni Parish Youth Christmas cake sale.">
-  <title>Staff desk — Vailankanni Parish Youth</title>
+  <meta name="description" content="Staff desk for the Vailankanni Matha Youth Christmas cake sale.">
+  <title>Staff desk — Vailankanni Matha Youth</title>
   <link rel="icon" href="logo.png" type="image/png">
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="/tailwind.css">
@@ -15,9 +15,9 @@
 <body class="m-0 bg-page font-sans leading-[1.45] text-ink antialiased">
   <div class="flex min-h-dvh w-full flex-col bg-m3-surface pb-[env(safe-area-inset-bottom)]">
     <header class="flex items-center gap-[0.7rem] relative z-10 bg-m3-surface px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 text-m3-on-surface shadow-m3-1 min-[720px]:px-[1.4rem]">
-      <img class="block size-[52px] shrink-0" src="logo.png" width="52" height="52" alt="Vailankanni Parish Youth logo">
+      <img class="block size-[52px] shrink-0" src="logo.png" width="52" height="52" alt="Vailankanni Matha Youth logo">
       <div class="min-w-0 flex-1 text-left">
-        <h1 class="text-[1.25rem] font-medium leading-7 text-m3-primary min-[720px]:text-[1.375rem]">Vailankanni Parish Youth</h1>
+        <h1 class="text-[1.25rem] font-medium leading-7 text-m3-primary min-[720px]:text-[1.375rem]">Vailankanni Matha Youth</h1>
         <p class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant">Staff desk • Christmas Cake Sale</p>
       </div>
       <button type="button" class="min-h-12 shrink-0 rounded-full px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-primary hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]" id="lock-btn">Lock</button>
@@ -31,7 +31,6 @@
     <main class="flex-1 px-[0.9rem] pt-[0.8rem] pb-[1.6rem] min-[720px]:px-[1.4rem] min-[720px]:pt-4 min-[720px]:pb-8">
       <section id="panel-orders" role="tabpanel" aria-labelledby="tab-orders">
         <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="date-chips" aria-label="Pickup date"></div>
-        <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="mass-chips" aria-label="Mass"></div>
         <label class="sr-only" for="search">Search orders</label>
         <input class="mb-[0.7rem] block min-h-12 w-full py-[0.55rem] rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary min-[720px]:max-w-[420px]" id="search" type="search" placeholder="Search name, phone, or order ID" autocomplete="off" enterkeyhint="search">
         <div class="mb-[0.8rem] grid grid-cols-[1.2fr_1fr_1fr] gap-[0.45rem] min-[720px]:grid-cols-[repeat(3,minmax(0,220px))] min-[720px]:gap-[0.8rem]" aria-label="Totals">
@@ -61,14 +60,6 @@
         <div class="relative mb-4">
           <input class="peer block min-h-14 w-full py-2 rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder-transparent" id="walkin-customer" type="text" maxlength="60" autocomplete="off" placeholder=" " aria-label="Customer name (optional)">
           <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem]" for="walkin-customer">Customer name (optional)</label>
-        </div>
-        <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
-          <label class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase" for="walkin-mass">Mass</label>
-          <select class="min-h-12 min-w-0 flex-1 font-medium rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary" id="walkin-mass">
-            <option value="6:30 AM Mass">6:30 AM Mass</option>
-            <option value="8:30 AM Mass">8:30 AM Mass</option>
-            <option value="Other">Other</option>
-          </select>
         </div>
         <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
           <span class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Payment</span>
@@ -199,11 +190,6 @@
     { name: 'Rich Plum Cake (800g)', short: 'Plum 800g', price: 650 },
     { name: 'Rich Plum Cake (400g)', short: 'Plum 400g', price: 350 }
   ];
-  const MASS_FILTERS = [
-    { id: '', label: 'All Masses' },
-    { id: '06:30', label: '6:30 AM' },
-    { id: '08:30', label: '8:30 AM' }
-  ];
   const DEFAULT_DATES = [
     { id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30' },
     { id: '2026-12-06', label: 'Sun, 6 Dec', closesAt: '2026-12-06T08:30:00+05:30' },
@@ -212,16 +198,16 @@
   ];
 
   const MOCK_ORDERS = [
-    { row: 2, orderId: 'PB-261123-HVAB', name: "Anita D'Souza", phone: '9876543210', mass: '06:30', pickupDate: '2026-11-29', items: '1 × Dates & Carrot Pudding (700g)\n2 × Rich Plum Cake (400g)', total: 1350, status: 'Pending' },
-    { row: 3, orderId: 'PB-261123-KLMN', name: 'Cyril Martin', phone: '7204017793', mass: '08:30', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (700g)', total: 700, status: 'Paid' },
-    { row: 4, orderId: 'PB-261123-QRST', name: 'Maria Fernandes', phone: '9988776655', mass: '06:30', pickupDate: '2026-11-29', items: '2 × Dates & Carrot Pudding (350g)\n1 × Rich Plum Cake (800g)', total: 1310, status: 'Picked up' },
-    { row: 5, orderId: 'PB-261122-ABCD', name: 'Joseph Pinto', phone: '9123456780', mass: '08:30', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Pending' },
-    { row: 6, orderId: 'PB-261122-WXYZ', name: 'Sunita Rao', phone: '9000011122', mass: '06:30', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (350g)', total: 350, status: 'Cancelled' },
-    { row: 7, orderId: 'PB-261121-EFGH', name: 'Rohan Naik', phone: '9811122233', mass: '08:30', pickupDate: '2026-12-06', items: '1 × Dates & Carrot Pudding (700g)', total: 650, status: 'Pending' }
+    { row: 2, orderId: 'PB-261123-HVAB', name: "Anita D'Souza", phone: '9876543210', pickupDate: '2026-11-29', items: '1 × Dates & Carrot Pudding (700g)\n2 × Rich Plum Cake (400g)', total: 1350, status: 'Pending' },
+    { row: 3, orderId: 'PB-261123-KLMN', name: 'Cyril Martin', phone: '7204017793', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (700g)', total: 700, status: 'Paid' },
+    { row: 4, orderId: 'PB-261123-QRST', name: 'Maria Fernandes', phone: '9988776655', pickupDate: '2026-11-29', items: '2 × Dates & Carrot Pudding (350g)\n1 × Rich Plum Cake (800g)', total: 1310, status: 'Picked up' },
+    { row: 5, orderId: 'PB-261122-ABCD', name: 'Joseph Pinto', phone: '9123456780', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Pending' },
+    { row: 6, orderId: 'PB-261122-WXYZ', name: 'Sunita Rao', phone: '9000011122', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (350g)', total: 350, status: 'Cancelled' },
+    { row: 7, orderId: 'PB-261121-EFGH', name: 'Rohan Naik', phone: '9811122233', pickupDate: '2026-12-06', items: '1 × Dates & Carrot Pudding (700g)', total: 650, status: 'Pending' }
   ];
   const MOCK_WALKINS = [
-    { walkinId: 'WI-demo-1', date: '2026-11-29', mass: '8:30 AM Mass', item: 'Dates & Carrot Pudding (700g)', qty: 1, price: 650, amount: 650, payment: 'Cash', notes: '', voided: false },
-    { walkinId: 'WI-demo-2', date: '2026-11-29', mass: '8:30 AM Mass', item: 'Rich Plum Cake (400g)', qty: 2, price: 350, amount: 700, payment: 'UPI', notes: '', voided: false }
+    { walkinId: 'WI-demo-1', date: '2026-11-29', item: 'Dates & Carrot Pudding (700g)', qty: 1, price: 650, amount: 650, payment: 'Cash', notes: '', voided: false },
+    { walkinId: 'WI-demo-2', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 2, price: 350, amount: 700, payment: 'UPI', notes: '', voided: false }
   ];
 
   const params = new URLSearchParams(location.search);
@@ -233,7 +219,6 @@
     unlocked: false,
     tab: ['walkin', 'recent'].indexOf(params.get('tab')) >= 0 ? params.get('tab') : 'orders',
     pickupDate: '2026-11-29',
-    mass: '',
     q: '',
     orders: [],
     walkins: [],
@@ -241,7 +226,6 @@
     counts: { toCollect: 0, toCollectAmount: 0, pickedUp: 0, pending: 0, total: 0 },
     item: '',
     cart: {},
-    walkinMass: '8:30 AM Mass',
     pickedDate: false,
     autoDay: '',
     autoDateSettled: false,
@@ -388,11 +372,9 @@
     if (action === 'staff_login') return Promise.resolve({ ok: true, status: 'ok', version: '2026-11-23.11' });
     if (action === 'staff_orders') {
       const date = payload.pickupDate || state.pickupDate;
-      const mass = payload.mass || '';
       const q = String(payload.q || '').trim().toLowerCase();
       const qDigits = q.replace(/\D/g, '');
       let orders = MOCK_ORDERS.filter(function (o) { return o.pickupDate === date; });
-      if (mass) orders = orders.filter(function (o) { return o.mass === mass; });
       if (q) {
         const qIsNumeric = qDigits.length > 0 && q.replace(/[\s\-()+]/g, '') === qDigits;
         orders = orders.filter(function (o) {
@@ -405,7 +387,6 @@
       return Promise.resolve({
         ok: true,
         pickupDate: date,
-        mass: mass,
         orders: orders.map(function (o) { return Object.assign({}, o); }),
         counts: countsFrom(orders),
         dates: DEFAULT_DATES.slice(),
@@ -433,7 +414,6 @@
       const row = {
         walkinId: payload.walkinId,
         date: payload.date,
-        mass: payload.mass,
         item: payload.item,
         qty: payload.qty,
         price: price,
@@ -491,7 +471,6 @@
           next.unshift({
             walkinId: e.payload.walkinId,
             date: e.payload.date,
-            mass: e.payload.mass,
             item: e.payload.item,
             qty: e.payload.qty,
             price: price,
@@ -575,13 +554,6 @@
     }).join('');
   }
 
-  function renderMassChips() {
-    $('mass-chips').innerHTML = MASS_FILTERS.map(function (m) {
-      const pressed = m.id === state.mass ? 'true' : 'false';
-      return '<button type="button" class="' + CLS.chip + '" data-mass="' + m.id + '" aria-pressed="' + pressed + '">' + m.label + '</button>';
-    }).join('');
-  }
-
   function renderCounts() {
     const c = state.counts || countsFrom(state.orders);
     $('count-collect').textContent = String(c.toCollect || 0);
@@ -616,9 +588,7 @@
       return '<article class="' + CLS.card + '" data-order="' + o.orderId + '" data-status="' + o.status + '">' +
         '<div class="' + CLS.top + '"><div>' +
         '<p class="order-name ' + CLS.name + '">' + escapeHtml(o.name || '') + '</p>' +
-        '<p class="' + CLS.meta + '">' + (o.mass === '06:30' ? '6:30 AM Mass' : o.mass === '08:30' ? '8:30 AM Mass' : escapeHtml(o.mass || '')) +
-        (phoneHtml ? ' · ' + phoneHtml : '') +
-        (o.assignedTo ? ' · To: ' + escapeHtml(o.assignedTo) : '') + '</p>' +
+        '<p class="' + CLS.meta + '">' + [phoneHtml, o.assignedTo ? 'To: ' + escapeHtml(o.assignedTo) : ''].filter(Boolean).join(' · ') + '</p>' +
         '</div><span class="' + pillClass(o.status) + '">' + escapeHtml(o.status) + '</span>' + queued + '</div>' +
         '<p class="' + CLS.items + '">' + escapeHtml(o.items || '') + '</p>' +
         '<p class="' + CLS.total + '">' + rupee(o.total) + '</p>' +
@@ -719,7 +689,6 @@
       }
     }
     if ($('walkin-customer').value !== state.customer) $('walkin-customer').value = state.customer;
-    $('walkin-mass').value = state.walkinMass;
     $('pay-cash').setAttribute('aria-pressed', state.payment === 'Cash' ? 'true' : 'false');
     $('pay-upi').setAttribute('aria-pressed', state.payment === 'UPI' ? 'true' : 'false');
     const lines = cartLines();
@@ -731,7 +700,7 @@
       }).join('')
       : '<li class="text-m3-on-surface-variant">Pick a cake to start</li>';
     $('live-meta').textContent = lines.length
-      ? state.payment + ' · ' + state.walkinMass + (state.customer.trim() ? ' · for ' + state.customer.trim() : '')
+      ? state.payment + (state.customer.trim() ? ' · for ' + state.customer.trim() : '')
       : '';
     renderCash(total, lines.length > 0);
     $('record-sale').disabled = !lines.length;
@@ -754,7 +723,7 @@
       return '<article class="' + CLS.card + '" data-walkin="' + escapeAttr(w.walkinId) + '">' +
         '<div class="' + CLS.top + '"><div>' +
         '<p class="' + CLS.name + '">' + w.qty + ' × ' + escapeHtml(shortItem(w.item)) + '</p>' +
-        '<p class="' + CLS.meta + '">' + escapeHtml(w.mass || '') + ' · ' + escapeHtml(w.payment || '') +
+        '<p class="' + CLS.meta + '">' + escapeHtml(w.payment || '') +
         (w.customer ? ' · <span class="walkin-customer">' + escapeHtml(w.customer) + '</span>' : '') + queued + '</p>' +
         (w.notes && !/^\s*VOID\b/i.test(w.notes) ? '<p class="walkin-notes mt-1 text-[0.75rem] text-m3-on-surface-variant">' + escapeHtml(w.notes) + '</p>' : '') +
         '</div><div><p class="' + CLS.amount + '">' + rupee(w.amount) + '</p>' +
@@ -839,7 +808,6 @@
       const res = await staffPost({
         action: 'staff_orders',
         pickupDate: state.pickupDate,
-        mass: state.mass,
         q: state.q
       });
       if (!res || !res.ok) {
@@ -869,7 +837,6 @@
       renderDates('date-chips');
       renderDates('walkin-date-chips');
       renderDates('recent-date-chips');
-      renderMassChips();
       renderOrders();
       $('orders-updated').textContent = state.lastOrdersAt
         ? 'Updated ' + state.lastOrdersAt + (readOutbox().length ? ' • syncing…' : '')
@@ -987,7 +954,6 @@
       const payload = {
         walkinId: (opts.walkinId && lines.length === 1) ? opts.walkinId : newWalkinId(),
         date: state.pickupDate,
-        mass: opts.mass || state.walkinMass,
         item: line.item,
         qty: line.qty,
         payment: opts.payment || state.payment,
@@ -998,7 +964,6 @@
       const local = {
         walkinId: payload.walkinId,
         date: payload.date,
-        mass: payload.mass,
         item: payload.item,
         qty: payload.qty,
         price: price,
@@ -1204,13 +1169,6 @@
     $('date-chips').addEventListener('click', onDateClick);
     $('walkin-date-chips').addEventListener('click', onDateClick);
     $('recent-date-chips').addEventListener('click', onDateClick);
-    $('mass-chips').addEventListener('click', function (ev) {
-      const btn = ev.target.closest('[data-mass]');
-      if (!btn) return;
-      state.mass = btn.getAttribute('data-mass') || '';
-      renderMassChips();
-      loadOrders();
-    });
     var searchTimer = null;
     $('search').addEventListener('input', function () {
       const value = $('search').value;
@@ -1262,9 +1220,6 @@
     $('walkin-customer').addEventListener('input', function () {
       state.customer = $('walkin-customer').value.slice(0, 60);
       renderWalkinForm();
-    });
-    $('walkin-mass').addEventListener('change', function () {
-      state.walkinMass = $('walkin-mass').value;
     });
     $('cash-received').addEventListener('input', function () {
       state.received = $('cash-received').value.replace(/\D/g, '').slice(0, 6);
@@ -1319,7 +1274,6 @@
     renderDates('date-chips');
     renderDates('walkin-date-chips');
     renderDates('recent-date-chips');
-    renderMassChips();
     renderWalkinForm();
     renderOrders();
     renderWalkins();
@@ -1364,7 +1318,6 @@
       renderDates('recent-date-chips');
       return loadOrders().then(function () { return loadWalkins(); });
     },
-    setMass: function (id) { state.mass = id; renderMassChips(); return loadOrders(); },
     search: function (q) { state.q = q; $('search').value = q; return loadOrders(); },
     setStatus: setStatus,
     addWalkin: addWalkin,
@@ -1389,7 +1342,6 @@
         unlocked: state.unlocked,
         tab: state.tab,
         pickupDate: state.pickupDate,
-        mass: state.mass,
         q: state.q,
         orders: applyOutboxToOrders(state.orders),
         walkins: applyOutboxToWalkins(state.walkins),
@@ -1400,7 +1352,6 @@
         payment: state.payment,
         customer: state.customer,
         received: state.received,
-        walkinMass: state.walkinMass,
         outbox: readOutbox(),
         isPreview: isPreview
       };

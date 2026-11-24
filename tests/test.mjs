@@ -41,10 +41,10 @@ const w = window;
 const cards = document.querySelectorAll('.menu-card');
 assert('renders 6 menu cards', cards.length === 6, cards.length);
 
-assert('title branded for parish', document.title.includes('Vailankanni Parish Youth'), document.title);
+assert('title branded for parish', document.title.includes('Vailankanni Matha Youth'), document.title);
 assert('favicon present', !!document.querySelector('link[rel="icon"][href="logo.png"]'));
 assert('apple-touch-icon present', !!document.querySelector('link[rel="apple-touch-icon"][href="logo.png"]'));
-assert('header title', document.querySelector('header.hero-head h1')?.textContent === 'Vailankanni Parish Youth');
+assert('header title', document.querySelector('header.hero-head h1')?.textContent === 'Vailankanni Matha Youth');
 assert('header subtitle', document.querySelector('header.hero-head .tagline')?.textContent === 'Christmas Cake Sale • with Poppins Bakers');
 assert('header logo', document.querySelector('header.hero-head img.logo')?.getAttribute('src') === 'logo.png');
 
@@ -211,15 +211,14 @@ if (typeof w.buildWhatsAppMessage === 'function') {
     totalAmount: 1350,
     name: 'Asha Rao',
     phone: '9876543210',
-    pickupDateShort: 'Sun, 29 Nov',
-    massLabel: '6:30 AM Mass'
+    pickupDateShort: 'Sun, 29 Nov'
   };
   const msg = w.buildWhatsAppMessage(sample);
   assert('whatsapp title is the buyer-voice format', msg.includes('✨ *Christmas Cake Order* ✨'), msg);
   assert('whatsapp has order id', msg.includes('*Order ID:* PB-251123-K7MQ'), msg);
   assert('whatsapp lists items with ×', msg.includes('• 2 × Rich Plum Cake (400g) – ₹700') && msg.includes('• 1 × Dates & Carrot Pudding (700g) – ₹650'), msg);
   assert('whatsapp total line', msg.includes('*Total: ₹1,350* (3 cakes)'), msg);
-  assert('whatsapp pickup block', msg.includes('*Pickup*') && msg.includes('Sun, 29 Nov, after the 6:30 AM Mass'), msg);
+  assert('whatsapp pickup block', msg.includes('*Pickup*') && msg.includes('Sun, 29 Nov') && !/Mass/.test(msg.split('*Pickup*')[1].split('*Name:*')[0]), msg);
   assert('whatsapp name and phone', msg.includes('*Name:* Asha Rao') && msg.includes('*Phone:* 9876543210'), msg);
   assert('whatsapp payment line', msg.includes('*Payment:* Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin)'), msg);
   const phoneAt = msg.indexOf('*Phone:* 9876543210');
@@ -262,7 +261,7 @@ assert('name described by its error', document.getElementById('buyer-name').getA
 assert('phone field has an inline error', /10-digit phone/.test(document.getElementById('buyer-phone-error')?.textContent || ''),
   document.getElementById('buyer-phone-error')?.textContent);
 assert('pickup date pre-selected so not flagged', !document.getElementById('field-pickup-date').classList.contains('invalid'));
-assert('mass required', document.getElementById('field-mass').classList.contains('invalid'));
+assert('no Mass field or chips exist any more', !document.getElementById('field-mass') && !document.getElementById('mass-options') && !document.getElementById('pickup-mass'));
 document.getElementById('pickup-date').value = '';
 document.getElementById('place-order-btn').click();
 assert('pickup date required once cleared', document.getElementById('field-pickup-date').classList.contains('invalid'));
@@ -270,27 +269,25 @@ w.selectPickupDate('2026-11-29');
 assert('button not stuck after failed validation', document.getElementById('place-order-btn').disabled === false);
 assert('button text unchanged', document.getElementById('place-order-btn').textContent === 'Place Order via WhatsApp');
 
-const massBtns = [...document.querySelectorAll('.mass-option')];
-assert('renders 2 mass options', massBtns.length === 2, massBtns.length);
-assert('mass labels', massBtns.map((b) => b.textContent).join('|') === '6:30 AM Mass|8:30 AM Mass',
-  massBtns.map((b) => b.textContent).join('|'));
+assert('no mass option buttons are rendered', document.querySelectorAll('.mass-option').length === 0);
 assert('no delivery field', !document.getElementById('field-delivery') && !document.getElementById('field-flat'));
 assert('church pickup note', /Vailankanni Matha Church, Muthanallur/.test(document.getElementById('pickup-place')?.textContent || ''));
 
 document.getElementById('buyer-name').value = 'Asha Rao';
 document.getElementById('buyer-phone').value = '+91 98765 43210';
+document.getElementById('pickup-date').value = '';
 document.getElementById('place-order-btn').click();
-assert('mass still required after name/phone', document.getElementById('field-mass').classList.contains('invalid'));
+assert('pickup date still required after name/phone', document.getElementById('field-pickup-date').classList.contains('invalid'));
 
 const formAlert = document.getElementById('form-alert');
 assert('invalid submit opens the custom alert dialog', formAlert && !formAlert.hidden && formAlert.classList.contains('is-open'));
 assert('alert is an alertdialog', document.getElementById('form-alert-dialog')?.getAttribute('role') === 'alertdialog');
 assert('alert is modal', document.getElementById('form-alert-dialog')?.getAttribute('aria-modal') === 'true');
 assert('alert title is Almost there!', document.getElementById('form-alert-title')?.textContent === 'Almost there!');
-assert('alert lists the missing Mass time', /Pick a Mass time/.test(formAlert.textContent), formAlert.textContent);
+assert('alert lists the missing pickup date', /Pick a pickup date/.test(formAlert.textContent), formAlert.textContent);
 assert('alert OK button label', document.getElementById('form-alert-ok')?.textContent === 'OK, fix it');
 const checkoutAlert = document.getElementById('checkout-alert');
-assert('sticky summary lists missing Mass time', checkoutAlert && !checkoutAlert.hidden && /Pick a Mass time/.test(checkoutAlert.textContent),
+assert('sticky summary lists missing pickup date', checkoutAlert && !checkoutAlert.hidden && /Pick a pickup date/.test(checkoutAlert.textContent),
   checkoutAlert && checkoutAlert.textContent);
 assert('button stays tappable after invalid submit', document.getElementById('place-order-btn').disabled === false);
 
@@ -300,7 +297,7 @@ document.getElementById('buyer-name').dispatchEvent(new window.Event('input', { 
 assert('name highlight clears once filled', !document.getElementById('field-name').classList.contains('invalid'));
 assert('name aria-invalid removed once filled', document.getElementById('buyer-name').getAttribute('aria-invalid') !== 'true');
 
-// Close via the OK button: first remaining problem (phone, if emptied) or mass
+// Close via the OK button: first remaining problem (phone, if emptied) or date
 document.getElementById('buyer-phone').value = '';
 document.getElementById('buyer-phone').dispatchEvent(new window.Event('input', { bubbles: true }));
 document.getElementById('form-alert-ok').click();
@@ -308,7 +305,7 @@ assert('OK closes the alert', formAlert.hidden === true && !formAlert.classList.
 assert('closing the alert focuses the first invalid field', document.activeElement === document.getElementById('buyer-phone') ||
   document.activeElement === document.getElementById('buyer-name') ||
   document.activeElement && document.activeElement.classList.contains('plus') ||
-  document.activeElement && document.activeElement.classList.contains('mass-option') ||
+  document.activeElement && document.activeElement.classList.contains('date-chip') ||
   document.activeElement === document.getElementById('buyer-phone'),
   document.activeElement && (document.activeElement.id || document.activeElement.className));
 
@@ -328,14 +325,12 @@ zeroCart();
 document.getElementById('buyer-name').value = '';
 document.getElementById('buyer-phone').value = '';
 document.getElementById('pickup-date').value = '';
-document.getElementById('pickup-mass').value = '';
 document.getElementById('place-order-btn').click();
 assert('empty cart is listed in the alert', /Please add at least one cake/.test(formAlert.textContent), formAlert.textContent);
-assert('alert lists name, phone, date and Mass',
+assert('alert lists name, phone and date',
   /Enter your name/.test(formAlert.textContent) &&
   /Enter a 10-digit phone number/.test(formAlert.textContent) &&
-  /Pick a pickup date/.test(formAlert.textContent) &&
-  /Pick a Mass time/.test(formAlert.textContent),
+  /Pick a pickup date/.test(formAlert.textContent),
   formAlert.textContent);
 assert('sticky alert is a live region', checkoutAlert.getAttribute('role') === 'alert' && checkoutAlert.getAttribute('aria-live') === 'assertive');
 assert('reduced-motion is respected for the alert (Tailwind motion-reduce)',
@@ -350,8 +345,9 @@ document.getElementById('buyer-name').value = 'Asha Rao';
 document.getElementById('buyer-phone').value = '+91 98765 43210';
 document.getElementById('buyer-name').dispatchEvent(new window.Event('input', { bubbles: true }));
 document.getElementById('buyer-phone').dispatchEvent(new window.Event('input', { bubbles: true }));
+document.getElementById('pickup-date').value = '';
 document.getElementById('place-order-btn').click();
-assert('mass still required after name/phone/item restored', document.getElementById('field-mass').classList.contains('invalid'));
+assert('pickup date still required after name/phone/item restored', document.getElementById('field-pickup-date').classList.contains('invalid'));
 w.closeFormAlert();
 
 // Pre-order: no sold-out labels, no clamping, every listed date is orderable
@@ -419,7 +415,6 @@ w.openWhatsApp = function(message) {
 };
 
 w.selectPickupDate('2026-11-29');
-w.selectMass('06:30');
 // Sheets URL is configured: enqueue, show Order placed, open WhatsApp, flush in the background.
 let postCalled = false;
 window.fetch = (...args) => {
@@ -446,7 +441,7 @@ const decoded = decodeURIComponent(redirected.split('text=')[1] || '');
 assert('redirect message has greeting', decoded.startsWith('✨ *Christmas Cake Order* ✨'), decoded);
 assert('redirect message has name', decoded.includes('*Name:* Asha Rao'));
 assert('redirect message has normalized phone', decoded.includes('*Phone:* 9876543210'));
-assert('redirect message has pickup', decoded.includes('Sun, 29 Nov, after the 6:30 AM Mass'), decoded);
+assert('redirect message has pickup', decoded.includes('Sun, 29 Nov') && !/after the .*Mass/.test(decoded), decoded);
 assert('redirect message has payment (one of the two contacts)', /\*Payment:\* Pay at pickup, or UPI to (\+91 72040 17793 \(Cyril Martin\)|\+91 80507 64341 \(Aashwin Alfy\))/.test(decoded), decoded);
 assert('redirect has no delivery', !decoded.includes('*Delivery:*') && !decoded.includes('Flat / Block'), decoded);
 assert('redirect message has thank you', decoded.includes('Thank you!'));
@@ -467,7 +462,6 @@ assert('rejects short phone', document.getElementById('field-phone').classList.c
 
 // ---- Atomic reserve + idempotency ----
 document.getElementById('buyer-phone').value = '9876543210';
-w.selectMass('06:30');
 window.__ORDER_TIMEOUT_MS = 80;
 try { window.sessionStorage.clear(); } catch (e) {}
 w.__setSheetsUrlForTest('https://script.google.com/macros/s/TEST/exec');
@@ -539,7 +533,6 @@ try { window.sessionStorage.setItem('poppinsCheckoutOrderId', 'PB-261123-DUP1');
 zeroCart();
 firstPlus.click();
 w.selectPickupDate('2026-11-29');
-w.selectMass('06:30');
 w.__setStockForTest(nov29Remaining(15));
 window.fetch = async function () {
   return { ok: true, json: async () => ({ ok: true, status: 'duplicate', orderId: 'PB-261123-DUP1' }) };
@@ -559,7 +552,6 @@ zeroCart();
 firstPlus.click();
 w.__setStockForTest(nov29Remaining(15));
 w.selectPickupDate('2026-11-29');
-w.selectMass('06:30');
 const timeoutBodies = [];
 window.fetch = async function (url, opts) {
   opts = opts || {};
@@ -595,7 +587,6 @@ try { window.localStorage.removeItem('poppinsOrderOutbox'); } catch (e) {}
 w.__setSheetsUrlForTest('https://script.google.com/macros/s/TEST/exec');
 window.dispatchEvent(new window.Event('pageshow'));
 w.selectPickupDate('2026-11-29');
-w.selectMass('06:30');
 document.getElementById('buyer-name').value = 'Asha Rao';
 document.getElementById('buyer-phone').value = '9876543210';
 zeroCart();
@@ -609,7 +600,6 @@ try { window.sessionStorage.setItem('poppinsCheckoutOrderId', 'PB-261123-Q2'); w
 zeroCart();
 firstPlus.click();
 w.selectPickupDate('2026-11-29');
-w.selectMass('06:30');
 await w.placeOrder();
 const queued = (typeof w.readOrderOutbox === 'function') ? w.readOrderOutbox() : [];
 assert('outbox holds two distinct orders', queued.length === 2 &&
@@ -647,7 +637,6 @@ w.__setSheetsUrlForTest('');
   zeroCart();
   firstPlus.click();
   w.selectPickupDate('2026-11-29');
-  w.selectMass('06:30');
   const apiCalls = [];
   const sheetCalls = [];
   window.fetch = async function (url, opts) {
@@ -788,7 +777,7 @@ assert('default cutoff stays 8:30 AM IST when header has no time',
 
 const payloadFri = w.buildOrderPayload();
 const waFri = w.buildWhatsAppMessage(payloadFri);
-assert('WhatsApp uses Friday short label', waFri.includes('Fri, 25 Dec, after the 6:30 AM Mass'), waFri);
+assert('WhatsApp uses Friday short label', waFri.includes('Fri, 25 Dec') && !/after the .*Mass/.test(waFri), waFri);
 assert('Friday WhatsApp has payment line', waFri.includes('*Payment:* Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin)'), waFri);
 
 // fetch fail restores the fallback catalog, not the live Friday date
@@ -802,7 +791,6 @@ assert('fetch fail does not keep the Friday date', fallbackChips.every((c) => c.
 w.__setSheetsUrlForTest('https://script.google.com/macros/s/TEST/exec');
 w.loadStock = async function () {};
 w.__setStockForTest(friRemaining, 'ok', [friDates[0]]);
-w.selectMass('06:30');
 document.getElementById('buyer-name').value = 'Asha';
 document.getElementById('buyer-phone').value = '9876543210';
 zeroCart();
@@ -978,7 +966,6 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
   firstPlus.click();
   document.getElementById('buyer-name').value = 'Asha Rao';
   document.getElementById('buyer-phone').value = '9876543210';
-  w.selectMass('06:30');
   try { window.sessionStorage.clear(); window.localStorage.clear(); } catch (e) {}
   let waCalls = 0;
   const realOpen = w.openWhatsApp;
@@ -1161,6 +1148,128 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
   w.__setStockForTest({}, 'ok', null);
   zeroCart();
 }
+
+// ---- Three-step tabs: Pickup date | Cakes | Your details ----
+{
+  w.closeFormAlert();
+  w.resetSubmitButton();
+  zeroCart();
+  const ids = ['date', 'cakes', 'details'];
+  const tab = (n) => document.getElementById('tab-' + n);
+  const panel = (n) => document.getElementById('panel-' + n);
+  const selected = () => ids.filter((n) => tab(n).getAttribute('aria-selected') === 'true').join(',');
+  const visible = () => ids.filter((n) => !panel(n).hidden).join(',');
+  w.selectPickupDate('2026-11-29');
+  w.setOrderTab('date');
+
+  const bar = document.getElementById('order-tabs');
+  assert('steps: three tabs in a tablist', bar.getAttribute('role') === 'tablist' && bar.querySelectorAll('[role="tab"]').length === 3);
+  assert('steps: tab order is Pickup date, Cakes, Your details',
+    /Pickup date/.test(tab('date').textContent) && /Cakes/.test(tab('cakes').textContent) && /Your details/.test(tab('details').textContent));
+  assert('steps: all panels are tabpanels wired to their tabs',
+    ids.every((n) => panel(n).getAttribute('role') === 'tabpanel' && panel(n).getAttribute('aria-labelledby') === 'tab-' + n && tab(n).getAttribute('aria-controls') === 'panel-' + n));
+  assert('steps: starts on Pickup date only', selected() === 'date' && visible() === 'date', selected() + '/' + visible());
+  assert('steps: date chips live in the first tab', !!panel('date').querySelector('#date-chips') && !panel('date').querySelector('#menu-list'));
+  assert('steps: cake list lives in the second tab', !!panel('cakes').querySelector('#menu-list') && !!panel('cakes').querySelector('#cart-error'));
+  assert('steps: name and phone live in the third tab, inside the one #order-form',
+    !!panel('details').querySelector('#order-form #buyer-name') && !!panel('details').querySelector('#order-form #buyer-phone') && document.querySelectorAll('form').length === 1);
+  assert('steps: unselected tabs are out of the tab order', tab('cakes').tabIndex === -1 && tab('details').tabIndex === -1 && tab('date').tabIndex === 0);
+
+  tab('cakes').click();
+  assert('steps: clicking Cakes shows only its panel', selected() === 'cakes' && visible() === 'cakes', selected() + '/' + visible());
+  tab('details').click();
+  assert('steps: clicking Your details shows only its panel', selected() === 'details' && visible() === 'details');
+  const key = (k) => bar.dispatchEvent(new window.KeyboardEvent('keydown', { key: k, bubbles: true }));
+  key('Home');
+  assert('steps: Home goes to the first tab', selected() === 'date');
+  key('ArrowRight');
+  assert('steps: ArrowRight goes to the next tab', selected() === 'cakes');
+  key('End');
+  assert('steps: End goes to the last tab', selected() === 'details');
+  key('ArrowRight');
+  assert('steps: ArrowRight wraps to the first tab', selected() === 'date');
+  key('ArrowLeft');
+  assert('steps: ArrowLeft wraps to the last tab', selected() === 'details');
+  w.setOrderTab('date');
+
+  // Consistent nav buttons
+  const nexts = [...document.querySelectorAll('.step-next')];
+  const backs = [...document.querySelectorAll('.step-back')];
+  assert('nav: 2 Next buttons and 2 Back buttons, one row per panel', nexts.length === 2 && backs.length === 2 && document.querySelectorAll('.step-nav').length === 3);
+  assert('nav: every Next shares one style, every Back shares another',
+    new Set(nexts.map((b) => b.className)).size === 1 && new Set(backs.map((b) => b.className)).size === 1);
+  assert('nav: buttons are at least 48px tall', nexts.concat(backs).every((b) => /min-h-12/.test(b.className)));
+  assert('nav: labels are Next and Back', nexts.every((b) => /^Next/.test(b.textContent.trim())) && backs.every((b) => /Back$/.test(b.textContent.trim())));
+  assert('nav: first step has Next only', !!panel('date').querySelector('#next-to-cakes') && !panel('date').querySelector('.step-back'));
+  assert('nav: middle step has Back and Next', !!panel('cakes').querySelector('#back-to-date') && !!panel('cakes').querySelector('#next-to-details'));
+  assert('nav: last step has Back only (the order bar is the CTA)', !!panel('details').querySelector('#back-to-cakes') && !panel('details').querySelector('.step-next'));
+  assert('nav: the order bar and summary sit outside the tab panels', !ids.some((n) => panel(n).contains(document.getElementById('place-order-btn'))));
+
+  // Gating: Next needs a date, then a cake
+  document.getElementById('pickup-date').value = '';
+  document.getElementById('next-to-cakes').click();
+  assert('gate: Next without a date stays on step 1 with an inline error',
+    selected() === 'date' && document.getElementById('field-pickup-date').classList.contains('invalid'));
+  w.selectPickupDate('2026-11-29');
+  document.getElementById('next-to-cakes').click();
+  assert('gate: with a date, Next goes to Cakes', selected() === 'cakes');
+  document.getElementById('next-to-details').click();
+  assert('gate: Next with an empty cart stays on Cakes and shows the cart error',
+    selected() === 'cakes' && document.getElementById('cart-error').classList.contains('visible') && /at least one cake/.test(document.getElementById('cart-error').textContent));
+  cards[0].querySelector('.plus').click();
+  cards[1].querySelector('.plus').click();
+  cards[1].querySelector('.plus').click();
+  assert('badge: the Cakes tab shows how many cakes are selected', document.getElementById('tab-cakes-badge').textContent === '3' && !document.getElementById('tab-cakes-badge').classList.contains('hidden'));
+  document.getElementById('next-to-details').click();
+  assert('gate: with a cake, Next goes to Your details', selected() === 'details');
+  document.getElementById('back-to-cakes').click();
+  assert('nav: Back returns to Cakes', selected() === 'cakes');
+  document.getElementById('back-to-date').click();
+  assert('nav: Back returns to Pickup date', selected() === 'date');
+
+  // Place Order with problems jumps to the tab that needs fixing
+  document.getElementById('buyer-name').value = '';
+  document.getElementById('buyer-phone').value = '';
+  w.setOrderTab('cakes');
+  document.getElementById('place-order-btn').click();
+  assert('errors: missing name/phone jumps to Your details with a dot on that tab', selected() === 'details' && !document.getElementById('tab-details-dot').classList.contains('hidden') && document.getElementById('tab-date-dot').classList.contains('hidden'));
+  w.closeFormAlert();
+  assert('errors: closing the alert focuses the first invalid field', document.activeElement === document.getElementById('buyer-name'), document.activeElement && document.activeElement.id);
+  zeroCart();
+  w.setOrderTab('details');
+  document.getElementById('place-order-btn').click();
+  assert('errors: an empty cart jumps to Cakes', selected() === 'cakes' && !document.getElementById('tab-cakes-dot').classList.contains('hidden'), selected());
+  w.closeFormAlert();
+  document.getElementById('pickup-date').value = '';
+  w.setOrderTab('details');
+  document.getElementById('place-order-btn').click();
+  assert('errors: a missing date jumps to Pickup date first', selected() === 'date' && !document.getElementById('tab-date-dot').classList.contains('hidden'), selected());
+  w.closeFormAlert();
+  w.selectPickupDate('2026-11-29');
+  w.setOrderTab('date');
+  zeroCart();
+
+  // Mass time is gone from the order
+  cards[0].querySelector('.plus').click();
+  document.getElementById('buyer-name').value = 'Asha Rao';
+  document.getElementById('buyer-phone').value = '9876543210';
+  const payload = w.buildOrderPayload();
+  assert('payload has no mass or massLabel', !('mass' in payload) && !('massLabel' in payload), JSON.stringify(Object.keys(payload)));
+  assert('payload still has the pickup date', payload.pickupDate === '2026-11-29' && !!payload.pickupDateShort);
+  window.localStorage.setItem('poppinsOrderOutbox', JSON.stringify([{ order: { orderId: 'PB-OLD-MASS1', name: 'Old', phone: '9876543210', pickupDate: '2026-11-29', mass: '06:30', massLabel: '6:30 AM Mass', items: [] }, attempts: 0, nextAttemptAt: 0 }]));
+  const oldEntry = w.readOrderOutbox().find((e) => e.order.orderId === 'PB-OLD-MASS1');
+  assert('old queued orders have their mass fields ignored', oldEntry && !('mass' in oldEntry.order) && !('massLabel' in oldEntry.order) && oldEntry.order.pickupDate === '2026-11-29');
+  window.localStorage.removeItem('poppinsOrderOutbox');
+  zeroCart();
+  document.getElementById('buyer-name').value = '';
+  document.getElementById('buyer-phone').value = '';
+}
+
+// ---- Renamed to Vailankanni Matha Youth ----
+assert('rename: no visible or meta text still says Parish Youth', !/Parish Youth/.test(document.documentElement.outerHTML.replace(/alt="[^"]*poster[^"]*"/i, '')));
+assert('rename: header, title and description say Vailankanni Matha Youth',
+  document.querySelector('header.hero-head h1').textContent === 'Vailankanni Matha Youth' && /Vailankanni Matha Youth/.test(document.title) && /Vailankanni Matha Youth/.test(document.querySelector('meta[name="description"]').content));
+assert('rename: WhatsApp message uses the new name', /Vailankanni Matha Youth/.test(w.buildWhatsAppMessage({ orderId: 'PB-X1', items: [], totalItems: 0, totalAmount: 0, name: 'A', phone: '9876543210' })));
 
 const failed = results.filter((r) => !r.ok);
 console.log('\n--- ' + (results.length - failed.length) + '/' + results.length + ' passed ---');

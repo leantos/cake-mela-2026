@@ -1,5 +1,5 @@
 /**
- * Vailankanni Parish Youth — Christmas cake sale order logger
+ * Vailankanni Matha Youth — Christmas cake sale order logger
  * (cakes by Poppins Bakers)
  * --------------------------------------------------------------------------
  * Container-bound Google Apps Script for a Google Sheet. The ordering page
@@ -8,7 +8,7 @@
  *
  * Setup (do this after pasting / updating this file)
  * --------------------------------------------------
- * 1. Create a Google Sheet (e.g. "Parish Youth Cake Sale").
+ * 1. Create a Google Sheet (e.g. "Matha Youth Cake Sale").
  *    Extensions → Apps Script, replace any stub with this file, Save.
  *
  * 2. In the editor, select setupSheets and click Run. Authorise when asked.
@@ -69,9 +69,8 @@ var TALLY_SHEET_NAME = 'Tally';
 var WALKIN_SHEET_NAME = 'Walk-in Sales';
 var ITEM_PRICES_SHEET_NAME = '_ItemPrices';
 var ORDER_STATUS_VALUES = ['Pending', 'Paid', 'Picked up', 'Cancelled', 'OVERSOLD'];
-var WALKIN_MASS_VALUES = ['6:30 AM Mass', '8:30 AM Mass', 'Other'];
 var WALKIN_PAYMENT_VALUES = ['Cash', 'UPI'];
-var WALKIN_HEADERS = ['Date', 'Mass', 'Item', 'Qty', 'Price each', 'Amount', 'Payment', 'Notes', 'Walk-in ID', 'Void'];
+var WALKIN_HEADERS = ['Date', 'Item', 'Qty', 'Price each', 'Amount', 'Payment', 'Notes', 'Walk-in ID', 'Void'];
 
 /** Official menu prices, used by the Walk-in Sales price-each formula. */
 var MENU_ITEM_PRICES = {
@@ -99,12 +98,6 @@ var LAST_TIMING_CACHE_KEY = 'last-order-timing-v1';
  * After that, pickup dates come exclusively from Stock column headers.
  */
 var DEFAULT_OPENING_DATE_ID = '2026-11-29';
-
-/** Keep labels in sync with MASS_TIMES in index.html. */
-var MASS_TIMES = [
-  { id: '06:30', label: '6:30 AM Mass' },
-  { id: '08:30', label: '8:30 AM Mass' }
-];
 
 
 /**
@@ -142,7 +135,6 @@ var BASE_HEADERS = [
   'Timestamp',
   'Order ID',
   'Pickup Date',
-  'Mass',
   'Name',
   'Phone',
   'Items',
@@ -164,7 +156,7 @@ var LEGACY_HEADERS = [
 /**
  * Run once from the Apps Script editor (select setupSheets → Run).
  * Safe to run again: it repairs missing tabs/columns/rows and rewrites
- * Weekly Summary formulas from current Stock dates × Mass times, but
+ * Weekly Summary formulas from the current Stock dates, but
  * does not wipe Stock quantities or Orders.
  */
 function setupSheets() {
@@ -189,7 +181,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-24.2';
+var SCRIPT_VERSION = '2026-11-24.3';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -257,7 +249,7 @@ function doGet(e) {
   } else {
     payload = {
       ok: true,
-      service: 'Vailankanni Parish Youth Cake Sale',
+      service: 'Vailankanni Matha Youth Cake Sale',
       sheet: ORDERS_SHEET_NAME
     };
   }
@@ -700,8 +692,9 @@ function readLastOrderError_() {
 /**
  * Create or migrate the Orders header row by name so an existing sheet
  * with the older column set keeps its data. Missing "Pickup Date" is
- * inserted immediately after "Order ID". Missing "Mass" is inserted
- * immediately after "Pickup Date". Missing "Status" is inserted
+ * inserted immediately after "Order ID". An existing legacy "Mass" column
+ * is left alone and ignored (remove it with Cake Sale → Remove Mass
+ * columns…). Missing "Status" is inserted
  * immediately before "Raw JSON" (or appended). Retired columns such as
  * "Delivery Option" and "Flat/Block" are left in place. New menu-item
  * quantity columns are appended at the right.
@@ -731,15 +724,6 @@ function ensureOrdersSchema_(sheet, itemNames) {
     var afterCol = (orderIdIdx >= 0 ? orderIdIdx + 1 : 2); // 1-based
     sheet.insertColumnAfter(afterCol);
     sheet.getRange(1, afterCol + 1).setValue('Pickup Date');
-    headers = getHeaders_(sheet);
-    mutated = true;
-  }
-
-  if (headers.indexOf('Mass') === -1) {
-    var pickupIdx = headers.indexOf('Pickup Date');
-    var afterPickup = (pickupIdx >= 0 ? pickupIdx + 1 : 3); // 1-based
-    sheet.insertColumnAfter(afterPickup);
-    sheet.getRange(1, afterPickup + 1).setValue('Mass');
     headers = getHeaders_(sheet);
     mutated = true;
   }
@@ -799,7 +783,7 @@ function styleOrdersHeader_(sheet) {
 }
 
 function textColumnIndexes_(headers) {
-  var names = ['Pickup Date', 'Mass', 'Phone'];
+  var names = ['Pickup Date', 'Phone'];
   var out = [];
   var i, idx;
   for (i = 0; i < names.length; i++) {
@@ -810,8 +794,8 @@ function textColumnIndexes_(headers) {
 }
 
 /**
- * Keep Pickup Date, Mass, and Phone as plain text so Sheets does not
- * auto-convert ISO dates / '06:30' times / leading digits.
+ * Keep Pickup Date and Phone as plain text so Sheets does not
+ * auto-convert ISO dates / leading digits.
  */
 function ensureOrdersTextColumns_(sheet, headers) {
   headers = headers || getHeaders_(sheet);
@@ -832,18 +816,6 @@ function formatOrdersTextCells_(sheet, headers, rowNumber) {
   }
 }
 
-function massLabelForWrite_(data) {
-  var raw = (data && (data.massLabel || data.mass)) || '';
-  var id = normalizeMassId_(raw);
-  var i;
-  if (id) {
-    for (i = 0; i < MASS_TIMES.length; i++) {
-      if (MASS_TIMES[i].id === id) return MASS_TIMES[i].label;
-    }
-  }
-  return raw;
-}
-
 function appendOrderRow_(sheet, data, status, headers, nextRow) {
   headers = headers || getHeaders_(sheet);
   var row = [];
@@ -858,7 +830,6 @@ function appendOrderRow_(sheet, data, status, headers, nextRow) {
   set('Timestamp', data.timestamp || new Date());
   set('Order ID', data.orderId || '');
   set('Pickup Date', data.pickupDate || data.pickupDateLabel || '');
-  set('Mass', massLabelForWrite_(data));
   set('Name', data.name || '');
   set('Phone', data.phone || '');
   set('Items', formatItems_(data.items));
@@ -1579,7 +1550,7 @@ function loadUsedByDate_(ss, dates, itemNames) {
   var orders = ss.getSheetByName(ORDERS_SHEET_NAME);
   var walkIn = ss.getSheetByName(WALKIN_SHEET_NAME);
   var summary = computeOrderSummaryFromValues_(
-    getSheetValues_(orders), dates, itemNames, ['06:30', '08:30'], new Date(), getSheetValues_(walkIn)
+    getSheetValues_(orders), dates, itemNames, new Date(), getSheetValues_(walkIn)
   );
   return usedByDateFromSummary_(summary, itemNames);
 }
@@ -1880,58 +1851,11 @@ function isTestOrderName_(name) {
   return /TEST ORDER/i.test(String(name));
 }
 
-function normalizeMassIdFromText_(s) {
-  s = String(s || '').trim();
-  if (!s) return '';
-  if (/(^|[^0-9])0?6[:.]30([^0-9]|$)/.test(s)) return '06:30';
-  if (/(^|[^0-9])0?8[:.]30([^0-9]|$)/.test(s)) return '08:30';
-  return '';
-}
-
-function hmFromOffsetMinutes_(date, offsetMin) {
-  var ms = date.getTime() + offsetMin * 60 * 1000;
-  var tod = ms % (24 * 60 * 60 * 1000);
-  if (tod < 0) tod += 24 * 60 * 60 * 1000;
-  var h = Math.floor(tod / (60 * 60 * 1000));
-  var min = Math.floor((tod % (60 * 60 * 1000)) / (60 * 1000));
-  return pad2_(h) + ':' + pad2_(min);
-}
-
-function normalizeMassId_(value) {
-  if (value === '' || value === null || typeof value === 'undefined') return '';
-  if (isDateObject_(value)) {
-    // Sheets time serials sit on 1899-12-30. IANA Asia/Kolkata used
-    // +05:53:28 before 1906, so a single TZ conversion can miss 06:30.
-    // Try modern IST, historical/local clocks, and the string form.
-    var parts = [
-      formatHmIst_(value),
-      hmFromOffsetMinutes_(value, 5 * 60 + 30),
-      pad2_(value.getHours()) + ':' + pad2_(value.getMinutes()),
-      pad2_(value.getUTCHours()) + ':' + pad2_(value.getUTCMinutes()),
-      String(value)
-    ];
-    var i, id;
-    for (i = 0; i < parts.length; i++) {
-      id = normalizeMassIdFromText_(parts[i]);
-      if (id) return id;
-    }
-    return '';
-  }
-  return normalizeMassIdFromText_(value);
-}
-
-function emptyMassSplit_(massIds) {
-  var out = { total: 0 };
-  var i;
-  for (i = 0; i < massIds.length; i++) out[massIds[i]] = 0;
-  return out;
-}
-
-function emptyItemsMap_(itemNames, massIds) {
+function emptyItemsMap_(itemNames) {
   var out = {};
   var i, row;
   for (i = 0; i < itemNames.length; i++) {
-    row = emptyMassSplit_(massIds);
+    row = { total: 0 };
     row.ordered = 0;
     row.pickedUp = 0;
     row.walkIn = 0;
@@ -2065,9 +1989,8 @@ function formatSummaryTime_(value) {
  * catalog (in order). Personal fields are never returned.
  * walk-ins on dates not in the catalog are appended.
  */
-function computeOrderSummaryFromValues_(values, dates, itemNames, massIds, now, walkInValues) {
+function computeOrderSummaryFromValues_(values, dates, itemNames, now, walkInValues) {
   itemNames = itemNames && itemNames.length ? itemNames : MENU_ITEM_COLUMNS.slice();
-  massIds = massIds && massIds.length ? massIds : ['06:30', '08:30'];
   dates = dates || [];
   values = values || [];
   now = now || new Date();
@@ -2104,7 +2027,7 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, massIds, now, 
       id: meta.id || id,
       label: meta.label || id,
       closesAt: meta.closesAt || '',
-      items: emptyItemsMap_(itemNames, massIds),
+      items: emptyItemsMap_(itemNames),
       totals: { cakes: 0, amount: 0, orders: 0 },
       sales: emptySalesBlock_()
     };
@@ -2120,7 +2043,7 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, massIds, now, 
 
   var latestMs = 0;
   var latestValue = '';
-  var r, row, raw, dateVal, massId, cakes, amount, q, itemName, ts, tsMs, i, status;
+  var r, row, raw, dateVal, cakes, amount, q, itemName, ts, tsMs, i, status;
 
   for (r = 1; r < values.length; r++) {
     row = values[r] || [];
@@ -2143,8 +2066,6 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, massIds, now, 
       continue;
     }
 
-    massId = normalizeMassId_(cell(row, 'Mass'));
-    if (!massId && raw) massId = normalizeMassId_(raw.massLabel || raw.mass);
     cakes = 0;
     for (i = 0; i < itemNames.length; i++) {
       itemName = itemNames[i];
@@ -2156,9 +2077,6 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, massIds, now, 
       if (!q || isNaN(q)) q = 0;
       bucket.items[itemName].total += q;
       bucket.items[itemName].ordered += q;
-      if (massId && typeof bucket.items[itemName][massId] === 'number') {
-        bucket.items[itemName][massId] += q;
-      }
       if (status === 'Picked up') bucket.items[itemName].pickedUp += q;
       cakes += q;
     }
@@ -2200,10 +2118,10 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, massIds, now, 
     cakes: 0,
     amount: 0,
     orders: 0,
-    items: emptyItemsMap_(itemNames, massIds),
+    items: emptyItemsMap_(itemNames),
     sales: emptySalesBlock_()
   };
-  var m, extra;
+  var extra;
   function pushBucket(b) {
     if (!b || seen[b.id]) return;
     seen[b.id] = true;
@@ -2219,9 +2137,6 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, massIds, now, 
       grand.items[itemName].ordered += b.items[itemName].ordered;
       grand.items[itemName].pickedUp += b.items[itemName].pickedUp;
       grand.items[itemName].walkIn += b.items[itemName].walkIn;
-      for (m = 0; m < massIds.length; m++) {
-        grand.items[itemName][massIds[m]] += b.items[itemName][massIds[m]];
-      }
     }
   }
   for (d = 0; d < dates.length; d++) pushBucket(byId[dates[d].id]);
@@ -2337,7 +2252,7 @@ function getOrderSummaryPayload_(ss) {
       walkInValues = walkInSheet.getRange(1, 1, wLastRow, wLastCol).getValues();
     }
   }
-  var payload = computeOrderSummaryFromValues_(values, dates, MENU_ITEM_COLUMNS, ['06:30', '08:30'], new Date(), walkInValues);
+  var payload = computeOrderSummaryFromValues_(values, dates, MENU_ITEM_COLUMNS, new Date(), walkInValues);
   try {
     if (cache) cache.put(SUMMARY_CACHE_KEY, JSON.stringify(payload), SUMMARY_CACHE_TTL);
   } catch (err2) {}
@@ -2679,40 +2594,48 @@ function ensureWalkInSalesSheet_(ss) {
   if (lastRow === 0 || lastCol === 0 || String(tab.getRange(1, 1).getValue() || '') !== 'Date') {
     tab.getRange(1, 1, 1, WALKIN_HEADERS.length).setValues([WALKIN_HEADERS]);
   }
-  var header = tab.getRange(1, 1, 1, WALKIN_HEADERS.length);
+  // Columns are looked up by header name so a legacy sheet that still has a
+  // "Mass" column (until Cake Sale -> Remove Mass columns...) keeps working.
+  var hdr = getHeaders_(tab);
+  function col(name) { return hdr.indexOf(name) + 1; } // 1-based, 0 = missing
+  var header = tab.getRange(1, 1, 1, hdr.length);
   header.setFontWeight('bold');
   header.setBackground('#7a0a10');
   header.setFontColor('#ffffff');
   tab.setFrozenRows(1);
-  tab.setColumnWidth(1, 130);
-  tab.setColumnWidth(2, 140);
-  tab.setColumnWidth(3, 260);
-  tab.setColumnWidth(4, 70);
-  tab.setColumnWidth(5, 100);
-  tab.setColumnWidth(6, 100);
-  tab.setColumnWidth(7, 100);
-  tab.setColumnWidth(8, 220);
+  var widths = { 'Date': 130, 'Item': 260, 'Qty': 70, 'Price each': 100, 'Amount': 100, 'Payment': 100, 'Notes': 220 };
+  Object.keys(widths).forEach(function (name) {
+    if (col(name)) tab.setColumnWidth(col(name), widths[name]);
+  });
 
   var maxRows = Math.max(tab.getMaxRows ? tab.getMaxRows() : 1000, 2);
   var dataRows = maxRows - 1;
-  tab.getRange(2, 1, dataRows, 1).setNumberFormat('yyyy-mm-dd');
+  if (col('Date')) tab.getRange(2, col('Date'), dataRows, 1).setNumberFormat('yyyy-mm-dd');
   try {
     var dateRule = SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(true).build();
-    tab.getRange(2, 1, dataRows, 1).setDataValidation(dateRule);
-    applyListValidation_(tab.getRange(2, 2, dataRows, 1), WALKIN_MASS_VALUES);
-    applyListValidation_(tab.getRange(2, 3, dataRows, 1), MENU_ITEM_COLUMNS.slice());
-    applyListValidation_(tab.getRange(2, 7, dataRows, 1), WALKIN_PAYMENT_VALUES);
+    if (col('Date')) tab.getRange(2, col('Date'), dataRows, 1).setDataValidation(dateRule);
+    if (col('Item')) applyListValidation_(tab.getRange(2, col('Item'), dataRows, 1), MENU_ITEM_COLUMNS.slice());
+    if (col('Payment')) applyListValidation_(tab.getRange(2, col('Payment'), dataRows, 1), WALKIN_PAYMENT_VALUES);
   } catch (err) {}
 
-  var priceCell = String(tab.getRange(2, 5).getFormula ? tab.getRange(2, 5).getFormula() : '');
-  if (!priceCell) {
-    tab.getRange(2, 5).setFormula(
-      '=ARRAYFORMULA(IF(C2:C="",,IFERROR(VLOOKUP(C2:C,' + ITEM_PRICES_SHEET_NAME + '!$A:$B,2,FALSE),"")))'
-    );
+  var itemL = col('Item') ? colLetter_(col('Item')) : 'B';
+  var qtyL = col('Qty') ? colLetter_(col('Qty')) : 'C';
+  var priceL = col('Price each') ? colLetter_(col('Price each')) : 'D';
+  if (col('Price each')) {
+    var priceCell = String(tab.getRange(2, col('Price each')).getFormula ? tab.getRange(2, col('Price each')).getFormula() : '');
+    if (!priceCell) {
+      tab.getRange(2, col('Price each')).setFormula(
+        '=ARRAYFORMULA(IF(' + itemL + '2:' + itemL + '="",,IFERROR(VLOOKUP(' + itemL + '2:' + itemL + ',' + ITEM_PRICES_SHEET_NAME + '!$A:$B,2,FALSE),"")))'
+      );
+    }
   }
-  var amountCell = String(tab.getRange(2, 6).getFormula ? tab.getRange(2, 6).getFormula() : '');
-  if (!amountCell) {
-    tab.getRange(2, 6).setFormula('=ARRAYFORMULA(IF(D2:D="",,IFERROR(D2:D*E2:E,"")))');
+  if (col('Amount')) {
+    var amountCell = String(tab.getRange(2, col('Amount')).getFormula ? tab.getRange(2, col('Amount')).getFormula() : '');
+    if (!amountCell) {
+      tab.getRange(2, col('Amount')).setFormula(
+        '=ARRAYFORMULA(IF(' + qtyL + '2:' + qtyL + '="",,IFERROR(' + qtyL + '2:' + qtyL + '*' + priceL + '2:' + priceL + ',"")))'
+      );
+    }
   }
   ensureWalkInExtraColumns_(tab);
   return tab;
@@ -2731,7 +2654,7 @@ function refreshWeeklySummaryIfNeeded_(ss, ordersSheet, dates) {
     refreshWeeklySummary_(ss, ordersSheet);
     return;
   }
-  var expected = dates.length * MASS_TIMES.length;
+  var expected = dates.length; // one row per pickup date
   var labels = tab.getRange(4, 1, Math.max(tab.getLastRow() - 3, 1), 1).getValues();
   var found = {};
   var n = 0;
@@ -2764,14 +2687,14 @@ function refreshWeeklySummary_(ss, ordersSheet) {
   normalizeOrdersPickupDates_(ordersSheet, dates);
 
   tab.clear();
-  tab.getRange(1, 1).setValue('Weekly Summary — Vailankanni Parish Youth Cake Sale');
+  tab.getRange(1, 1).setValue('Weekly Summary — Vailankanni Matha Youth Cake Sale');
   tab.getRange(1, 1).setFontWeight('bold');
   tab.getRange(1, 1).setFontSize(14);
   tab.getRange(2, 1).setValue(
     'Live ordered totals from the Orders tab (Cancelled rows are excluded; OVERSOLD orders count as ordered). Picked up and Walk-in columns are cakes. A Walk-in block by date sits below the total. The Stock tab holds the batch quantity per date — add a date there, then use Cake Sale → Refresh Weekly Summary. Placing an order does not rebuild this tab.'
   );
 
-  var headers = ['Pickup Date', 'Mass', 'Orders'].concat(itemNames).concat(['Total Cakes', 'Total ₹', 'Picked up', 'Walk-in']);
+  var headers = ['Pickup Date', 'Orders'].concat(itemNames).concat(['Total Cakes', 'Total ₹', 'Picked up', 'Walk-in']);
   tab.getRange(3, 1, 1, headers.length).setValues([headers]);
   var headerRange = tab.getRange(3, 1, 1, headers.length);
   headerRange.setFontWeight('bold');
@@ -2780,30 +2703,27 @@ function refreshWeeklySummary_(ss, ordersSheet) {
   tab.setFrozenRows(3);
 
   var firstData = 4;
-  var i, m, j, row, n;
+  var i, j, row, n;
   n = 0;
   for (i = 0; i < dates.length; i++) {
-    for (m = 0; m < MASS_TIMES.length; m++) {
-      row = firstData + n;
-      n += 1;
-      tab.getRange(row, 1).setValue(dates[i].label);
-      tab.getRange(row, 2).setValue(MASS_TIMES[m].label);
-      var pickupLit = quoteSheetString_(dates[i].id);
-      tab.getRange(row, 3).setFormula(countIfPickupMassFormula_(pickupLit, 'B' + row));
-      for (j = 0; j < itemNames.length; j++) {
-        tab.getRange(row, 4 + j).setFormula(sumIfPickupMassFormula_(pickupLit, 'B' + row, itemNames[j]));
-      }
-      var firstItemCol = 4;
-      var lastItemCol = 3 + itemNames.length;
-      var totalCakesCol = lastItemCol + 1;
-      var totalRsCol = lastItemCol + 2;
-      tab.getRange(row, totalCakesCol).setFormula(
-        '=SUM(' + colLetter_(firstItemCol) + row + ':' + colLetter_(lastItemCol) + row + ')'
-      );
-      tab.getRange(row, totalRsCol).setFormula(sumIfPickupMassFormula_(pickupLit, 'B' + row, 'Total Amount (₹)'));
-      tab.getRange(row, totalRsCol + 1).setFormula(sumIfPickupMassPickedUpFormula_(pickupLit, 'B' + row));
-      tab.getRange(row, totalRsCol + 2).setFormula(sumWalkInForPickupMassFormula_(pickupLit, 'B' + row));
+    row = firstData + n;
+    n += 1;
+    tab.getRange(row, 1).setValue(dates[i].label);
+    var pickupLit = quoteSheetString_(dates[i].id);
+    tab.getRange(row, 2).setFormula(countIfPickupFormula_(pickupLit));
+    for (j = 0; j < itemNames.length; j++) {
+      tab.getRange(row, 3 + j).setFormula(sumIfPickupFormula_(pickupLit, itemNames[j]));
     }
+    var firstItemCol = 3;
+    var lastItemCol = 2 + itemNames.length;
+    var totalCakesCol = lastItemCol + 1;
+    var totalRsCol = lastItemCol + 2;
+    tab.getRange(row, totalCakesCol).setFormula(
+      '=SUM(' + colLetter_(firstItemCol) + row + ':' + colLetter_(lastItemCol) + row + ')'
+    );
+    tab.getRange(row, totalRsCol).setFormula(sumIfPickupFormula_(pickupLit, 'Total Amount (₹)'));
+    tab.getRange(row, totalRsCol + 1).setFormula(sumIfPickupPickedUpFormula_(pickupLit));
+    tab.getRange(row, totalRsCol + 2).setFormula(sumWalkInForPickupFormula_(pickupLit, walkInLetter_('Qty')));
   }
 
   var totalRow;
@@ -2812,7 +2732,7 @@ function refreshWeeklySummary_(ss, ordersSheet) {
     totalRow = lastData + 1;
     tab.getRange(totalRow, 1).setValue('TOTAL');
     tab.getRange(totalRow, 1, totalRow, headers.length).setFontWeight('bold');
-    for (j = 3; j <= headers.length; j++) {
+    for (j = 2; j <= headers.length; j++) {
       tab.getRange(totalRow, j).setFormula(
         '=SUM(' + colLetter_(j) + firstData + ':' + colLetter_(j) + lastData + ')'
       );
@@ -2835,8 +2755,8 @@ function refreshWeeklySummary_(ss, ordersSheet) {
     wrow = walkInStart + 2 + wi;
     wPickup = quoteSheetString_(dates[wi].id);
     tab.getRange(wrow, 1).setValue(dates[wi].label);
-    tab.getRange(wrow, 2).setFormula(sumWalkInForPickupFormula_(wPickup, 'D'));
-    tab.getRange(wrow, 3).setFormula(sumWalkInForPickupFormula_(wPickup, 'F'));
+    tab.getRange(wrow, 2).setFormula(sumWalkInForPickupFormula_(wPickup, walkInLetter_('Qty')));
+    tab.getRange(wrow, 3).setFormula(sumWalkInForPickupFormula_(wPickup, walkInLetter_('Amount')));
     tab.getRange(wrow, 4).setFormula(sumWalkInPaymentFormula_(wPickup, 'Cash'));
     tab.getRange(wrow, 5).setFormula(sumWalkInPaymentFormula_(wPickup, 'UPI'));
   }
@@ -2850,7 +2770,7 @@ function refreshWeeklySummary_(ss, ordersSheet) {
   }
 
   tab.setColumnWidth(1, 180);
-  tab.setColumnWidth(2, 140);
+  tab.setColumnWidth(2, 90);
   tab.setColumnWidth(headers.length, 120);
 }
 
@@ -2910,7 +2830,55 @@ function onOpen() {
     .addItem('Open Walk-in Sales', 'openWalkInSales')
     .addItem('Set staff PIN…', 'promptSetStaffPin')
     .addItem('Add pickup date…', 'promptAddPickupDate')
+    .addItem('Remove Mass columns…', 'promptRemoveMassColumns')
     .addToUi();
+}
+
+/**
+ * Mass time is no longer collected. Existing sheets keep their old "Mass"
+ * column (it is ignored everywhere) until you run this menu item, which
+ * permanently deletes the column from Orders and Walk-in Sales and then
+ * rebuilds the Weekly Summary. Nothing is deleted without the confirmation.
+ */
+function promptRemoveMassColumns() {
+  var ui = SpreadsheetApp.getUi();
+  var ss = getSpreadsheet_();
+  var targets = [ORDERS_SHEET_NAME, WALKIN_SHEET_NAME].filter(function (name) {
+    var tab = ss.getSheetByName(name);
+    return tab && tab.getLastColumn() > 0 && getHeaders_(tab).indexOf('Mass') !== -1;
+  });
+  if (!targets.length) {
+    ui.alert('No "Mass" column found on the Orders or Walk-in Sales tabs. Nothing to remove.');
+    return;
+  }
+  var res = ui.alert(
+    'Remove Mass columns?',
+    'This PERMANENTLY deletes the "Mass" column (and its values) from: ' + targets.join(', ') +
+    '. The Weekly Summary will be rebuilt without Mass rows. This cannot be undone ' +
+    '(use File > Version history to recover). Continue?',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (res !== ui.Button.OK) return;
+  var removed = removeMassColumns_(ss);
+  ui.alert('Removed ' + removed + ' Mass column(s) and rebuilt the Weekly Summary.');
+}
+
+function removeMassColumns_(ss) {
+  var removed = 0;
+  [ORDERS_SHEET_NAME, WALKIN_SHEET_NAME].forEach(function (name) {
+    var tab = ss.getSheetByName(name);
+    if (!tab || tab.getLastColumn() < 1) return;
+    var idx = getHeaders_(tab).indexOf('Mass');
+    if (idx >= 0) {
+      tab.deleteColumn(idx + 1);
+      removed += 1;
+    }
+  });
+  var orders = getOrCreateSheet_(ss, ORDERS_SHEET_NAME);
+  refreshWeeklySummary_(ss, orders);
+  invalidateStockCache_();
+  invalidateSummaryCache_();
+  return removed;
 }
 
 function openWalkInSales() {
@@ -2967,11 +2935,6 @@ function pickupKeyExpr_(rangeExpr) {
   return 'IFERROR(TEXT(' + rangeExpr + ',"yyyy-mm-dd"),""&' + rangeExpr + ')';
 }
 
-function massKeyExpr_(rangeExpr) {
-  var asText = '""&' + rangeExpr;
-  return 'IF(REGEXMATCH(' + asText + ',"0?6[:.]30"),"06:30",IF(REGEXMATCH(' + asText + ',"0?8[:.]30"),"08:30",IFERROR(TEXT(' + rangeExpr + ',"HH:mm"),' + asText + ')))';
-}
-
 function ordersCol_(headerName) {
   return 'INDEX(Orders!$1:$1048576, 0, ' + matchHeaderFormula_(headerName) + ')';
 }
@@ -2980,45 +2943,53 @@ function notCancelledExpr_() {
   return '(NOT(REGEXMATCH(LOWER(""&' + ordersCol_('Status') + '),"cancel")))';
 }
 
-function countIfPickupMassFormula_(pickupCell, massCell) {
-  return '=SUMPRODUCT((' + pickupKeyExpr_(ordersCol_('Pickup Date')) + '=' + pickupCell +
-    ')*(' + massKeyExpr_(ordersCol_('Mass')) + '=' + massKeyExpr_(massCell) + ')*' +
+function countIfPickupFormula_(pickupCell) {
+  return '=SUMPRODUCT((' + pickupKeyExpr_(ordersCol_('Pickup Date')) + '=' + pickupCell + ')*' +
     notCancelledExpr_() + ')';
 }
 
-function sumIfPickupMassFormula_(pickupCell, massCell, headerName) {
-  return '=SUMPRODUCT((' + pickupKeyExpr_(ordersCol_('Pickup Date')) + '=' + pickupCell +
-    ')*(' + massKeyExpr_(ordersCol_('Mass')) + '=' + massKeyExpr_(massCell) + ')*' +
+function sumIfPickupFormula_(pickupCell, headerName) {
+  return '=SUMPRODUCT((' + pickupKeyExpr_(ordersCol_('Pickup Date')) + '=' + pickupCell + ')*' +
     notCancelledExpr_() + '*' +
     'IFERROR(1*' + ordersCol_(headerName) + ',0))';
 }
 
-function sumIfPickupMassPickedUpFormula_(pickupCell, massCell) {
-  return '=SUMPRODUCT((' + pickupKeyExpr_(ordersCol_('Pickup Date')) + '=' + pickupCell +
-    ')*(' + massKeyExpr_(ordersCol_('Mass')) + '=' + massKeyExpr_(massCell) + ')*' +
+function sumIfPickupPickedUpFormula_(pickupCell) {
+  return '=SUMPRODUCT((' + pickupKeyExpr_(ordersCol_('Pickup Date')) + '=' + pickupCell + ')*' +
     '(REGEXMATCH(LOWER(""&' + ordersCol_('Status') + '),"picked\\s*up"))*' +
     'IFERROR(1*' + ordersCol_('Total Items') + ',0))';
+}
+
+/**
+ * Column letter of a Walk-in Sales header, read from the live tab so legacy
+ * sheets that still carry a "Mass" column keep working. Falls back to the
+ * Mass-free default layout (Date, Item, Qty, Price each, Amount, Payment).
+ */
+function walkInLetter_(name) {
+  var defaults = { 'Date': 'A', 'Item': 'B', 'Qty': 'C', 'Price each': 'D', 'Amount': 'E', 'Payment': 'F' };
+  try {
+    var tab = getSpreadsheet_().getSheetByName(WALKIN_SHEET_NAME);
+    if (tab) {
+      var idx = getHeaders_(tab).indexOf(name);
+      if (idx >= 0) return colLetter_(idx + 1);
+    }
+  } catch (err) {}
+  return defaults[name];
 }
 
 function walkInCol_(letter) {
   return "'" + WALKIN_SHEET_NAME + "'!" + letter + '2:' + letter;
 }
 
-function sumWalkInForPickupMassFormula_(pickupCell, massCell) {
-  return '=SUMPRODUCT((' + pickupKeyExpr_(walkInCol_('A')) + '=' + pickupCell +
-    ')*(' + massKeyExpr_(walkInCol_('B')) + '=' + massKeyExpr_(massCell) + ')*' +
-    'IFERROR(1*' + walkInCol_('D') + ',0))';
-}
-
 function sumWalkInForPickupFormula_(pickupCell, qtyOrAmountLetter) {
-  return '=SUMPRODUCT((' + pickupKeyExpr_(walkInCol_('A')) + '=' + pickupCell +
+  return '=SUMPRODUCT((' + pickupKeyExpr_(walkInCol_(walkInLetter_('Date'))) + '=' + pickupCell +
     ')*IFERROR(1*' + walkInCol_(qtyOrAmountLetter) + ',0))';
 }
 
 function sumWalkInPaymentFormula_(pickupCell, payment) {
   return '=SUMPRODUCT((' + pickupKeyExpr_(walkInCol_('A')) + '=' + pickupCell +
-    ')*(LOWER(""&' + walkInCol_('G') + ')=' + quoteSheetString_(String(payment).toLowerCase()) + ')*' +
-    'IFERROR(1*' + walkInCol_('F') + ',0))';
+    ')*(LOWER(""&' + walkInCol_(walkInLetter_('Payment')) + ')=' + quoteSheetString_(String(payment).toLowerCase()) + ')*' +
+    'IFERROR(1*' + walkInCol_(walkInLetter_('Amount')) + ',0))';
 }
 
 function colLetter_(n) {
@@ -3200,12 +3171,11 @@ function staffOrdersFromValues_(values, opts) {
   var now = opts.now || new Date();
   var requested = normalizePickupDateId_(opts.pickupDate || opts.date || '');
   var pickupDate = requested || nextUpcomingPickupDateId_(dates, now);
-  var massFilter = normalizeMassId_(opts.mass);
   var q = String(opts.q || '').trim().toLowerCase();
   var qDigits = q.replace(/\D/g, '');
   var includeTest = !!opts.includeTest;
   var list = [];
-  var r, row, name, phone, orderId, status, dateId, mass, items, total, stamp, d;
+  var r, row, name, phone, orderId, status, dateId, items, total, stamp, d;
   var toCollect = 0, toCollectAmount = 0, pickedUp = 0, pending = 0;
 
   function cell(row, name) {
@@ -3222,8 +3192,6 @@ function staffOrdersFromValues_(values, opts) {
       dateId = d ? d.id : '';
     }
     if (pickupDate && dateId !== pickupDate) continue;
-    mass = normalizeMassId_(cell(row, 'Mass'));
-    if (massFilter && mass !== massFilter) continue;
     orderId = String(cell(row, 'Order ID') || '').trim();
     phone = String(cell(row, 'Phone') || '').trim();
     status = normalizeOrderStatus_(cell(row, 'Status'));
@@ -3257,7 +3225,6 @@ function staffOrdersFromValues_(values, opts) {
       orderId: orderId,
       name: name,
       phone: phone,
-      mass: mass,
       pickupDate: dateId,
       items: items,
       total: total,
@@ -3271,7 +3238,6 @@ function staffOrdersFromValues_(values, opts) {
   return {
     ok: true,
     pickupDate: pickupDate,
-    mass: massFilter || '',
     q: opts.q || '',
     orders: list,
     counts: {
@@ -3298,7 +3264,6 @@ function staffListOrders_(data) {
     : [['Timestamp']];
   return staffOrdersFromValues_(values, {
     pickupDate: data && (data.pickupDate || data.date) || '',
-    mass: data && data.mass || '',
     q: data && (data.q || data.search) || '',
     includeTest: !!(data && data.includeTest),
     dates: getPickupDatesCached_(ss),
@@ -3486,10 +3451,9 @@ function staffWalkInsFromValues_(values, opts) {
   var dates = opts.dates || [];
   var requested = normalizePickupDateId_(opts.date || opts.pickupDate || '');
   var dateId = requested || nextUpcomingPickupDateId_(dates, opts.now || new Date());
-  var massFilter = String(opts.mass || '').trim();
   var includeVoid = !!opts.includeVoid;
   var list = [];
-  var r, row, date, item, qty, amount, price, payment, notes, walkinId, voided, mass, d;
+  var r, row, date, item, qty, amount, price, payment, notes, walkinId, voided, d;
 
   function wcell(row, name) {
     return typeof col[name] === 'number' ? row[col[name]] : '';
@@ -3503,8 +3467,6 @@ function staffWalkInsFromValues_(values, opts) {
       date = d ? d.id : '';
     }
     if (dateId && date !== dateId) continue;
-    mass = String(wcell(row, 'Mass') || '').trim();
-    if (massFilter && mass !== massFilter) continue;
     voided = isVoidWalkIn_(wcell(row, 'Void'), wcell(row, 'Notes'));
     if (voided && !includeVoid) continue;
     item = String(wcell(row, 'Item') || '').trim();
@@ -3520,7 +3482,6 @@ function staffWalkInsFromValues_(values, opts) {
       row: r + 1,
       walkinId: walkinId,
       date: date,
-      mass: mass,
       item: item,
       qty: qty,
       price: price,
@@ -3531,7 +3492,7 @@ function staffWalkInsFromValues_(values, opts) {
       voided: voided
     });
   }
-  return { ok: true, date: dateId, mass: massFilter || '', walkins: list, version: SCRIPT_VERSION };
+  return { ok: true, date: dateId, walkins: list, version: SCRIPT_VERSION };
 }
 
 function staffListWalkIns_(data) {
@@ -3544,7 +3505,6 @@ function staffListWalkIns_(data) {
     : [WALKIN_HEADERS.slice()];
   return staffWalkInsFromValues_(values, {
     date: data && (data.date || data.pickupDate) || '',
-    mass: data && data.mass || '',
     includeVoid: !!(data && data.includeVoid),
     dates: getPickupDatesCached_(ss),
     now: new Date()
@@ -3554,7 +3514,6 @@ function staffListWalkIns_(data) {
 function staffAddWalkIn_(data) {
   var walkinId = String(data && (data.walkinId || data.id) || '').trim();
   var dateId = normalizePickupDateId_(data && (data.date || data.pickupDate));
-  var mass = String(data && data.mass || '').trim();
   var item = String(data && data.item || '').trim();
   var qty = Math.max(0, Math.floor(Number(data && data.qty) || 0));
   var payment = normalizePayment_(data && data.payment);
@@ -3565,7 +3524,6 @@ function staffAddWalkIn_(data) {
   if (!item) return { ok: false, error: 'Missing item' };
   if (!qty) return { ok: false, error: 'Invalid quantity' };
   if (MENU_ITEM_COLUMNS.indexOf(item) === -1) return { ok: false, error: 'Unknown item' };
-  if (!mass) mass = WALKIN_MASS_VALUES[0];
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
@@ -3588,7 +3546,6 @@ function staffAddWalkIn_(data) {
     }
     var nextRow = nextWalkInDataRow_(tab, headers);
     var dateCol = headers.indexOf('Date');
-    var massCol = headers.indexOf('Mass');
     var itemCol = headers.indexOf('Item');
     var qtyCol = headers.indexOf('Qty');
     var payCol = headers.indexOf('Payment');
@@ -3598,7 +3555,6 @@ function staffAddWalkIn_(data) {
     var customerCol = headers.indexOf('Customer');
     if (customerCol >= 0 && customer) tab.getRange(nextRow, customerCol + 1).setNumberFormat('@').setValue(customer);
     if (dateCol >= 0) tab.getRange(nextRow, dateCol + 1).setValue(dateId);
-    if (massCol >= 0) tab.getRange(nextRow, massCol + 1).setValue(mass);
     if (itemCol >= 0) tab.getRange(nextRow, itemCol + 1).setValue(item);
     if (qtyCol >= 0) tab.getRange(nextRow, qtyCol + 1).setValue(qty);
     if (payCol >= 0) tab.getRange(nextRow, payCol + 1).setValue(payment || 'Cash');
@@ -3617,8 +3573,7 @@ function staffAddWalkIn_(data) {
       price: price,
       amount: qty * price,
       payment: payment || 'Cash',
-      date: dateId,
-      mass: mass
+      date: dateId
     };
   } finally {
     lock.releaseLock();

@@ -22,7 +22,7 @@ const context = {};
 vm.createContext(context);
 vm.runInContext(
   extractVarBlock('var SCRIPT_VERSION', 'function doGet') + '\n' +
-  extractVarBlock('var MASS_TIMES', 'var BASE_HEADERS') + '\n' +
+  extractVarBlock('var DEFAULT_OPENING_DATE_ID', 'var BASE_HEADERS') + '\n' +
   slice('/* ---- date helpers (testable) ---- */', '/* ---- end date helpers ---- */') + '\n' +
   slice('/* ---- order summary (testable) ---- */', '/* ---- end order summary ---- */'),
   context
@@ -94,7 +94,7 @@ const grid = [
 ];
 
 const now = new Date('2026-11-23T16:00:00+05:30');
-const summary = context.computeOrderSummaryFromValues_(grid, DATES, MENU, ['06:30', '08:30'], now);
+const summary = context.computeOrderSummaryFromValues_(grid, DATES, MENU, now);
 
 assert('payload is ok', summary.ok === true);
 assert('version is present', typeof summary.version === 'string' && summary.version.length > 0, summary.version);
@@ -108,9 +108,14 @@ assert('TEST ORDER row is excluded from 29 Nov plum count', nov.items['Rich Plum
   JSON.stringify(nov.items['Rich Plum Cake (400g)']));
 assert('cancelled row is excluded from dates pudding', nov.items['Dates & Carrot Pudding (700g)'].total === 1,
   JSON.stringify(nov.items['Dates & Carrot Pudding (700g)']));
-assert('6:30 / 8:30 split for plum on 29 Nov is 2 and 1',
-  nov.items['Rich Plum Cake (400g)']['06:30'] === 2 && nov.items['Rich Plum Cake (400g)']['08:30'] === 1,
+assert('summary items have no per-Mass keys (legacy Mass column is ignored)',
+  !('06:30' in nov.items['Rich Plum Cake (400g)']) && !('08:30' in nov.items['Rich Plum Cake (400g)']) &&
+  !('06:30' in summary.grand.items['Rich Plum Cake (400g)']),
   JSON.stringify(nov.items['Rich Plum Cake (400g)']));
+assert('item shape per date is total/ordered/pickedUp/walkIn only',
+  JSON.stringify(Object.keys(nov.items['Rich Plum Cake (400g)']).sort()) === JSON.stringify(['ordered', 'pickedUp', 'total', 'walkIn']),
+  JSON.stringify(Object.keys(nov.items['Rich Plum Cake (400g)'])));
+assert('plum on 29 Nov totals 3 across both legacy Mass labels', nov.items['Rich Plum Cake (400g)'].total === 3);
 assert('29 Nov has 2 orders and 4 cakes', nov.totals.orders === 2 && nov.totals.cakes === 4,
   JSON.stringify(nov.totals));
 assert('29 Nov amount is 1700', nov.totals.amount === 1700, JSON.stringify(nov.totals));
@@ -126,8 +131,7 @@ assert('lastUpdated is set', /IST/.test(summary.lastUpdated), summary.lastUpdate
 assert('latest order timestamp prefers the later row', /10:30/.test(summary.latestOrderAt) || /10:30/.test(String(summary.latestOrderAt)),
   summary.latestOrderAt);
 
-assert('normalize 6:30 AM Mass', context.normalizeMassId_('6:30 AM Mass') === '06:30');
-assert('normalize 08:30', context.normalizeMassId_('08:30') === '08:30');
+assert('Mass helpers are gone from the script', typeof context.normalizeMassId_ === 'undefined' && typeof context.massKeyExpr_ === 'undefined');
 assert('cancelled status detected', context.isCancelledStatus_('CANCELLED') === true);
 assert('ok status is not cancelled', context.isCancelledStatus_('OK') === false);
 assert('TEST ORDER name detected', context.isTestOrderName_('TEST ORDER - delete me') === true);
@@ -173,22 +177,20 @@ const rawGrid = [
   ]
 ];
 
-const rawSummary = context.computeOrderSummaryFromValues_(rawGrid, DATES, MENU, ['06:30', '08:30'], now);
+const rawSummary = context.computeOrderSummaryFromValues_(rawGrid, DATES, MENU, now);
 const rawNov = rawSummary.dates[0];
 const rawDec = rawSummary.dates[1];
-assert('raw JSON fallback counts 29 Nov plum qty', rawNov.items['Rich Plum Cake (400g)'].total === 2 && rawNov.items['Rich Plum Cake (400g)']['06:30'] === 2,
+assert('raw JSON fallback counts 29 Nov plum qty', rawNov.items['Rich Plum Cake (400g)'].total === 2,
   JSON.stringify(rawNov.items['Rich Plum Cake (400g)']));
 assert('raw JSON TEST ORDER is excluded', rawDec.items['Dates & Carrot Pudding (700g)'].total === 1,
   JSON.stringify(rawDec.items['Dates & Carrot Pudding (700g)']));
 assert('raw JSON fills amount from line totals when the amount column is blank', rawDec.totals.amount === 1350,
   JSON.stringify(rawDec.totals));
-assert('raw JSON mass split lands on 8:30', rawDec.items['Butterscotch Pudding (350g)']['08:30'] === 2);
+assert('raw JSON qty still lands on the right date without a Mass', rawDec.items['Butterscotch Pudding (350g)'].total === 2);
 
 // Sheets getValues() returns Date objects when setValues auto-converted
 // the ISO pickup date and the '06:30' mass time.
 const istMidnight29 = new Date('2026-11-28T18:30:00.000Z'); // 29 Nov 00:00 IST
-const istMass630 = new Date('1899-12-30T01:00:00.000Z'); // 06:30 IST (Sheets time serial)
-const istMass830 = new Date('1899-12-30T03:00:00.000Z'); // 08:30 IST
 const tsDate = new Date('2026-11-23T16:45:00+05:30');
 
 assert('findStockDate_ accepts a Sheets Date at IST midnight',
@@ -197,14 +199,6 @@ assert('findStockDate_ accepts a Sheets Date at IST midnight',
 assert('normalizePickupDateId_ uses the IST calendar date, not the UTC day',
   context.normalizePickupDateId_(istMidnight29) === '2026-11-29',
   context.normalizePickupDateId_(istMidnight29));
-assert('normalizeMassId_ accepts a Sheets time Date for 6:30',
-  context.normalizeMassId_(istMass630) === '06:30', context.normalizeMassId_(istMass630));
-assert('normalizeMassId_ accepts a Sheets time Date for 8:30',
-  context.normalizeMassId_(istMass830) === '08:30', context.normalizeMassId_(istMass830));
-assert('normalizeMassId_ accepts a local 6:30 Sheets-epoch Date',
-  context.normalizeMassId_(new Date(1899, 11, 30, 6, 30, 0)) === '06:30',
-  String(context.normalizeMassId_(new Date(1899, 11, 30, 6, 30, 0))));
-assert('normalizeMassId_ still accepts 6:30 AM Mass text', context.normalizeMassId_('6:30 AM Mass') === '06:30');
 assert('TEST ORDER exclusion does not match an ordinary name', context.isTestOrderName_('Cyril Martin') === false);
 assert('TEST ORDER exclusion does not match a Date cell', context.isTestOrderName_(istMidnight29) === false);
 assert('TEST ORDER exclusion matches only names containing TEST ORDER',
@@ -217,7 +211,6 @@ const dateGrid = [
     {
       orderId: 'PB-DATE-1',
       pickupDate: istMidnight29,
-      mass: istMass630,
       amount: 700,
       totalItems: 2,
       name: 'Priya',
@@ -229,7 +222,6 @@ const dateGrid = [
     {
       orderId: 'PB-DATE-2',
       pickupDate: istMidnight29,
-      mass: istMass830,
       amount: 650,
       totalItems: 1,
       name: 'Joseph',
@@ -238,13 +230,13 @@ const dateGrid = [
     { 'Dates & Carrot Pudding (700g)': 1 }
   )
 ];
-const dateSummary = context.computeOrderSummaryFromValues_(dateGrid, DATES, MENU, ['06:30', '08:30'], now);
+const dateSummary = context.computeOrderSummaryFromValues_(dateGrid, DATES, MENU, now);
 const dateNov = dateSummary.dates[0];
 assert('Date cells still count cakes on 29 Nov', dateNov.totals.cakes === 3 && dateNov.totals.orders === 2,
   JSON.stringify(dateNov.totals));
-assert('Date mass cells split 6:30 / 8:30',
-  dateNov.items['Rich Plum Cake (400g)']['06:30'] === 2 &&
-  dateNov.items['Dates & Carrot Pudding (700g)']['08:30'] === 1,
+assert('Date cells still total per item without a Mass split',
+  dateNov.items['Rich Plum Cake (400g)'].total === 2 &&
+  dateNov.items['Dates & Carrot Pudding (700g)'].total === 1,
   JSON.stringify({ plum: dateNov.items['Rich Plum Cake (400g)'], pudding: dateNov.items['Dates & Carrot Pudding (700g)'] }));
 assert('latestOrderAt formats a Date timestamp in IST',
   /4:45/.test(dateSummary.latestOrderAt) && /IST/.test(dateSummary.latestOrderAt),
@@ -271,13 +263,13 @@ const fallbackGrid = [
     }
   )
 ];
-const fallback = context.computeOrderSummaryFromValues_(fallbackGrid, DATES, MENU, ['06:30', '08:30'], now);
-assert('unparseable Date cells fall back to Raw JSON pickup and mass',
-  fallback.dates[0].items['Rich Plum Cake (400g)']['06:30'] === 1 && fallback.dates[0].totals.orders === 1,
+const fallback = context.computeOrderSummaryFromValues_(fallbackGrid, DATES, MENU, now);
+assert('unparseable Date cells fall back to Raw JSON pickup',
+  fallback.dates[0].items['Rich Plum Cake (400g)'].total === 1 && fallback.dates[0].totals.orders === 1,
   JSON.stringify(fallback.dates[0].totals));
 
 assert('weekly summary formulas normalize Date cells with SUMPRODUCT and TEXT',
-  /function pickupKeyExpr_/.test(src) && /SUMPRODUCT/.test(src) && /yyyy-mm-dd/.test(src) && /HH:mm/.test(src));
+  /function pickupKeyExpr_/.test(src) && /SUMPRODUCT/.test(src) && /yyyy-mm-dd/.test(src));
 
 assert('normalizeOrderStatus_ maps OK and New to Pending',
   context.normalizeOrderStatus_('OK') === 'Pending' &&
@@ -302,7 +294,7 @@ const statusGrid = [
   row({ orderId: 'PB-S5', pickupDate: '2026-11-29', mass: '6:30 AM Mass', amount: 650, totalItems: 1, name: 'Evan', status: 'Cancelled' },
     { 'Dates & Carrot Pudding (700g)': 1 })
 ];
-const statusSummary = context.computeOrderSummaryFromValues_(statusGrid, DATES, MENU, ['06:30', '08:30'], now);
+const statusSummary = context.computeOrderSummaryFromValues_(statusGrid, DATES, MENU, now);
 const stNov = statusSummary.dates[0];
 assert('legacy OK/New statuses count as ordered Pending', stNov.totals.orders === 4 && stNov.totals.cakes === 6,
   JSON.stringify(stNov.totals));
@@ -328,7 +320,7 @@ assert('OVERSOLD is neither paid, picked up nor cancelled',
     row({ orderId: 'PB-S6', pickupDate: '2026-11-29', mass: '6:30 AM Mass', amount: 1050, totalItems: 3, name: 'Fay', status: 'OVERSOLD' },
       { 'Rich Plum Cake (400g)': 3 })
   ]);
-  const ov = context.computeOrderSummaryFromValues_(ovGrid, DATES, MENU, ['06:30', '08:30'], now);
+  const ov = context.computeOrderSummaryFromValues_(ovGrid, DATES, MENU, now);
   const ovNov = ov.dates[0];
   assert('OVERSOLD counts as ordered', ovNov.sales.ordered.orders === 5 && ovNov.totals.cakes === 9 &&
     ovNov.items['Rich Plum Cake (400g)'].ordered === 8, JSON.stringify(ovNov.sales));
@@ -346,7 +338,7 @@ const walkGrid = [
   [new Date('2026-11-28T18:30:00.000Z'), '8:30 AM Mass', 'Dates & Carrot Pudding (700g)', 1, 650, 650, 'UPI', ''],
   [new Date('2026-12-21T00:00:00+05:30'), 'Other', 'Butterscotch Pudding (350g)', 2, 350, 700, 'cash', 'unlisted date']
 ];
-const withWalk = context.computeOrderSummaryFromValues_(statusGrid, DATES, MENU, ['06:30', '08:30'], now, walkGrid);
+const withWalk = context.computeOrderSummaryFromValues_(statusGrid, DATES, MENU, now, walkGrid);
 const walkNov = withWalk.dates[0];
 assert('walk-in Date cells add cakes and cash/UPI split on 29 Nov',
   walkNov.sales.walkIn.cakes === 4 && walkNov.sales.walkIn.amount === 1700 &&

@@ -32,12 +32,12 @@ const mock = {
       label: 'Sun, 16 Nov',
       closesAt: '2026-11-16T08:30:00+05:30',
       items: {
-        'Dates & Carrot Pudding (700g)': { '06:30': 2, '08:30': 1, total: 3 },
-        'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Rich Plum Cake (400g)': { '06:30': 1, '08:30': 1, total: 2 }
+        'Dates & Carrot Pudding (700g)': { total: 3 },
+        'Dates & Carrot Pudding (350g)': { total: 0 },
+        'Butterscotch Pudding (700g)': { total: 0 },
+        'Butterscotch Pudding (350g)': { total: 0 },
+        'Rich Plum Cake (800g)': { total: 0 },
+        'Rich Plum Cake (400g)': { total: 2 }
       },
       totals: { cakes: 5, amount: 2000, orders: 2 }
     },
@@ -47,11 +47,11 @@ const mock = {
       closesAt: '2026-11-29T08:30:00+05:30',
       items: {
         'Dates & Carrot Pudding (700g)': { '06:30': 5, '08:30': 3, total: 8, ordered: 8, pickedUp: 2, walkIn: 1 },
-        'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Rich Plum Cake (400g)': { '06:30': 8, '08:30': 7, total: 15, ordered: 15, pickedUp: 8, walkIn: 2 }
+        'Dates & Carrot Pudding (350g)': { total: 0 },
+        'Butterscotch Pudding (700g)': { total: 0 },
+        'Butterscotch Pudding (350g)': { total: 0 },
+        'Rich Plum Cake (800g)': { total: 0 },
+        'Rich Plum Cake (400g)': { total: 15, ordered: 15, pickedUp: 8, walkIn: 2 }
       },
       totals: { cakes: 23, amount: 10000, orders: 7 },
       sales: {
@@ -70,12 +70,12 @@ const mock = {
       label: 'Sun, 6 Dec',
       closesAt: '2026-12-06T08:30:00+05:30',
       items: {
-        'Dates & Carrot Pudding (700g)': { '06:30': 1, '08:30': 0, total: 1 },
-        'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0 },
-        'Rich Plum Cake (400g)': { '06:30': 2, '08:30': 0, total: 2 }
+        'Dates & Carrot Pudding (700g)': { total: 1 },
+        'Dates & Carrot Pudding (350g)': { total: 0 },
+        'Butterscotch Pudding (700g)': { total: 0 },
+        'Butterscotch Pudding (350g)': { total: 0 },
+        'Rich Plum Cake (800g)': { total: 0 },
+        'Rich Plum Cake (400g)': { total: 2 }
       },
       totals: { cakes: 3, amount: 1350, orders: 2 }
     }
@@ -85,12 +85,12 @@ const mock = {
     amount: 13350,
     orders: 11,
     items: {
-      'Dates & Carrot Pudding (700g)': { '06:30': 8, '08:30': 4, total: 12, ordered: 12, pickedUp: 4, walkIn: 2 },
-      'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
-      'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
-      'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
-      'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
-      'Rich Plum Cake (400g)': { '06:30': 11, '08:30': 8, total: 19, ordered: 19, pickedUp: 8, walkIn: 2 }
+      'Dates & Carrot Pudding (700g)': { total: 12, ordered: 12, pickedUp: 4, walkIn: 2 },
+      'Dates & Carrot Pudding (350g)': { total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
+      'Butterscotch Pudding (700g)': { total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
+      'Butterscotch Pudding (350g)': { total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
+      'Rich Plum Cake (800g)': { total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
+      'Rich Plum Cake (400g)': { total: 19, ordered: 19, pickedUp: 8, walkIn: 2 }
     },
     sales: {
       ordered: { cakes: 31, amount: 13350, orders: 11 },
@@ -129,7 +129,7 @@ const { window } = dom;
 const { document } = window;
 await new Promise((r) => setTimeout(r, 40));
 
-assert('header is branded', document.querySelector('header.hero-head h1')?.textContent === 'Vailankanni Parish Youth');
+assert('header is branded', document.querySelector('header.hero-head h1')?.textContent === 'Vailankanni Matha Youth');
 assert('cards show the upcoming date totals by default (29 Nov)',
   document.getElementById('card-cakes')?.textContent === '23' &&
   document.getElementById('card-orders')?.textContent === '7',
@@ -139,15 +139,14 @@ assert('29 Nov chip is selected by default',
 assert('29 Nov panel is open by default',
   document.querySelector('details[data-panel-id="2026-11-29"]')?.open === true);
 assert('cakes table has a caption', !!document.querySelector('#table-2026-11-29 caption'));
-assert('cakes table has 6:30, 8:30 and Total columns',
-  /6:30 AM/.test(document.querySelector('#table-2026-11-29')?.textContent) &&
-  /8:30 AM/.test(document.querySelector('#table-2026-11-29')?.textContent) &&
-  /Total/.test(document.querySelector('#table-2026-11-29')?.textContent));
+assert('cakes table has Item and Total columns only (no Mass split)',
+  /Total/.test(document.querySelector('#table-2026-11-29')?.textContent) &&
+  !/6:30|8:30/.test(document.querySelector('#table-2026-11-29')?.textContent) &&
+  document.querySelectorAll('#table-2026-11-29 thead th').length === 2);
 assert('total row is present', /Total/.test(document.querySelector('#table-2026-11-29 tfoot')?.textContent || ''));
-assert('plum 400 6:30 qty is 8',
-  /Rich Plum Cake \(400g\)\s*8\s*7\s*15/.test((document.querySelector('#table-2026-11-29 tbody')?.textContent || '').replace(/\s+/g, ' ')) ||
+assert('plum 400 total qty is 15',
   [...document.querySelectorAll('#table-2026-11-29 tbody tr')].some((tr) =>
-    /Rich Plum Cake \(400g\)/.test(tr.textContent) && tr.cells[1].textContent === '8' && tr.cells[3].textContent === '15'),
+    /Rich Plum Cake \(400g\)/.test(tr.textContent) && tr.cells.length === 2 && tr.cells[1].textContent === '15'),
   document.querySelector('#table-2026-11-29 tbody')?.textContent);
 
 assert('sales cards show 29 Nov picked up, walk-in and collected',
@@ -202,7 +201,7 @@ assert('open state is remembered in localStorage', saved['2026-11-29'] === true,
 
 const text = window.__admin.poppinsTextForDate(mock.dates[1]);
 assert('copy text names Poppins and the date', /Poppins/.test(text) && /Sun, 29 Nov/.test(text), text);
-assert('copy text includes per-mass qty', /6:30 AM 8/.test(text) && /8:30 AM 7/.test(text), text);
+assert('copy text has per-item totals and no per-Mass split', /Rich Plum Cake \(400g\): 15/.test(text) && !/6:30|8:30/.test(text), text);
 
 assert('last updated is shown', /Last updated/.test(document.getElementById('updated').textContent));
 assert('status region is a live region', document.getElementById('status').getAttribute('aria-live') === 'polite');

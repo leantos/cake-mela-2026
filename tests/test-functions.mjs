@@ -101,8 +101,6 @@ function order(over = {}) {
     pickupDate: '2026-11-29',
     pickupDateLabel: 'Sun, 29 Nov',
     pickupDateShort: 'Sun, 29 Nov',
-    mass: '06:30',
-    massLabel: '6:30 AM Mass',
     items: [{ id: 'rich-plum-cake-400', name: 'Rich Plum Cake (400g)', qty: 2, price: 350, lineTotal: 700 }],
     totalItems: 2,
     totalAmount: 700
@@ -140,6 +138,19 @@ assert('config: sweep is scheduled every 5 minutes', sweepCfg.schedule === '*/5 
   assert('rejects a malformed orderId', r5.status === 400 && r5.json.fields.includes('orderId'));
   const r6 = await call(null, 'PUT');
   assert('only POST/GET allowed', r6.status === 405);
+}
+
+// ---- Mass time is no longer collected ----
+{
+  const noMass = lib.validateOrder(order());
+  assert('an order without any Mass fields validates', noMass.ok === true, JSON.stringify(noMass));
+  const legacy = lib.validateOrder(order({ mass: '06:30', massLabel: '6:30 AM Mass' }));
+  assert('a legacy order that still sends Mass (old cached page / outbox) is accepted', legacy.ok === true, JSON.stringify(legacy));
+  assert('legacy Mass is dropped from the stored order and the Sheet payload',
+    !('mass' in legacy.order) && !('massLabel' in legacy.order) &&
+    !('mass' in lib.sheetPayload({ order: legacy.order, contact: {} })), JSON.stringify(legacy.order));
+  const badMass = lib.validateOrder(order({ mass: 'garbage' }));
+  assert('a bogus legacy Mass value no longer rejects the order', badMass.ok === true, JSON.stringify(badMass));
 }
 
 // ---- alternate contacts + fast reply + background forward ----

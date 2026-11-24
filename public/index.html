@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#7a0a10">
-  <meta name="description" content="Order festive plum cakes and puddings from the Vailankanni Parish Youth Christmas cake sale, with Poppins Bakers, at Vailankanni Matha Church, Bengaluru.">
-  <title>Vailankanni Parish Youth — Christmas Cake Sale</title>
+  <meta name="description" content="Order festive plum cakes and puddings from the Vailankanni Matha Youth Christmas cake sale, with Poppins Bakers, at Vailankanni Matha Church, Bengaluru.">
+  <title>Vailankanni Matha Youth — Christmas Cake Sale</title>
   <link rel="icon" href="logo.png" type="image/png">
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="preconnect" href="https://script.google.com">
@@ -34,7 +34,7 @@
   <header class="hero-head sticky top-0 z-30 flex h-[var(--topbar-h)] w-full items-center gap-[0.7rem] bg-m3-surface px-4 text-m3-on-surface shadow-m3-1 md:px-6 lg:px-[clamp(16px,3vw,48px)]">
       <img class="logo block size-14 shrink-0" src="logo.png" alt="Vailankanni Matha Youth logo" width="192" height="192">
       <div class="brand min-w-0 flex-1 text-left">
-        <h1 class="truncate text-[1.25rem] font-medium leading-7 text-m3-primary">Vailankanni Parish Youth</h1>
+        <h1 class="truncate text-[1.25rem] font-medium leading-7 text-m3-primary">Vailankanni Matha Youth</h1>
         <p class="tagline truncate text-[0.75rem] font-medium leading-4 tracking-[0.5px] text-m3-on-surface-variant">Christmas Cake Sale • with Poppins Bakers</p>
       </div>
       <nav class="contact-nav relative ml-auto shrink-0" aria-label="Contact us">
@@ -59,7 +59,7 @@
         <img
           class="block h-auto max-h-full w-auto max-w-full rounded-m3-lg object-contain shadow-m3-1"
           src="poster.jpg"
-          alt="Festive Plum Cakes Cake Sale poster for Vailankanni Parish Youth in association with Poppins Bakers, listing Dates &amp; Carrot Pudding, Butterscotch Pudding, and Rich Plum Cake prices, sold every Sunday from Nov 29 after the 6:30 and 8:30 AM Mass at Vailankanni Matha Church, Muthanallur."
+          alt="Festive Plum Cakes Cake Sale poster for Vailankanni Matha Youth in association with Poppins Bakers, listing Dates &amp; Carrot Pudding, Butterscotch Pudding, and Rich Plum Cake prices, sold every Sunday from Nov 29 after the 6:30 and 8:30 AM Mass at Vailankanni Matha Church, Muthanallur."
           width="1024"
           height="1536"
           fetchpriority="high">
@@ -69,47 +69,60 @@
     </aside>
 
     <div class="right-col lg:col-start-2 lg:row-start-2 lg:min-w-0 xl:row-start-1">
+    <div class="order-tabs sticky top-[var(--topbar-h)] z-10 mx-[0.9rem] mb-3 grid grid-cols-3 rounded-m3-lg border border-m3-outline-variant bg-m3-surface lg:mx-0" id="order-tabs" role="tablist" aria-label="Order steps">
+      <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-m3-primary  rounded-tl-m3-lg" id="tab-date" role="tab" aria-selected="true" aria-controls="panel-date"><span>1 · Pickup date</span><span class="ml-1 hidden size-2 rounded-full bg-maroon align-middle" id="tab-date-dot" aria-label="needs attention"></span></button>
+      <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-m3-primary" id="tab-cakes" role="tab" aria-selected="false" aria-controls="panel-cakes" tabindex="-1"><span>2 · Cakes</span><span class="ml-1 hidden min-w-5 rounded-full bg-m3-primary px-1.5 text-[0.6875rem] leading-5 text-m3-on-primary" id="tab-cakes-badge" aria-label="cakes selected"></span><span class="ml-1 hidden size-2 rounded-full bg-maroon align-middle" id="tab-cakes-dot" aria-label="needs attention"></span></button>
+      <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-m3-primary  rounded-tr-m3-lg" id="tab-details" role="tab" aria-selected="false" aria-controls="panel-details" tabindex="-1"><span>3 · Your details</span><span class="ml-1 hidden size-2 rounded-full bg-maroon align-middle" id="tab-details-dot" aria-label="needs attention"></span></button>
+    </div>
+    <section id="panel-date" role="tabpanel" aria-labelledby="tab-date">
+    <div class="date-selector mx-[0.9rem] mb-4 rounded-m3-lg bg-m3-surface-container-low px-4 pb-[1.1rem] pt-4 shadow-m3-1 lg:mx-0">
+      <p class="closed-banner hidden rounded-m3-sm bg-m3-primary-container px-3 py-[0.7rem] text-[0.875rem] font-medium text-m3-on-primary-container [&.visible]:block" id="preorders-closed" role="status">Pre-orders closed. Pickups for this cake sale have ended.</p>
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-pickup-date">
+        <label class="mb-2 block text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant" id="pickup-date-label">Pickup Date <span class="req text-maroon" aria-hidden="true">*</span></label>
+        <div class="date-chips flex flex-wrap gap-[0.45rem]" id="date-chips" role="group" aria-labelledby="pickup-date-label"></div>
+        <input type="hidden" id="pickup-date" name="pickupDate" value="">
+        <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="pickup-date-error"></p>
+      </div>
+      <p class="pickup-place mb-2 mt-[0.15rem] text-[0.875rem] leading-5 text-m3-on-surface-variant" id="pickup-place">Pickup after Sunday Mass at Vailankanni Matha Church, Muthanallur</p>
+      <p class="hint mt-1 text-[0.75rem] text-m3-on-surface-variant [&.is-error]:text-gold-dark" id="stock-status"></p>
+    </div>
+    <div class="step-nav mx-[0.9rem] mt-4 flex items-center justify-between gap-3 lg:mx-0">
+      <span></span>
+      <button type="button" class="step-next inline-flex min-h-12 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary border-0 bg-m3-primary text-m3-on-primary hover:bg-m3-primary/90" id="next-to-cakes">Next <span aria-hidden="true">→</span></button>
+    </div>
+    </section>
+    <section id="panel-cakes" role="tabpanel" aria-labelledby="tab-cakes" hidden>
     <h2 class="section-title mx-[1.05rem] mb-[0.55rem] mt-[0.4rem] scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant lg:mt-0 lg:scroll-mb-5" id="menu-heading">Cake varieties</h2>
     <div class="menu-list flex scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] flex-col gap-[0.7rem] px-[0.9rem] md:grid md:grid-cols-2 md:items-stretch lg:scroll-mb-5 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]" id="menu-list" role="list" aria-labelledby="menu-heading"></div>
     <p class="cart-error mx-[0.9rem] mt-[0.7rem] hidden rounded-m3-sm bg-m3-primary-container px-3 py-[0.55rem] text-[0.875rem] font-medium text-m3-on-primary-container [&.visible]:block" id="cart-error" role="alert" aria-live="assertive"></p>
-
-    <form class="order-form mx-[0.9rem] mt-[1.15rem] rounded-m3-lg bg-m3-surface-container-low px-4 pb-[1.1rem] pt-4 shadow-m3-1" id="order-form" novalidate>
+    <div class="step-nav mx-[0.9rem] mt-4 flex items-center justify-between gap-3 lg:mx-0">
+      <button type="button" class="step-back inline-flex min-h-12 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary border border-m3-outline bg-transparent text-m3-primary hover:bg-m3-primary/8" id="back-to-date"><span aria-hidden="true">←</span> Back</button>
+      <button type="button" class="step-next inline-flex min-h-12 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary border-0 bg-m3-primary text-m3-on-primary hover:bg-m3-primary/90" id="next-to-details">Next <span aria-hidden="true">→</span></button>
+    </div>
+    </section>
+    <section id="panel-details" role="tabpanel" aria-labelledby="tab-details" hidden>
+    <form class="order-form mx-[0.9rem] lg:mx-0 rounded-m3-lg bg-m3-surface-container-low px-4 pb-[1.1rem] pt-4 shadow-m3-1" id="order-form" novalidate>
       <h2 class="mb-4 text-[1.375rem] font-normal leading-7 text-m3-on-surface">Your details</h2>
-
-      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-name">
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-name">
         <div class="relative">
           <input class="peer block min-h-14 w-full rounded-m3-xs border border-m3-outline bg-transparent px-4 py-2 text-[1rem] text-m3-on-surface appearance-none hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder:text-transparent focus:placeholder:text-m3-on-surface-variant/70" type="text" id="buyer-name" name="name" autocomplete="name" required placeholder="Full name">
           <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface-container-low px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem] motion-reduce:transition-none" for="buyer-name">Buyer Name <span class="req text-maroon" aria-hidden="true">*</span></label>
         </div>
         <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="buyer-name-error"></p>
       </div>
-
-      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-phone">
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-phone">
         <div class="relative">
           <input class="peer block min-h-14 w-full rounded-m3-xs border border-m3-outline bg-transparent px-4 py-2 text-[1rem] text-m3-on-surface appearance-none hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder:text-transparent focus:placeholder:text-m3-on-surface-variant/70" type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" required placeholder="10-digit mobile">
           <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface-container-low px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem] motion-reduce:transition-none" for="buyer-phone">Phone Number <span class="req text-maroon" aria-hidden="true">*</span></label>
         </div>
         <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="buyer-phone-error"></p>
       </div>
-
-      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-pickup-date">
-        <label class="mb-2 block text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant" id="pickup-date-label">Pickup Date <span class="req text-maroon" aria-hidden="true">*</span></label>
-        <div class="date-chips flex flex-wrap gap-[0.45rem]" id="date-chips" role="group" aria-labelledby="pickup-date-label"></div>
-        <input type="hidden" id="pickup-date" name="pickupDate" value="">
-        <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="pickup-date-error"></p>
-      </div>
-
-      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-mass">
-        <label class="mb-2 block text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant" id="mass-label">Pickup after Mass <span class="req text-maroon" aria-hidden="true">*</span></label>
-        <div class="mass-options grid grid-cols-2 gap-2" id="mass-options" role="group" aria-labelledby="mass-label"></div>
-        <input type="hidden" id="pickup-mass" name="mass" value="">
-        <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="mass-error"></p>
-      </div>
-
-      <p class="pickup-place mb-2 mt-[0.15rem] text-[0.875rem] leading-5 text-m3-on-surface-variant" id="pickup-place">Pickup at Vailankanni Matha Church, Muthanallur after 6:30 AM &amp; 8:30 AM Mass</p>
-      <p class="closed-banner hidden rounded-m3-sm bg-m3-primary-container px-3 py-[0.7rem] text-[0.875rem] font-medium text-m3-on-primary-container [&.visible]:block" id="preorders-closed" role="status">Pre-orders closed. Pickups for this cake sale have ended.</p>
-      <p class="hint mt-1 text-[0.75rem] text-m3-on-surface-variant [&.is-error]:text-gold-dark" id="stock-status"></p>
     </form>
+    <div class="step-nav mx-[0.9rem] mt-4 flex items-center justify-between gap-3 lg:mx-0">
+      <button type="button" class="step-back inline-flex min-h-12 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary border border-m3-outline bg-transparent text-m3-primary hover:bg-m3-primary/8" id="back-to-cakes"><span aria-hidden="true">←</span> Back</button>
+      <span></span>
+    </div>
+    </section>
     </div>
 
     <aside class="sticky-bar fixed inset-x-0 bottom-0 z-40 w-full bg-m3-surface-container px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-2px_6px_2px_rgba(0,0,0,0.15),0_-1px_2px_rgba(0,0,0,0.3)] lg:sticky lg:inset-x-auto lg:bottom-auto lg:top-[calc(var(--topbar-h)+1rem)] lg:col-start-2 lg:row-start-1 lg:w-auto lg:rounded-m3-lg lg:bg-m3-surface-container-low lg:px-4 lg:pb-4 lg:pt-4 lg:shadow-m3-1 xl:col-start-3" aria-label="Order summary">
@@ -186,15 +199,6 @@
       { id: '2026-12-06', label: 'Sun, 6 Dec', closesAt: '2026-12-06T08:30:00+05:30' },
       { id: '2026-12-13', label: 'Sun, 13 Dec', closesAt: '2026-12-13T08:30:00+05:30' },
       { id: '2026-12-20', label: 'Sun, 20 Dec', closesAt: '2026-12-20T08:30:00+05:30' }
-    ];
-
-    /**
-     * Sunday Mass times for pickup — edit this list if the schedule changes.
-     * label is what appears on the button, in the payload, and in WhatsApp.
-     */
-    const MASS_TIMES = [
-      { id: '06:30', label: '6:30 AM Mass' },
-      { id: '08:30', label: '8:30 AM Mass' }
     ];
 
     /**
@@ -298,9 +302,6 @@
       dateChips: document.getElementById('date-chips'),
       pickupDate: document.getElementById('pickup-date'),
       fieldPickupDate: document.getElementById('field-pickup-date'),
-      massOptions: document.getElementById('mass-options'),
-      mass: document.getElementById('pickup-mass'),
-      fieldMass: document.getElementById('field-mass'),
       pickupPlace: document.getElementById('pickup-place'),
       preordersClosed: document.getElementById('preorders-closed'),
       stockStatus: document.getElementById('stock-status'),
@@ -323,9 +324,87 @@
     const fieldMap = {
       name: document.getElementById('field-name'),
       phone: document.getElementById('field-phone'),
-      pickupDate: document.getElementById('field-pickup-date'),
-      mass: document.getElementById('field-mass')
+      pickupDate: document.getElementById('field-pickup-date')
     };
+
+    /* ---------- Order steps: Pickup date | Cakes | Your details ---------- */
+
+    const ORDER_TABS = ['date', 'cakes', 'details'];
+
+    function tabForIssueKey(key) {
+      if (key === 'pickupDate' || key === 'closed') return 'date';
+      if (key === 'name' || key === 'phone') return 'details';
+      return 'cakes';
+    }
+
+    function getOrderTab() {
+      for (let i = 0; i < ORDER_TABS.length; i++) {
+        const t = document.getElementById('tab-' + ORDER_TABS[i]);
+        if (t && t.getAttribute('aria-selected') === 'true') return ORDER_TABS[i];
+      }
+      return 'date';
+    }
+
+    function setOrderTab(name, opts) {
+      opts = opts || {};
+      if (ORDER_TABS.indexOf(name) < 0) name = 'date';
+      ORDER_TABS.forEach(function (n) {
+        const tab = document.getElementById('tab-' + n);
+        const panel = document.getElementById('panel-' + n);
+        if (!tab || !panel) return;
+        const on = n === name;
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        tab.tabIndex = on ? 0 : -1;
+        panel.hidden = !on;
+      });
+      if (opts.focus) {
+        const t = document.getElementById('tab-' + name);
+        try { t.focus({ preventScroll: true }); } catch (err) { t.focus(); }
+      }
+      if (opts.scroll) {
+        const bar = document.getElementById('order-tabs');
+        if (bar && bar.scrollIntoView) {
+          try { bar.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); } catch (err) { bar.scrollIntoView(); }
+        }
+      }
+    }
+
+    function updateTabDots(issues) {
+      issues = issues || [];
+      ORDER_TABS.forEach(function (n) {
+        const dot = document.getElementById('tab-' + n + '-dot');
+        if (!dot) return;
+        dot.classList.toggle('hidden', !issues.some(function (i) { return tabForIssueKey(i.key) === n; }));
+      });
+    }
+
+    /** Step 1 → 2 needs an open pickup date; step 2 → 3 needs at least one cake. */
+    function goNextStep(from) {
+      if (from === 'date') {
+        const pickup = getSelectedPickupDate();
+        if (!pickup || !isPickupDateOpen(pickup.id)) {
+          setFieldError('pickupDate', 'Pick a pickup date');
+          const chip = els.dateChips && els.dateChips.querySelector('.date-chip');
+          if (chip) chip.focus();
+          return false;
+        }
+        clearFieldError('pickupDate');
+        setOrderTab('cakes', { focus: true, scroll: true });
+        return true;
+      }
+      if (from === 'cakes') {
+        if (getCart().length === 0) {
+          showCartError('Please add at least one cake');
+          const plus = els.menuList && els.menuList.querySelector('.plus');
+          if (plus) plus.focus();
+          return false;
+        }
+        hideCartError();
+        setOrderTab('details', { focus: true, scroll: true });
+        return true;
+      }
+      return false;
+    }
 
     /* ---------- Helpers ---------- */
 
@@ -494,22 +573,11 @@
       return findPickupDate(els.pickupDate.value);
     }
 
-    function findMassTime(id) {
-      for (var i = 0; i < MASS_TIMES.length; i++) {
-        if (MASS_TIMES[i].id === id) return MASS_TIMES[i];
-      }
-      return null;
-    }
-
-    function getSelectedMass() {
-      return findMassTime(els.mass.value);
-    }
-
     /* ---------- WhatsApp message (edit this one function to change wording) ---------- */
     /**
      * Default format (the original brief was cut off at "WhatsApp Message Format:"):
      *
-     * 🎄 *New Order – Vailankanni Parish Youth Cake Sale*
+     * 🎄 *New Order – Vailankanni Matha Youth Cake Sale*
      *
      * *Order ID:* PB-YYMMDD-XXXX
      * <timestamp IST>
@@ -522,7 +590,7 @@
      *
      * *Name:* Asha
      * *Phone:* 9876543210
-     * *Pickup:* Sun, 29 Nov after 6:30 AM Mass
+     * *Pickup:* Sun, 29 Nov
      *
      * Thank you!
      */
@@ -538,7 +606,7 @@
       const cakeWord = order.totalItems === 1 ? 'cake' : 'cakes';
       const lines = [];
       lines.push('✨ *Christmas Cake Order* ✨');
-      lines.push('_Vailankanni Parish Youth × Poppins Bakers_');
+      lines.push('_Vailankanni Matha Youth × Poppins Bakers_');
       lines.push(RULE);
       lines.push('*Order ID:* ' + order.orderId);
       lines.push(RULE);
@@ -551,9 +619,9 @@
       lines.push('');
       lines.push('*Total: ' + formatINR(order.totalAmount) + '* (' + order.totalItems + ' ' + cakeWord + ')');
       lines.push('');
-      if (order.pickupDateShort && order.massLabel) {
+      if (order.pickupDateShort) {
         lines.push('*Pickup*');
-        lines.push(order.pickupDateShort + ', after the ' + order.massLabel);
+        lines.push(order.pickupDateShort);
         lines.push('Vailankanni Matha Church, Muthanallur');
         lines.push('');
       }
@@ -782,10 +850,16 @@
       const { totalItems, totalAmount } = cartTotals(cart);
       els.summaryCount.textContent = totalItems + (totalItems === 1 ? ' item' : ' items');
       els.summaryTotal.textContent = formatINR(totalAmount);
+      const badge = document.getElementById('tab-cakes-badge');
+      if (badge) {
+        badge.textContent = String(totalItems);
+        badge.classList.toggle('hidden', totalItems === 0);
+        badge.setAttribute('aria-label', totalItems + (totalItems === 1 ? ' cake selected' : ' cakes selected'));
+      }
       renderCartLines(cart);
     }
 
-    /* ---------- Pickup dates, Mass, and stock ---------- */
+    /* ---------- Pickup dates and stock ---------- */
 
     function renderPickupDates(now) {
       const open = getOpenPickupDates(now);
@@ -794,7 +868,6 @@
       els.preordersClosed.classList.toggle('visible', closed);
       els.dateChips.hidden = closed;
       els.fieldPickupDate.classList.toggle('hidden', closed);
-      els.fieldMass.classList.toggle('hidden', closed);
       if (els.pickupPlace) els.pickupPlace.hidden = closed;
       if (closed) {
         els.pickupDate.value = '';
@@ -813,29 +886,6 @@
         btn.setAttribute('aria-pressed', date.id === els.pickupDate.value ? 'true' : 'false');
         els.dateChips.appendChild(btn);
       });
-    }
-
-    function renderMassTimes() {
-      els.massOptions.innerHTML = '';
-      MASS_TIMES.forEach(function (mass) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'mass-option min-h-14 cursor-pointer rounded-m3-md border border-m3-outline bg-transparent px-3 py-3 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant appearance-none [-webkit-tap-highlight-color:transparent] disabled:cursor-not-allowed disabled:opacity-[0.38] aria-pressed:border-transparent aria-pressed:bg-m3-secondary-container aria-pressed:text-m3-on-secondary-container aria-pressed:before:mr-2 aria-pressed:before:content-["✓"] [&:hover:not(:disabled)]:bg-[linear-gradient(#2a230614,#2a230614)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary';
-        btn.dataset.id = mass.id;
-        btn.textContent = mass.label;
-        btn.setAttribute('aria-pressed', mass.id === els.mass.value ? 'true' : 'false');
-        btn.addEventListener('click', function () { selectMass(mass.id); });
-        els.massOptions.appendChild(btn);
-      });
-    }
-
-    function selectMass(id) {
-      els.mass.value = id;
-      els.massOptions.querySelectorAll('.mass-option').forEach(function (btn) {
-        btn.setAttribute('aria-pressed', btn.dataset.id === id ? 'true' : 'false');
-      });
-      clearFieldError('mass');
-      refreshCheckoutErrorSummary();
     }
 
     function selectPickupDate(id, opts) {
@@ -1373,6 +1423,31 @@
         return issues;
       }
 
+      const pickupId = els.pickupDate.value;
+      const pickup = getSelectedPickupDate();
+      if (!pickupId) {
+        issues.push({
+          key: 'pickupDate',
+          message: 'Pick a pickup date',
+          target: fieldMap.pickupDate,
+          focus: els.dateChips && els.dateChips.querySelector('.date-chip')
+        });
+      } else if (!pickup) {
+        issues.push({
+          key: 'pickupDate',
+          message: 'Pick a pickup date',
+          target: fieldMap.pickupDate,
+          focus: els.dateChips && els.dateChips.querySelector('.date-chip')
+        });
+      } else if (!isPickupDateOpen(pickup.id)) {
+        issues.push({
+          key: 'pickupDate',
+          message: 'Pick a pickup date',
+          target: fieldMap.pickupDate,
+          focus: els.dateChips && els.dateChips.querySelector('.date-chip')
+        });
+      }
+
       if (getCart().length === 0) {
         issues.push({
           key: 'cart',
@@ -1401,40 +1476,7 @@
         });
       }
 
-      const pickupId = els.pickupDate.value;
-      const pickup = getSelectedPickupDate();
-      if (!pickupId) {
-        issues.push({
-          key: 'pickupDate',
-          message: 'Pick a pickup date',
-          target: fieldMap.pickupDate,
-          focus: els.dateChips && els.dateChips.querySelector('.date-chip')
-        });
-      } else if (!pickup) {
-        issues.push({
-          key: 'pickupDate',
-          message: 'Pick a pickup date',
-          target: fieldMap.pickupDate,
-          focus: els.dateChips && els.dateChips.querySelector('.date-chip')
-        });
-      } else if (!isPickupDateOpen(pickup.id)) {
-        issues.push({
-          key: 'pickupDate',
-          message: 'Pick a pickup date',
-          target: fieldMap.pickupDate,
-          focus: els.dateChips && els.dateChips.querySelector('.date-chip')
-        });
-      }
 
-      const mass = getSelectedMass();
-      if (!mass) {
-        issues.push({
-          key: 'mass',
-          message: 'Pick a Mass time',
-          target: fieldMap.mass,
-          focus: els.massOptions && els.massOptions.querySelector('.mass-option')
-        });
-      }
       return issues;
     }
 
@@ -1442,7 +1484,6 @@
       clearFieldError('name');
       clearFieldError('phone');
       clearFieldError('pickupDate');
-      clearFieldError('mass');
       hideCartError();
       issues = issues || [];
       issues.forEach(function (issue) {
@@ -1453,6 +1494,7 @@
     }
 
     function renderCheckoutErrorSummary(issues) {
+      updateTabDots(issues);
       const box = els.checkoutAlert;
       if (!box) return;
       issues = issues || [];
@@ -1476,7 +1518,7 @@
       if (!checkoutTried) return;
       const issues = collectCheckoutIssues();
       if (getCart().length > 0) hideCartError();
-      ['name', 'phone', 'pickupDate', 'mass'].forEach(function (key) {
+      ['name', 'phone', 'pickupDate'].forEach(function (key) {
         if (!issues.some(function (issue) { return issue.key === key; })) clearFieldError(key);
       });
       renderCheckoutErrorSummary(issues);
@@ -1513,6 +1555,7 @@
     function showFormAlert(issues) {
       issues = issues || collectCheckoutIssues();
       if (!els.formAlert || !issues.length) return;
+      setOrderTab(tabForIssueKey(issues[0].key));
       formAlertFirstIssue = issues[0];
       formAlertPrevFocus = document.activeElement;
       const closed = issues.length === 1 && issues[0].key === 'closed';
@@ -1565,7 +1608,8 @@
       const bar = document.querySelector('.sticky-bar');
       const barRect = bar ? bar.getBoundingClientRect() : null;
       // The top app bar is sticky on every screen size, so content must clear it.
-      const top = header ? header.getBoundingClientRect().height : 0;
+      const tabBar = document.getElementById('order-tabs');
+      const top = (header ? header.getBoundingClientRect().height : 0) + (tabBar ? tabBar.getBoundingClientRect().height : 0);
       const bottom = (barRect && barRect.bottom >= (window.innerHeight || 0) - 2 && barRect.top > (window.innerHeight || 0) / 2)
         ? barRect.height
         : 0;
@@ -1574,6 +1618,7 @@
 
     function revealFirstIssue(issue) {
       if (!issue) return;
+      if (issue.key) setOrderTab(tabForIssueKey(issue.key));
       const target = issue.target || issue.focus;
       const focusEl = issue.focus;
       if (target && target.scrollIntoView) {
@@ -1600,7 +1645,6 @@
       const cart = getCart();
       const totals = cartTotals(cart);
       const pickup = getSelectedPickupDate();
-      const mass = getSelectedMass();
       return {
         timestamp: formatTimestampIST(now),
         orderId: getOrCreateCheckoutOrderId(now),
@@ -1609,8 +1653,6 @@
         pickupDate: pickup ? pickup.id : '',
         pickupDateLabel: pickup ? pickup.label : '',
         pickupDateShort: pickup ? pickupDisplayLabel(pickup) : '',
-        mass: mass ? mass.id : '',
-        massLabel: mass ? mass.label : '',
         items: cart,
         totalItems: totals.totalItems,
         totalAmount: totals.totalAmount
@@ -1769,7 +1811,7 @@
 
     function orderSignature(order) {
       return JSON.stringify([
-        order.name, order.phone, order.pickupDate, order.mass,
+        order.name, order.phone, order.pickupDate,
         (order.items || []).map(function (l) { return [l.id || l.name, l.qty]; })
       ]);
     }
@@ -1799,7 +1841,12 @@
       try {
         const raw = localStorage.getItem(OUTBOX_KEY);
         const list = raw ? JSON.parse(raw) : [];
-        return Array.isArray(list) ? list : [];
+        if (!Array.isArray(list)) return [];
+        // Mass time was removed from the order: ignore it on old queued orders.
+        list.forEach(function (entry) {
+          if (entry && entry.order) { delete entry.order.mass; delete entry.order.massLabel; }
+        });
+        return list;
       } catch (err) {
         return [];
       }
@@ -2077,7 +2124,6 @@
     selectFirstDateWithStock({ silent: true, skipReload: true });
     applyStockToMenu({ silent: true });
     applyCachedStock();
-    renderMassTimes();
     updateSummary();
     loadPickupDates();
     startStockRefresh();
@@ -2104,6 +2150,28 @@
         }
       });
     }
+    ORDER_TABS.forEach(function (n) {
+      document.getElementById('tab-' + n).addEventListener('click', function () { setOrderTab(n); });
+    });
+    document.getElementById('order-tabs').addEventListener('keydown', function (ev) {
+      const keys = { ArrowRight: 1, ArrowLeft: -1 };
+      let idx = ORDER_TABS.indexOf(getOrderTab());
+      if (ev.key === 'Home') idx = 0;
+      else if (ev.key === 'End') idx = ORDER_TABS.length - 1;
+      else if (keys[ev.key]) idx = (idx + keys[ev.key] + ORDER_TABS.length) % ORDER_TABS.length;
+      else return;
+      ev.preventDefault();
+      setOrderTab(ORDER_TABS[idx], { focus: true });
+    });
+    document.getElementById('next-to-cakes').addEventListener('click', function () { goNextStep('date'); });
+    document.getElementById('next-to-details').addEventListener('click', function () { goNextStep('cakes'); });
+    document.getElementById('back-to-date').addEventListener('click', function () {
+      setOrderTab('date', { focus: true, scroll: true });
+    });
+    document.getElementById('back-to-cakes').addEventListener('click', function () {
+      setOrderTab('cakes', { focus: true, scroll: true });
+    });
+
     els.form.addEventListener('submit', (event) => {
       event.preventDefault();
       placeOrder();

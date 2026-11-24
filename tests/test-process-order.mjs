@@ -545,7 +545,10 @@ assert('AFTER duplicate does not flush (no write)', after.dup.stats.flush === 0,
   const mass = last[headers.indexOf('Mass')];
   const phone = last[headers.indexOf('Phone')];
   assert('AFTER saved writes Pickup Date as an ISO text id', pickup === '2026-11-29', String(pickup));
-  assert('AFTER saved writes Mass as the 6:30 AM Mass label', mass === '6:30 AM Mass', String(mass));
+  assert('AFTER saved leaves a legacy Mass column blank (Mass is no longer collected)', mass === '' || typeof mass === 'undefined', String(mass));
+  assert('new Orders schema has no Mass column', !after.saved.world.ctx.BASE_HEADERS.includes('Mass') && !after.saved.world.ctx.WALKIN_HEADERS.includes('Mass'));
+  assert('legacy massLabel in the payload is accepted and not stored in Raw JSON consumers\' columns',
+    last.every((v) => v !== '6:30 AM Mass'), JSON.stringify(last));
   const fmt = after.saved.calls.filter((c) => c.name === 'setNumberFormat');
   const written = after.saved.calls.find((c) => c.name === 'setValues' && c.sheet === 'Orders');
   const firstFmt = after.saved.calls.find((c) => c.name === 'setNumberFormat');

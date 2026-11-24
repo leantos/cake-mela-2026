@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#7a0a10">
-  <meta name="description" content="Private order totals for the Vailankanni Parish Youth Christmas cake sale.">
-  <title>Cake orders — Vailankanni Parish Youth</title>
+  <meta name="description" content="Private order totals for the Vailankanni Matha Youth Christmas cake sale.">
+  <title>Cake orders — Vailankanni Matha Youth</title>
   <link rel="icon" href="logo.png" type="image/png">
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="preconnect" href="https://script.google.com">
@@ -28,9 +28,9 @@
 <body class="bg-page font-sans text-ink antialiased">
   <div class="app min-h-screen w-full bg-m3-surface pb-10 shadow-m3-2 md:px-6 lg:bg-transparent lg:p-[clamp(16px,3vw,48px)] lg:shadow-none">
     <header class="hero-head sticky top-0 z-30 flex items-center gap-4 border-b border-m3-outline-variant bg-m3-surface-container px-4 py-2 text-brand-blue shadow-m3-1 lg:static lg:rounded-t-m3-xl lg:px-6 lg:py-3">
-      <img class="logo block size-14 shrink-0 lg:size-16" src="logo.png" width="56" height="56" alt="Vailankanni Parish Youth logo">
+      <img class="logo block size-14 shrink-0 lg:size-16" src="logo.png" width="56" height="56" alt="Vailankanni Matha Youth logo">
       <div class="brand min-w-0 flex-1 text-left">
-        <h1 class="m-0 font-serif text-[1.375rem] leading-7 font-bold text-brand-blue lg:text-[1.75rem] lg:leading-9">Vailankanni Parish Youth</h1>
+        <h1 class="m-0 font-serif text-[1.375rem] leading-7 font-bold text-brand-blue lg:text-[1.75rem] lg:leading-9">Vailankanni Matha Youth</h1>
         <p class="tagline mt-0.5 text-[0.75rem] leading-4 font-medium tracking-[0.5px] text-m3-on-surface-variant lg:text-[0.875rem] lg:leading-5">Order dashboard • Christmas Cake Sale</p>
       </div>
       <a class="staff-link ml-auto inline-flex min-h-10 shrink-0 items-center self-center rounded-full bg-m3-primary-container px-4 text-[0.875rem] font-medium tracking-[0.1px] whitespace-nowrap text-m3-on-primary-container no-underline hover:shadow-m3-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12]" href="staff.html">Staff mode</a>
@@ -121,8 +121,6 @@
       'Rich Plum Cake (800g)',
       'Rich Plum Cake (400g)'
     ];
-    const MASS_IDS = ['06:30', '08:30'];
-    const MASS_LABELS = { '06:30': '6:30 AM', '08:30': '8:30 AM' };
 
     const MOCK_SUMMARY = {
       ok: true,
@@ -135,12 +133,12 @@
           label: 'Sun, 16 Nov',
           closesAt: '2026-11-16T08:30:00+05:30',
           items: {
-            'Dates & Carrot Pudding (700g)': { '06:30': 2, '08:30': 1, total: 3 },
-            'Dates & Carrot Pudding (350g)': { '06:30': 1, '08:30': 2, total: 3 },
-            'Butterscotch Pudding (700g)': { '06:30': 1, '08:30': 0, total: 1 },
-            'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 2, total: 2 },
-            'Rich Plum Cake (800g)': { '06:30': 1, '08:30': 1, total: 2 },
-            'Rich Plum Cake (400g)': { '06:30': 4, '08:30': 3, total: 7 }
+            'Dates & Carrot Pudding (700g)': { total: 3 },
+            'Dates & Carrot Pudding (350g)': { total: 3 },
+            'Butterscotch Pudding (700g)': { total: 1 },
+            'Butterscotch Pudding (350g)': { total: 2 },
+            'Rich Plum Cake (800g)': { total: 2 },
+            'Rich Plum Cake (400g)': { total: 7 }
           },
           totals: { cakes: 18, amount: 7450, orders: 6 }
         },
@@ -149,12 +147,12 @@
           label: 'Sun, 29 Nov',
           closesAt: '2026-11-29T08:30:00+05:30',
           items: {
-            'Dates & Carrot Pudding (700g)': { '06:30': 5, '08:30': 3, total: 8 },
-            'Dates & Carrot Pudding (350g)': { '06:30': 4, '08:30': 6, total: 10 },
-            'Butterscotch Pudding (700g)': { '06:30': 2, '08:30': 2, total: 4 },
-            'Butterscotch Pudding (350g)': { '06:30': 3, '08:30': 1, total: 4 },
-            'Rich Plum Cake (800g)': { '06:30': 3, '08:30': 2, total: 5 },
-            'Rich Plum Cake (400g)': { '06:30': 8, '08:30': 7, total: 15 }
+            'Dates & Carrot Pudding (700g)': { total: 8 },
+            'Dates & Carrot Pudding (350g)': { total: 10 },
+            'Butterscotch Pudding (700g)': { total: 4 },
+            'Butterscotch Pudding (350g)': { total: 4 },
+            'Rich Plum Cake (800g)': { total: 5 },
+            'Rich Plum Cake (400g)': { total: 15 }
           },
           totals: { cakes: 46, amount: 19250, orders: 14 }
         },
@@ -163,12 +161,12 @@
           label: 'Sun, 6 Dec',
           closesAt: '2026-12-06T08:30:00+05:30',
           items: {
-            'Dates & Carrot Pudding (700g)': { '06:30': 2, '08:30': 2, total: 4 },
-            'Dates & Carrot Pudding (350g)': { '06:30': 3, '08:30': 1, total: 4 },
-            'Butterscotch Pudding (700g)': { '06:30': 1, '08:30': 1, total: 2 },
-            'Butterscotch Pudding (350g)': { '06:30': 2, '08:30': 2, total: 4 },
-            'Rich Plum Cake (800g)': { '06:30': 1, '08:30': 0, total: 1 },
-            'Rich Plum Cake (400g)': { '06:30': 5, '08:30': 4, total: 9 }
+            'Dates & Carrot Pudding (700g)': { total: 4 },
+            'Dates & Carrot Pudding (350g)': { total: 4 },
+            'Butterscotch Pudding (700g)': { total: 2 },
+            'Butterscotch Pudding (350g)': { total: 4 },
+            'Rich Plum Cake (800g)': { total: 1 },
+            'Rich Plum Cake (400g)': { total: 9 }
           },
           totals: { cakes: 24, amount: 9900, orders: 9 }
         },
@@ -177,12 +175,12 @@
           label: 'Sun, 13 Dec',
           closesAt: '2026-12-13T08:30:00+05:30',
           items: {
-            'Dates & Carrot Pudding (700g)': { '06:30': 1, '08:30': 0, total: 1 },
-            'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 2, total: 2 },
-            'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 1, total: 1 },
-            'Butterscotch Pudding (350g)': { '06:30': 1, '08:30': 0, total: 1 },
-            'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 1, total: 1 },
-            'Rich Plum Cake (400g)': { '06:30': 2, '08:30': 3, total: 5 }
+            'Dates & Carrot Pudding (700g)': { total: 1 },
+            'Dates & Carrot Pudding (350g)': { total: 2 },
+            'Butterscotch Pudding (700g)': { total: 1 },
+            'Butterscotch Pudding (350g)': { total: 1 },
+            'Rich Plum Cake (800g)': { total: 1 },
+            'Rich Plum Cake (400g)': { total: 5 }
           },
           totals: { cakes: 11, amount: 4550, orders: 5 }
         },
@@ -191,12 +189,12 @@
           label: 'Sun, 20 Dec',
           closesAt: '2026-12-20T08:30:00+05:30',
           items: {
-            'Dates & Carrot Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
-            'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
-            'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
-            'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
-            'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0 },
-            'Rich Plum Cake (400g)': { '06:30': 0, '08:30': 1, total: 1 }
+            'Dates & Carrot Pudding (700g)': { total: 0 },
+            'Dates & Carrot Pudding (350g)': { total: 0 },
+            'Butterscotch Pudding (700g)': { total: 0 },
+            'Butterscotch Pudding (350g)': { total: 0 },
+            'Rich Plum Cake (800g)': { total: 0 },
+            'Rich Plum Cake (400g)': { total: 1 }
           },
           totals: { cakes: 1, amount: 350, orders: 1 }
         }
@@ -206,12 +204,12 @@
         amount: 41500,
         orders: 35,
         items: {
-          'Dates & Carrot Pudding (700g)': { '06:30': 10, '08:30': 6, total: 16 },
-          'Dates & Carrot Pudding (350g)': { '06:30': 8, '08:30': 11, total: 19 },
-          'Butterscotch Pudding (700g)': { '06:30': 4, '08:30': 4, total: 8 },
-          'Butterscotch Pudding (350g)': { '06:30': 6, '08:30': 5, total: 11 },
-          'Rich Plum Cake (800g)': { '06:30': 5, '08:30': 4, total: 9 },
-          'Rich Plum Cake (400g)': { '06:30': 19, '08:30': 18, total: 37 }
+          'Dates & Carrot Pudding (700g)': { total: 16 },
+          'Dates & Carrot Pudding (350g)': { total: 19 },
+          'Butterscotch Pudding (700g)': { total: 8 },
+          'Butterscotch Pudding (350g)': { total: 11 },
+          'Rich Plum Cake (800g)': { total: 9 },
+          'Rich Plum Cake (400g)': { total: 37 }
         }
       }
     };
@@ -229,7 +227,7 @@
       };
       (summary.dates || []).forEach(function (date, index) {
         MENU_ITEMS.forEach(function (name) {
-          var row = date.items[name] || (date.items[name] = { '06:30': 0, '08:30': 0, total: 0 });
+          var row = date.items[name] || (date.items[name] = { total: 0 });
           row.ordered = row.total;
           row.pickedUp = Math.floor(row.total * (index === 4 ? 0 : 0.45));
           row.walkIn = index === 4 ? 0 : Math.max(0, Math.round(row.total * 0.15));
@@ -453,27 +451,21 @@
 
     function itemSplit(items, name) {
       var row = (items && items[name]) || {};
-      return {
-        m630: Number(row['06:30'] || 0),
-        m830: Number(row['08:30'] || 0),
-        total: Number(row.total || 0)
-      };
+      return { total: Number(row.total || 0) };
     }
 
     function cakesTable(items, caption, tableId) {
-      var foot = { m630: 0, m830: 0, total: 0 };
+      var foot = { total: 0 };
       var rows = MENU_ITEMS.map(function (name) {
         var q = itemSplit(items, name);
-        foot.m630 += q.m630;
-        foot.m830 += q.m830;
         foot.total += q.total;
-        return '<tr><th scope="row">' + escapeHtml(name) + '</th><td>' + q.m630 + '</td><td>' + q.m830 + '</td><td>' + q.total + '</td></tr>';
+        return '<tr><th scope="row">' + escapeHtml(name) + '</th><td>' + q.total + '</td></tr>';
       }).join('');
       return '<table class="' + C_TABLE + '" id="' + escapeHtml(tableId) + '">' +
         '<caption>' + escapeHtml(caption) + '</caption>' +
-        '<thead><tr><th scope="col">Item</th><th scope="col">6:30 AM</th><th scope="col">8:30 AM</th><th scope="col">Total</th></tr></thead>' +
+        '<thead><tr><th scope="col">Item</th><th scope="col">Total</th></tr></thead>' +
         '<tbody>' + rows + '</tbody>' +
-        '<tfoot><tr><th scope="row">Total</th><td>' + foot.m630 + '</td><td>' + foot.m830 + '</td><td>' + foot.total + '</td></tr></tfoot>' +
+        '<tfoot><tr><th scope="row">Total</th><td>' + foot.total + '</td></tr></tfoot>' +
         '</table>';
     }
 
@@ -621,13 +613,13 @@
 
     function poppinsTextForDate(date) {
       var lines = [
-        'Vailankanni Parish Youth — cakes to order from Poppins Bakers',
+        'Vailankanni Matha Youth — cakes to order from Poppins Bakers',
         'Pickup: ' + date.label,
         ''
       ];
       MENU_ITEMS.forEach(function (name) {
         var q = itemSplit(date.items, name);
-        lines.push(name + ': ' + q.total + '  (6:30 AM ' + q.m630 + ', 8:30 AM ' + q.m830 + ')');
+        lines.push(name + ': ' + q.total);
       });
       lines.push('');
       lines.push('Total cakes: ' + date.totals.cakes);
@@ -637,7 +629,7 @@
     }
 
     function poppinsTextForAll(data) {
-      var blocks = ['Vailankanni Parish Youth — cakes to order from Poppins Bakers', ''];
+      var blocks = ['Vailankanni Matha Youth — cakes to order from Poppins Bakers', ''];
       (data.dates || []).forEach(function (date) {
         blocks.push(poppinsTextForDate(date), '');
       });
