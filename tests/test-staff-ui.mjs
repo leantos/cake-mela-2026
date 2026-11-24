@@ -19,6 +19,7 @@ assert('staff page has robots noindex', /<meta\s+name=["']robots["']\s+content=[
 assert('staff page uses the live Sheets URL', staffHtml.includes(LIVE));
 assert('staff page has no WhatsApp links', !/whatsapp|wa\.me/i.test(fs.readFileSync(PUBLIC + '/staff.html', 'utf8')));
 assert('orders.html links to Staff mode', /href=["']staff\.html["']/.test(ordersHtml) && /Staff mode/.test(ordersHtml));
+assert('staff.html links to the Orders page', /class="orders-link[^"]*"[^>]*href="orders\.html"[^>]*>Orders</.test(readPage('staff.html')));
 assert('index.html does not link to staff.html', !/staff\.html/.test(fs.readFileSync(PUBLIC + '/index.html', 'utf8')));
 assert('PIN is stored in sessionStorage, not localStorage',
   staffHtml.includes("sessionStorage.setItem(PIN_KEY") &&
