@@ -30,23 +30,23 @@
     }
   </style>
 </head>
-<body class="bg-page font-sans leading-normal text-ink antialiased [--sticky-h:11.25rem]">
-  <div class="app min-h-screen w-full bg-page md:px-6 pb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+1rem)] lg:m-0 lg:grid lg:w-full lg:max-w-none lg:grid-cols-[minmax(340px,32%)_minmax(0,1fr)] lg:items-start lg:gap-x-[1.35rem] lg:gap-y-4 lg:p-[clamp(16px,3vw,48px)] xl:grid-cols-[minmax(340px,32%)_minmax(0,1fr)_minmax(300px,22%)]">
-    <aside class="left-col lg:sticky lg:top-4 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100vh-2rem)] lg:overflow-auto lg:pb-2 xl:row-span-1">
-    <header class="hero-head flex items-center gap-[0.7rem] bg-m3-surface px-4 py-[0.6rem] text-m3-on-surface shadow-m3-1 lg:rounded-m3-lg">
+<body class="bg-page font-sans leading-normal text-ink antialiased [--sticky-h:11.25rem] [--topbar-h:4.5rem]">
+  <header class="hero-head sticky top-0 z-30 flex h-[var(--topbar-h)] w-full items-center gap-[0.7rem] bg-m3-surface px-4 text-m3-on-surface shadow-m3-1 md:px-6 lg:px-[clamp(16px,3vw,48px)]">
       <img class="logo block size-14 shrink-0" src="logo.png" alt="Vailankanni Matha Youth logo" width="192" height="192">
       <div class="brand min-w-0 text-left">
         <h1 class="text-[1.25rem] font-medium leading-7 text-m3-primary">Vailankanni Parish Youth</h1>
         <p class="tagline text-[0.75rem] font-medium leading-4 tracking-[0.5px] text-m3-on-surface-variant">Christmas Cake Sale • with Poppins Bakers</p>
       </div>
     </header>
+  <div class="app min-h-screen w-full bg-page md:px-6 pb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+1rem)] lg:m-0 lg:grid lg:w-full lg:max-w-none lg:grid-cols-[minmax(340px,32%)_minmax(0,1fr)] lg:items-start lg:gap-x-[1.35rem] lg:gap-y-4 lg:p-[clamp(16px,3vw,48px)] xl:grid-cols-[minmax(340px,32%)_minmax(0,1fr)_minmax(300px,22%)]">
+    <aside class="left-col lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:pb-2 xl:row-span-1">
 
     <!-- Hero: WebP with JPEG fallback. Deploy poster.webp and poster.jpg alongside this file. -->
-    <div class="poster-wrap px-[0.9rem] pt-[0.9rem]">
+    <div class="poster-wrap box-border flex h-[calc(100vh-var(--topbar-h))] items-center justify-center p-[0.9rem] supports-[height:100dvh]:h-[calc(100dvh-var(--topbar-h))]">
       <picture>
         <source type="image/webp" srcset="poster.webp">
         <img
-          class="block h-auto w-full rounded-m3-lg shadow-m3-1"
+          class="block h-auto max-h-full w-auto max-w-full rounded-m3-lg object-contain shadow-m3-1"
           src="poster.jpg"
           alt="Festive Plum Cakes Cake Sale poster for Vailankanni Parish Youth in association with Poppins Bakers, listing Dates &amp; Carrot Pudding, Butterscotch Pudding, and Rich Plum Cake prices, sold every Sunday from Nov 29 after the 6:30 and 8:30 AM Mass at Vailankanni Matha Church, Muthanallur."
           width="1024"
@@ -55,22 +55,24 @@
       </picture>
     </div>
 
-    <section class="fundraiser-info m-[0.9rem] rounded-m3-lg bg-m3-surface-container-low px-4 pb-4 pt-4 shadow-m3-1 lg:mb-0" aria-label="Sale details">
-      <p class="assoc mb-[0.65rem] text-center text-[1rem] font-medium leading-6 tracking-[0.15px] text-m3-primary">Vailankanni Parish Youth in association with Poppins Bakers</p>
-      <p class="pickup text-center text-[0.875rem] leading-5 text-m3-on-surface-variant">Pickup every Sunday from Nov 29 after 6:30 AM &amp; 8:30 AM Mass at Vailankanni Matha Church, Muthanallur, Harohalli, Sarjapura Road, Bengaluru 560099</p>
-      <p class="enquire mt-3 border-t border-m3-outline-variant pt-[0.7rem] text-center text-[0.875rem]" id="enquire">Enquiries: <a class="font-medium text-m3-primary no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary focus-visible:rounded-sm" href="tel:+917204017793">Cyril Martin • +91 72040 17793</a> <span class="enquire-sep mx-1 text-m3-outline-variant" aria-hidden="true">|</span> <a class="font-medium text-m3-primary no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary focus-visible:rounded-sm" href="tel:+918050764341">Aashwin Alfy • +91 80507 64341</a></p>
+    <section class="contact-card mx-[0.9rem] mb-[0.9rem] rounded-m3-lg bg-m3-surface-container-low p-4 shadow-m3-1 lg:mx-0 lg:mb-0" aria-label="Contact us">
+      <h2 class="mb-3 text-[1rem] font-medium leading-6 tracking-[0.15px] text-m3-primary">Contact us</h2>
+      <ul class="enquire flex flex-col gap-2 md:flex-row md:flex-wrap" id="enquire">
+        <li><a class="flex min-h-12 items-center gap-2 rounded-full bg-m3-secondary-container px-4 py-2 text-[0.875rem] font-medium text-m3-on-secondary-container no-underline hover:bg-m3-primary-container focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" href="tel:+917204017793"><span aria-hidden="true">☎</span> Cyril Martin • +91 72040 17793</a></li>
+        <li><a class="flex min-h-12 items-center gap-2 rounded-full bg-m3-secondary-container px-4 py-2 text-[0.875rem] font-medium text-m3-on-secondary-container no-underline hover:bg-m3-primary-container focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" href="tel:+918050764341"><span aria-hidden="true">☎</span> Aashwin Alfy • +91 80507 64341</a></li>
+      </ul>
     </section>
     </aside>
 
     <div class="right-col lg:col-start-2 lg:row-start-2 lg:min-w-0 xl:row-start-1">
-    <h2 class="section-title mx-[1.05rem] mb-[0.55rem] mt-[0.4rem] scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant lg:mt-0 lg:scroll-mb-5" id="menu-heading">Cake varieties</h2>
-    <div class="menu-list flex scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] flex-col gap-[0.7rem] px-[0.9rem] md:grid md:grid-cols-2 md:items-stretch lg:scroll-mb-5 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]" id="menu-list" role="list" aria-labelledby="menu-heading"></div>
+    <h2 class="section-title mx-[1.05rem] mb-[0.55rem] mt-[0.4rem] scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant lg:mt-0 lg:scroll-mb-5" id="menu-heading">Cake varieties</h2>
+    <div class="menu-list flex scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] flex-col gap-[0.7rem] px-[0.9rem] md:grid md:grid-cols-2 md:items-stretch lg:scroll-mb-5 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]" id="menu-list" role="list" aria-labelledby="menu-heading"></div>
     <p class="cart-error mx-[0.9rem] mt-[0.7rem] hidden rounded-m3-sm bg-m3-primary-container px-3 py-[0.55rem] text-[0.875rem] font-medium text-m3-on-primary-container [&.visible]:block" id="cart-error" role="alert" aria-live="assertive"></p>
 
     <form class="order-form mx-[0.9rem] mt-[1.15rem] rounded-m3-lg bg-m3-surface-container-low px-4 pb-[1.1rem] pt-4 shadow-m3-1" id="order-form" novalidate>
       <h2 class="mb-4 text-[1.375rem] font-normal leading-7 text-m3-on-surface">Your details</h2>
 
-      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-name">
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-name">
         <div class="relative">
           <input class="peer block min-h-14 w-full rounded-m3-xs border border-m3-outline bg-transparent px-4 py-2 text-[1rem] text-m3-on-surface appearance-none hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder:text-transparent focus:placeholder:text-m3-on-surface-variant/70" type="text" id="buyer-name" name="name" autocomplete="name" required placeholder="Full name">
           <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface-container-low px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem] motion-reduce:transition-none" for="buyer-name">Buyer Name <span class="req text-maroon" aria-hidden="true">*</span></label>
@@ -78,7 +80,7 @@
         <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="buyer-name-error"></p>
       </div>
 
-      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-phone">
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-phone">
         <div class="relative">
           <input class="peer block min-h-14 w-full rounded-m3-xs border border-m3-outline bg-transparent px-4 py-2 text-[1rem] text-m3-on-surface appearance-none hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder:text-transparent focus:placeholder:text-m3-on-surface-variant/70" type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" required placeholder="10-digit mobile">
           <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface-container-low px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem] motion-reduce:transition-none" for="buyer-phone">Phone Number <span class="req text-maroon" aria-hidden="true">*</span></label>
@@ -86,14 +88,14 @@
         <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="buyer-phone-error"></p>
       </div>
 
-      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-pickup-date">
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-pickup-date">
         <label class="mb-2 block text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant" id="pickup-date-label">Pickup Date <span class="req text-maroon" aria-hidden="true">*</span></label>
         <div class="date-chips flex flex-wrap gap-[0.45rem]" id="date-chips" role="group" aria-labelledby="pickup-date-label"></div>
         <input type="hidden" id="pickup-date" name="pickupDate" value="">
         <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="pickup-date-error"></p>
       </div>
 
-      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-mass">
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-mass">
         <label class="mb-2 block text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant" id="mass-label">Pickup after Mass <span class="req text-maroon" aria-hidden="true">*</span></label>
         <div class="mass-options grid grid-cols-2 gap-2" id="mass-options" role="group" aria-labelledby="mass-label"></div>
         <input type="hidden" id="pickup-mass" name="mass" value="">
@@ -106,7 +108,7 @@
     </form>
     </div>
 
-    <aside class="sticky-bar fixed inset-x-0 bottom-0 z-40 w-full bg-m3-surface-container px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-2px_6px_2px_rgba(0,0,0,0.15),0_-1px_2px_rgba(0,0,0,0.3)] lg:sticky lg:inset-x-auto lg:bottom-auto lg:top-4 lg:col-start-2 lg:row-start-1 lg:w-auto lg:rounded-m3-lg lg:bg-m3-surface-container-low lg:px-4 lg:pb-4 lg:pt-4 lg:shadow-m3-1 xl:col-start-3" aria-label="Order summary">
+    <aside class="sticky-bar fixed inset-x-0 bottom-0 z-40 w-full bg-m3-surface-container px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-2px_6px_2px_rgba(0,0,0,0.15),0_-1px_2px_rgba(0,0,0,0.3)] lg:sticky lg:inset-x-auto lg:bottom-auto lg:top-[calc(var(--topbar-h)+1rem)] lg:col-start-2 lg:row-start-1 lg:w-auto lg:rounded-m3-lg lg:bg-m3-surface-container-low lg:px-4 lg:pb-4 lg:pt-4 lg:shadow-m3-1 xl:col-start-3" aria-label="Order summary">
       <h2 class="summary-heading mb-[0.65rem] hidden text-[1.375rem] font-normal leading-7 text-m3-on-surface lg:block">Your order</h2>
       <ul class="cart-lines mb-3 hidden max-h-[min(42vh,22rem)] overflow-auto lg:block" id="cart-lines"></ul>
       <div class="summary mb-[0.3rem] flex items-baseline justify-between font-bold">
@@ -598,9 +600,10 @@
     function renderEnquiries() {
       const el = document.getElementById('enquire');
       if (!el) return;
-      el.innerHTML = 'Enquiries: ' + CONTACTS.map(function (c) {
-        return '<a class="font-medium text-m3-primary no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary focus-visible:rounded-sm" href="tel:+' + escapeHtml(c.number) + '">' + escapeHtml(c.name) + ' • ' + escapeHtml(contactDisplay(c)) + '</a>';
-      }).join(' <span class="enquire-sep mx-1 text-m3-outline-variant" aria-hidden="true">|</span> ');
+      const linkClass = 'flex min-h-12 items-center gap-2 rounded-full bg-m3-secondary-container px-4 py-2 text-[0.875rem] font-medium text-m3-on-secondary-container no-underline hover:bg-m3-primary-container focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary';
+      el.innerHTML = CONTACTS.map(function (c) {
+        return '<li><a class="' + linkClass + '" href="tel:+' + escapeHtml(c.number) + '"><span aria-hidden="true">☎</span> ' + escapeHtml(c.name) + ' • ' + escapeHtml(contactDisplay(c)) + '</a></li>';
+      }).join('');
     }
 
     function applyPosterConfig() {
@@ -1497,12 +1500,9 @@
     function stickyOffset() {
       const header = document.querySelector('header.hero-head');
       const bar = document.querySelector('.sticky-bar');
-      const headerRect = header ? header.getBoundingClientRect() : null;
       const barRect = bar ? bar.getBoundingClientRect() : null;
-      // Mobile: bar sits at the bottom. Desktop: summary is in normal flow / sticky top.
-      const top = (headerRect && headerRect.top >= -1 && headerRect.bottom < (window.innerHeight || 800) * 0.5)
-        ? 0
-        : (headerRect && headerRect.top <= 1 && headerRect.bottom > 0 ? headerRect.height : 0);
+      // The top app bar is sticky on every screen size, so content must clear it.
+      const top = header ? header.getBoundingClientRect().height : 0;
       const bottom = (barRect && barRect.bottom >= (window.innerHeight || 0) - 2 && barRect.top > (window.innerHeight || 0) / 2)
         ? barRect.height
         : 0;
