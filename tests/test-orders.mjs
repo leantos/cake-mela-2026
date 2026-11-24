@@ -364,12 +364,12 @@ fetchDom.window.close();
   const summaryGets = (pg) => pg.calls.filter((c) => c.method === 'GET' && /action=summary/.test(c.url));
 
   const ORDERS = [
-    { row: 5, orderId: 'PB-X-3', name: 'Zed Third', phone: '9000000003', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Pending', assignedTo: '' },
+    { row: 5, orderId: 'PB-X-3', name: 'Zed Third', phone: '9000000003', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Pending' },
     { row: 2, orderId: 'PB-X-1', name: 'Asha Rao', phone: '9876543210', pickupDate: '2026-11-29', items: '2 × Rich Plum Cake (400g)\n1 × Dates & Carrot Pudding (700g)', total: 1350, status: 'Pending', assignedTo: 'Cyril Martin' },
-    { row: 3, orderId: 'PB-X-2', name: 'Paid Person', phone: '9000000002', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (800g)', total: 650, status: 'Paid', assignedTo: '' },
-    { row: 4, orderId: 'PB-X-4', name: 'Oversold Person', phone: '9000000004', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'OVERSOLD', assignedTo: '' },
-    { row: 6, orderId: 'PB-X-5', name: 'Picked Person', phone: '9000000005', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Picked up', assignedTo: '' },
-    { row: 7, orderId: 'PB-X-6', name: 'Cancelled Person', phone: '9000000006', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Cancelled', assignedTo: '' }
+    { row: 3, orderId: 'PB-X-2', name: 'Paid Person', phone: '9000000002', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (800g)', total: 650, status: 'Paid' },
+    { row: 4, orderId: 'PB-X-4', name: 'Oversold Person', phone: '9000000004', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'OVERSOLD' },
+    { row: 6, orderId: 'PB-X-5', name: 'Picked Person', phone: '9000000005', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Picked up' },
+    { row: 7, orderId: 'PB-X-6', name: 'Cancelled Person', phone: '9000000006', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Cancelled' }
   ];
   let staffOrdersMode = 'ok';
   const handler = (u, method, body) => {
@@ -435,12 +435,12 @@ fetchDom.window.close();
   assert('pending list: oldest first (by sheet row)',
     rows.map((r) => r.querySelector('.pending-name').textContent).join(',') === 'Asha Rao,Zed Third');
   const first = rows[0];
-  assert('pending list: each order shows name, tel: link, items, total and assignee',
+  assert('pending list: each order shows name, tel: link, items and total; no assignee label even if an old backend sends one',
     first.querySelector('a.pending-phone').getAttribute('href') === 'tel:+919876543210' &&
     /\+91 98765 43210/.test(first.querySelector('a.pending-phone').textContent) &&
     /2 × Rich Plum Cake \(400g\) · 1 × Dates & Carrot Pudding \(700g\)/.test(first.querySelector('.pending-items-text').textContent) &&
     /1,350/.test(first.querySelector('.pending-total').textContent) &&
-    /To: Cyril Martin/.test(first.querySelector('.pending-assigned').textContent) &&
+    !first.querySelector('.pending-assigned') && !/To:/.test(first.textContent) && !/Cyril Martin/.test(first.textContent) &&
     !rows[1].querySelector('.pending-assigned'));
   assert('pending list: sits inside that date\'s Pending orders card',
     pg.doc.querySelector('details[data-panel-id="2026-11-29"] #pending-2026-11-29 .pending-orders') !== null);

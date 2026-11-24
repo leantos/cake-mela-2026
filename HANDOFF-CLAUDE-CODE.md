@@ -30,7 +30,7 @@ You are picking up an existing, working project. Read this fully, then `README.m
   - **Fallback.** If `/api/order` can't be reached (offline, or a Netlify Drop deploy returning 404), the page uses its localStorage outbox, picks a random contact and posts straight to Apps Script (text/plain POST, sendBeacon/keepalive). Later retries try `/api/order` first and pass along the chosen contact.
 - Async Workloads were deliberately **not** used, because they need a team extension and an API key on Starter. The scheduled sweep is used instead.
 
-## Apps Script (`apps-script/Code.gs`, SCRIPT_VERSION `2026-11-24.6`)
+## Apps Script (`apps-script/Code.gs`, SCRIPT_VERSION `2026-11-24.7`)
 - **Live deployment URL (keep this one):** `https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec` (the "QyGs" deployment). Check `?action=debug` for the version it currently serves; redeploy after any Code.gs change.
   - **Redeploy without changing the URL:** paste the code → Save → Deploy → Manage deployments → pencil on the existing deployment → Version: New version → Deploy. Choosing "New deployment" creates a new URL, so avoid that.
   - Old unused deployments ending `...RstCz` and `...67X5n` can be deleted.
@@ -112,4 +112,16 @@ You are picking up an existing, working project. Read this fully, then `README.m
 - **Walk-in recorded time:** Walk-in Sales gets a `Recorded At` text column (ISO 8601, added automatically like `Customer`). `staff_add_walkin` accepts an optional `recordedAt` from the client (offline-queued sales keep their real time); it must be a real date within the last 14 days and at most 5 minutes ahead, otherwise the server time is used. `staff_walkins` rows return `recordedAt` (`''` for legacy rows). A duplicate `walkinId` never overwrites the time.
 - **/orders is PIN-gated and lists pending orders:** each date's "Pending orders" card also lists the orders whose status is exactly Pending (name, tel: link, items, total, "To: <assignee>"), oldest first, loaded lazily per open date panel through the PIN-protected `staff_orders` action (no `Code.gs` change) and refreshed with the 60s timer. A failed load shows the real error with a Retry button; a wrong/locked/unauthorized answer returns to the gate.
   - **Privacy, honestly:** names and phone numbers are returned ONLY by PIN-protected `staff_orders`. The Apps Script `?action=summary` GET is still public and returns aggregates only (no names, phones or order IDs); gating the page does not make that URL private.
-- **Apps Script:** SCRIPT_VERSION `2026-11-24.6`; redeploy as a New version of the existing deployment and run `setupSheets`.
+- **Apps Script:** SCRIPT_VERSION `2026-11-24.7`; redeploy as a New version of the existing deployment and run `setupSheets`.
+
+## Update 2026-11-24 (WhatsApp and contact assignment removed)
+**Supersedes** every older line in this file about WhatsApp, alternating contacts, "Assigned To", `formatPaymentLine` and the `contact` field.
+- **No WhatsApp step.** Placing an order only saves it (the page shows its own confirmation). Nothing opens `wa.me`, and the order is not assigned to anyone.
+- **`/api/order` response is exactly `{ ok: true, status: 'queued' | 'duplicate', orderId }`** (no `contact`). Errors are unchanged: 400 `{ok:false, error:'invalid', fields}`, 409 `{ok:false, error:'out_of_stock', items}`, 405 for other methods.
+- **Netlify:** the round-robin counter (`meta/counter`, `nextContactIndex`), contact selection, `publicContact` and `findContact` are deleted. Stored order records no longer carry `contact`. The Sheet payload no longer has `assignedTo` / `assignedContactId` / `assignedNumber`; it keeps `source: 'netlify'`.
+- **Legacy clients are tolerated.** An old page or outbox entry that still sends `assignedContactId`, `assignedTo` or `mass` is accepted and those fields are dropped.
+- **Stock check bypass.** An order the customer was already told was placed is never rejected by the stock check. The bypass used to be the contact hint; it is now any of `retry: true`, `fallback: true`, or a legacy `assignedContactId`. The page must send `retry: true` on outbox retries.
+- **`site-config.js`:** `contacts` stays (name / number / display, used for the tap-to-call links); `paymentLine` is one plain sentence naming both UPI numbers; `formatPaymentLine` is gone.
+- **Code.gs `2026-11-24.7`:** new orders never write "Assigned To"; the column is no longer in `BASE_HEADERS` (it is in `LEGACY_HEADERS`, so an existing column is ignored and never treated as a cake column). `staff_orders` no longer returns `assignedTo`. New menu item **Cake Sale → Remove Assigned To column…** confirms first, then permanently deletes that column from Orders. Nothing is deleted automatically, including by `setupSheets`.
+- **Redeploy** `Code.gs` as a New version of the existing deployment.
+

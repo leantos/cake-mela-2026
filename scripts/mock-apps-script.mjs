@@ -40,7 +40,7 @@ http.createServer((req, res) => {
     try { data = JSON.parse(body); } catch (e) {}
     const dup = rows.has(data.orderId);
     if (!dup) {
-      rows.set(data.orderId, { orderId: data.orderId, name: data.name, assignedTo: data.assignedTo, source: data.source || 'browser' });
+      rows.set(data.orderId, { orderId: data.orderId, name: data.name, source: data.source || 'browser' });
       const lim = limits[data.pickupDate];
       if (lim) {
         (data.items || []).forEach((line) => {
@@ -48,7 +48,7 @@ http.createServer((req, res) => {
         });
       }
     }
-    console.log('[mock sheet]', dup ? 'duplicate' : 'saved', data.orderId, '→', data.assignedTo);
+    console.log('[mock sheet]', dup ? 'duplicate' : 'saved', data.orderId);
     res.end(JSON.stringify({ ok: true, status: dup ? 'duplicate' : 'saved', orderId: data.orderId }));
   });
 }).listen(port, () => console.log('mock Apps Script on http://localhost:' + port + '/exec'));

@@ -1,6 +1,6 @@
 /**
- * POST /api/order  — save the order to Netlify Blobs, pick the WhatsApp
- * contact (alternating), answer immediately, then push it to the Google
+ * POST /api/order  — save the order to Netlify Blobs, answer immediately
+ * ({ok, status, orderId}), then push it to the Google
  * Sheet in the background (context.waitUntil). Anything that fails is
  * retried by sweep-orders.mjs every 5 minutes.
  *

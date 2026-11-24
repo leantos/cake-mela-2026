@@ -4,9 +4,8 @@
  * Blobs store + fetch so tests can run without Netlify.
  *
  * Blobs keys (store "orders"):
- *   order/<orderId>    full record { order, contact, sent, attempts, ... }
+ *   order/<orderId>    full record { order, sent, attempts, ... }
  *   pending/<orderId>  marker for "not yet confirmed by the Sheet"
- *   meta/counter       { next } — round-robin pointer for contacts
  */
 import SITE_CONFIG from '../../public/site-config.js';
 
@@ -41,14 +40,6 @@ export function getConfig() {
 export function appsScriptUrl(env) {
   const fromEnv = env && env.APPS_SCRIPT_URL;
   return String(fromEnv || SITE_CONFIG.appsScriptUrl || '').trim();
-}
-
-export function publicContact(c) {
-  return c ? { id: c.id, name: c.name, number: c.number, display: c.display } : null;
-}
-
-export function findContact(id, config = SITE_CONFIG) {
-  return config.contacts.find((c) => c.id === id) || null;
 }
 
 function str(v, max) {
@@ -115,11 +106,12 @@ export function validateOrder(raw) {
       totalItems,
       totalAmount
     },
-    contactHint: str(raw.assignedContactId, 40)
+    // A retry from the page's outbox (or an older page that still sends
+    // assignedContactId) was already confirmed to the customer, so the stock
+    // check must not reject it. Everything else in the payload is dropped.
+    skipStockCheck: raw.retry === true || raw.fallback === true || !!str(raw.assignedContactId, 40)
   };
 }
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------- stock check (fails open) ---------- */
 
@@ -194,31 +186,10 @@ export function noteOrderInStockCache(order) {
 }
 
 /**
- * Round-robin pointer with compare-and-swap (onlyIfNew / onlyIfMatch),
- * so two orders landing at the same moment don't both get the same slot.
- */
-export async function nextContactIndex(store, count) {
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const cur = await store.getWithMetadata('meta/counter', { type: 'json' });
-    if (!cur || !cur.data) {
-      const res = await store.setJSON('meta/counter', { next: 1 }, { onlyIfNew: true });
-      if (res && res.modified) return 0;
-    } else {
-      const value = Number(cur.data.next) || 0;
-      const res = await store.setJSON('meta/counter', { next: value + 1 }, { onlyIfMatch: cur.etag });
-      if (res && res.modified) return value % count;
-    }
-    await sleep(20 + Math.floor(Math.random() * 60));
-  }
-  return Math.floor(Math.random() * count);
-}
-
-/**
- * Store the order (idempotent by orderId) and pick its WhatsApp contact.
+ * Store the order (idempotent by orderId) and queue it for the Sheet.
  * Returns { status, body } for the HTTP response, plus `record`.
  */
 export async function acceptOrder(store, raw, opts = {}) {
-  const config = opts.config || SITE_CONFIG;
   const now = opts.now ? opts.now() : Date.now();
   const v = validateOrder(raw);
   if (!v.ok) return { status: 400, body: { ok: false, error: 'invalid', fields: v.errors } };
@@ -230,32 +201,22 @@ export async function acceptOrder(store, raw, opts = {}) {
     return {
       status: 200,
       record: existing,
-      body: { ok: true, status: 'duplicate', orderId: order.orderId, contact: publicContact(existing.contact) }
+      body: { ok: true, status: 'duplicate', orderId: order.orderId }
     };
   }
 
   // Stock check for NEW orders only (duplicates answered above). A retry
-  // from the page's outbox carries a contact hint: the customer was already
-  // told "placed", so it is never rejected here (the Sheet flags OVERSOLD).
-  if (!v.contactHint && typeof opts.stockCheck === 'function') {
+  // from the page's outbox is flagged (skipStockCheck): the customer was
+  // already told "placed", so it is never rejected here (the Sheet flags OVERSOLD).
+  if (!v.skipStockCheck && typeof opts.stockCheck === 'function') {
     const short = await opts.stockCheck(order);
     if (short && short.length) {
       return { status: 409, body: { ok: false, error: 'out_of_stock', items: short } };
     }
   }
 
-  // A client that already fell back to a random contact (function was
-  // unreachable earlier) keeps that contact, since the customer already
-  // messaged that person.
-  let contact = v.contactHint ? findContact(v.contactHint, config) : null;
-  if (!contact) {
-    const idx = await nextContactIndex(store, config.contacts.length);
-    contact = config.contacts[idx];
-  }
-
   const record = {
     order,
-    contact: publicContact(contact),
     receivedAt: new Date(now).toISOString(),
     sent: false,
     attempts: 0,
@@ -271,7 +232,7 @@ export async function acceptOrder(store, raw, opts = {}) {
       return {
         status: 200,
         record: winner,
-        body: { ok: true, status: 'duplicate', orderId: order.orderId, contact: publicContact(winner.contact) }
+        body: { ok: true, status: 'duplicate', orderId: order.orderId }
       };
     }
   }
@@ -285,18 +246,12 @@ export async function acceptOrder(store, raw, opts = {}) {
   return {
     status: 200,
     record,
-    body: { ok: true, status: 'queued', orderId: order.orderId, contact: record.contact }
+    body: { ok: true, status: 'queued', orderId: order.orderId }
   };
 }
 
 export function sheetPayload(record) {
-  const c = record.contact || {};
-  const payload = Object.assign({}, record.order, {
-    assignedTo: c.name || '',
-    assignedContactId: c.id || '',
-    assignedNumber: c.display || c.number || '',
-    source: 'netlify'
-  });
+  const payload = Object.assign({}, record.order, { source: 'netlify' });
   if (record.useFallback) payload.fallback = true;
   return payload;
 }

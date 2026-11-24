@@ -38,6 +38,11 @@ function assert(name, cond, detail) {
 }
 
 const w = window;
+// index.html as written on disk (readPage() also inlines site-config.js, whose comments are not this page).
+const rawIndexHtml = fs.readFileSync(ROOT + '/public/index.html', 'utf8');
+const confirmView = () => document.getElementById('order-confirmation');
+const confirmShown = () => confirmView().hidden === false;
+const confirmTitle = () => document.getElementById('order-confirmation-title').textContent;
 const cards = document.querySelectorAll('.menu-card');
 assert('renders 6 menu cards', cards.length === 6, cards.length);
 
@@ -74,9 +79,17 @@ assert('bestseller only on Rich Plum 400g', tags.join('|') === '|||||Bestseller'
 assert('helper generateOrderId is global', typeof w.generateOrderId === 'function');
 assert('helper normalizePhone is global', typeof w.normalizePhone === 'function');
 assert('helper formatINR is global', typeof w.formatINR === 'function');
-assert('helper buildWhatsAppMessage is global', typeof w.buildWhatsAppMessage === 'function');
+assert('helper showOrderConfirmation is global', typeof w.showOrderConfirmation === 'function');
+assert('WhatsApp is gone: no message builder, opener or url helper', typeof w.buildWhatsAppMessage === 'undefined' && typeof w.openWhatsApp === 'undefined' && typeof w.whatsAppUrl === 'undefined');
+assert('WhatsApp is gone: no WhatsApp text, and exactly one wa.me link in the page (the UPI screenshot button)', !/whatsapp/i.test(rawIndexHtml) && (rawIndexHtml.match(/wa\.me/g) || []).length === 1, String((rawIndexHtml.match(/wa\.me/g) || []).length));
+assert('contact assignment is gone: no random contact or assignment helpers', typeof w.pickRandomContact === 'undefined' && typeof w.applyContactToOrder === 'undefined' && typeof w.resolveContact === 'undefined');
 const payNote = document.querySelector('.sticky-bar .payment-note');
-assert('payment note sits in the sticky summary (before ordering: no number yet)', !!(payNote && /^Payment: Pay at pickup, or UPI \(number shown when you order\)/.test(payNote.textContent)), payNote && payNote.textContent);
+assert('payment note sits in the sticky summary and names both UPI numbers',
+  !!(payNote && /^Payment: Pay at pickup, or UPI to /.test(payNote.textContent) &&
+    payNote.textContent.includes('+91 72040 17793 (Cyril Martin)') && payNote.textContent.includes('+91 80507 64341 (Aashwin Alfy)') &&
+    !/[{}]/.test(payNote.textContent)), payNote && payNote.textContent);
+assert('payment line is the same plain sentence in code',
+  w.eval('PAYMENT_LINE') === payNote.textContent.replace(/^Payment: /, ''), w.eval('PAYMENT_LINE'));
 const enquire = document.getElementById('enquire');
 assert('enquiries list both contacts', !!(enquire &&
   enquire.textContent.includes('Cyril Martin • +91 72040 17793') &&
@@ -199,10 +212,10 @@ assert('6 Dec is not stock-limited (pre-order remaining is unlimited)', w.remain
   String(w.remainingForItem({ name: 'Dates & Carrot Pudding', weight: '700g' }, '2026-12-06')));
 assert('closed banner hidden while dates remain', !document.getElementById('preorders-closed').classList.contains('visible'));
 
-if (typeof w.buildWhatsAppMessage === 'function') {
+{
+  // The confirmation screen content is built from a sample order (no network, no WhatsApp).
   const sample = {
     orderId: 'PB-251123-K7MQ',
-    timestamp: '23/11/2026, 12:00:00 pm IST',
     items: [
       { qty: 2, name: 'Rich Plum Cake (400g)', lineTotal: 700 },
       { qty: 1, name: 'Dates & Carrot Pudding (700g)', lineTotal: 650 }
@@ -213,20 +226,79 @@ if (typeof w.buildWhatsAppMessage === 'function') {
     phone: '9876543210',
     pickupDateShort: 'Sun, 29 Nov'
   };
-  const msg = w.buildWhatsAppMessage(sample);
-  assert('whatsapp title is the buyer-voice format', msg.includes('✨ *Christmas Cake Order* ✨'), msg);
-  assert('whatsapp has order id', msg.includes('*Order ID:* PB-251123-K7MQ'), msg);
-  assert('whatsapp lists items with ×', msg.includes('• 2 × Rich Plum Cake (400g) – ₹700') && msg.includes('• 1 × Dates & Carrot Pudding (700g) – ₹650'), msg);
-  assert('whatsapp total line', msg.includes('*Total: ₹1,350* (3 cakes)'), msg);
-  assert('whatsapp pickup block', msg.includes('*Pickup*') && msg.includes('Sun, 29 Nov') && !/Mass/.test(msg.split('*Pickup*')[1].split('*Name:*')[0]), msg);
-  assert('whatsapp name and phone', msg.includes('*Name:* Asha Rao') && msg.includes('*Phone:* 9876543210'), msg);
-  assert('whatsapp payment line', msg.includes('*Payment:* Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin)'), msg);
-  const phoneAt = msg.indexOf('*Phone:* 9876543210');
-  const payAt = msg.indexOf('*Payment:* Pay at pickup');
-  const confirmAt = msg.indexOf('Please confirm my order. Thank you!');
-  assert('payment line sits after phone and before confirm', phoneAt >= 0 && payAt > phoneAt && confirmAt > payAt, msg);
-  assert('whatsapp has no delivery line', !msg.includes('*Delivery:*') && !msg.includes('Flat / Block'), msg);
-  assert('whatsapp avoids supplementary-plane emoji', !/\uD83C/.test(msg), msg);
+  w.showOrderConfirmation(sample);
+  const view = confirmView();
+  assert('confirmation: view is shown, role=status, with Order placed as the heading',
+    confirmShown() && view.getAttribute('role') === 'status' && confirmTitle() === 'Order placed');
+  assert('confirmation: focus moves to the heading', document.activeElement && document.activeElement.id === 'order-confirmation-title', document.activeElement && document.activeElement.id);
+  assert('confirmation: order id and pickup date', document.getElementById('confirm-order-id').textContent === 'PB-251123-K7MQ' && document.getElementById('confirm-pickup').textContent === 'Sun, 29 Nov');
+  const cl = document.getElementById('confirm-lines').textContent.replace(/\s+/g, ' ');
+  assert('confirmation: lists the cakes with quantities and line totals', cl.includes('2 × Rich Plum Cake (400g)') && cl.includes('₹700') && cl.includes('1 × Dates & Carrot Pudding (700g)') && cl.includes('₹650'), cl);
+  assert('confirmation: shows the total', document.getElementById('confirm-total').textContent === '₹1,350', document.getElementById('confirm-total').textContent);
+  assert('confirmation: shows the payment line', document.getElementById('confirm-payment').textContent === w.eval('PAYMENT_LINE'), document.getElementById('confirm-payment').textContent);
+  const calls = Array.from(document.querySelectorAll('#confirm-call a'));
+  assert('confirmation: two tonal tel: Call us links from SITE_CONFIG.contacts',
+    calls.length === 2 && calls[0].getAttribute('href') === 'tel:+917204017793' && calls[1].getAttribute('href') === 'tel:+918050764341' &&
+    calls.every((a) => a.className.includes('bg-m3-secondary-container') && a.className.includes('min-h-12')),
+    calls.map((a) => a.outerHTML).join(' '));
+  assert('confirmation: has a filled Place another order button', document.getElementById('place-another').textContent.trim() === 'Place another order' && document.getElementById('place-another').className.includes('bg-m3-primary'));
+  w.showOrderConfirmation(sample, { offline: true });
+  assert('confirmation: offline variant says the order is saved and will be sent when online',
+    /Order saved/.test(confirmTitle()) && /as soon as you.re online/.test(confirmTitle()) && view.classList.contains('offline'), confirmTitle());
+  w.hideOrderConfirmation();
+  assert('confirmation: hideOrderConfirmation hides it', confirmView().hidden === true);
+}
+
+// ---- Pay by UPI: QR + the single "Send screenshot" link (the only wa.me link) ----
+{
+  const sampleUpi = {
+    orderId: 'PB-251123-K7MQ',
+    items: [{ qty: 2, name: 'Rich Plum Cake (400g)', lineTotal: 700 }, { qty: 1, name: 'Dates & Carrot Pudding (700g)', lineTotal: 650 }],
+    totalItems: 3, totalAmount: 1350, name: 'Asha Rao', phone: '9876543210', pickupDateShort: 'Sun, 29 Nov'
+  };
+  w.showOrderConfirmation(sampleUpi);
+  const box = document.getElementById('confirm-upi');
+  const img = box.querySelector('img.upi-qr');
+  assert('upi: the confirmation screen shows the QR image with its alt text',
+    !!img && img.getAttribute('src') === 'cyril-upi-qr.jpg' && img.getAttribute('alt') === 'UPI QR code to pay Cyril Martin' && img.getAttribute('loading') === 'lazy',
+    img && img.outerHTML);
+  assert('upi: the QR is width-limited (~280px), centred and rounded',
+    img.className.includes('max-w-[280px]') && img.className.includes('w-full') && img.className.includes('rounded-m3-lg') && box.className.includes('items-center'), img.className);
+  assert('upi: the confirmation shows the amount to pay and the order ID reminder',
+    box.querySelector('.upi-amount').textContent === 'Pay ₹1,350' && box.querySelector('.upi-note').textContent.includes('PB-251123-K7MQ'),
+    box.querySelector('.upi-amount').textContent + ' | ' + box.querySelector('.upi-note').textContent);
+  const shot = box.querySelector('a.upi-screenshot');
+  const shotUrl = new URL(shot.getAttribute('href'));
+  const shotMsg = shotUrl.searchParams.get('text');
+  assert('upi: the screenshot button opens wa.me/917204017793 in a new tab with rel=noopener',
+    shot.textContent.trim() === 'Send screenshot to Cyril' && shotUrl.origin + shotUrl.pathname === 'https://wa.me/917204017793' &&
+    shot.getAttribute('target') === '_blank' && /noopener/.test(shot.getAttribute('rel') || ''), shot.outerHTML);
+  assert('upi: the message carries the total and order ID and is BMP-only',
+    shotMsg === 'Hi Cyril, I have paid ₹1,350 for order PB-251123-K7MQ. Screenshot attached.' && !/[\uD800-\uDFFF]/.test(shotMsg), shotMsg);
+  assert('upi: nothing in the Place order button or the confirmation title mentions WhatsApp',
+    !/whatsapp/i.test(document.getElementById('place-order-btn').textContent) && !/whatsapp/i.test(confirmTitle()) && !/whatsapp/i.test(document.getElementById('confirm-payment').textContent));
+  w.hideOrderConfirmation();
+
+  // the same QR lives in a collapsible card in the Your details step
+  const card = document.getElementById('pay-upi-card');
+  assert('upi: a collapsible Pay by UPI card sits in the Your details step',
+    !!card && card.tagName === 'DETAILS' && document.getElementById('panel-details').contains(card) && /Pay by UPI/.test(card.querySelector('summary').textContent));
+  const cimg = card.querySelector('img.upi-qr');
+  assert('upi: the details step shows the same QR with the same alt text',
+    !!cimg && cimg.getAttribute('src') === 'cyril-upi-qr.jpg' && cimg.getAttribute('alt') === 'UPI QR code to pay Cyril Martin' && cimg.getAttribute('loading') === 'lazy' && cimg.className.includes('max-w-[280px]'));
+  zeroCart();
+  assert('upi: with an empty cart the card asks you to pick cakes', card.querySelector('.upi-amount').textContent === 'Pick your cakes to see the amount', card.querySelector('.upi-amount').textContent);
+  cards[0].querySelector('.plus').click();
+  assert('upi: the details-step amount follows the cart', card.querySelector('.upi-amount').textContent === 'Pay ₹650', card.querySelector('.upi-amount').textContent);
+  const cshot = card.querySelector('a.upi-screenshot');
+  const cmsg = new URL(cshot.getAttribute('href')).searchParams.get('text');
+  assert('upi: before ordering the message has the total but no order ID wording',
+    cmsg === 'Hi Cyril, I have paid ₹650 for my cake order. Screenshot attached.' && !/PB-|order PB/.test(cmsg) && cshot.getAttribute('target') === '_blank' && /noopener/.test(cshot.getAttribute('rel')), cmsg);
+  zeroCart();
+  const waLinks = Array.from(document.querySelectorAll('a[href*="wa.me"]'));
+  assert('upi: the only wa.me links in the page are the two screenshot buttons, both to Cyril',
+    waLinks.length === 2 && waLinks.every((a) => a.classList.contains('upi-screenshot') && a.getAttribute('href').startsWith('https://wa.me/917204017793?text=')),
+    waLinks.map((a) => a.getAttribute('href')).join(' | '));
 }
 
 function zeroCart() {
@@ -267,7 +339,7 @@ document.getElementById('place-order-btn').click();
 assert('pickup date required once cleared', document.getElementById('field-pickup-date').classList.contains('invalid'));
 w.selectPickupDate('2026-11-29');
 assert('button not stuck after failed validation', document.getElementById('place-order-btn').disabled === false);
-assert('button text unchanged', document.getElementById('place-order-btn').textContent === 'Place Order via WhatsApp');
+assert('button text unchanged', document.getElementById('place-order-btn').textContent === 'Place order');
 
 assert('no mass option buttons are rendered', document.querySelectorAll('.mass-option').length === 0);
 assert('no delivery field', !document.getElementById('field-delivery') && !document.getElementById('field-flat'));
@@ -408,14 +480,12 @@ firstPlus.click();
 lastPlus.click();
 w.loadStock = origLoadStock;
 
-// Successful place — intercept WhatsApp redirect (jsdom forbids redefining location)
-let redirected = '';
-w.openWhatsApp = function(message) {
-  redirected = 'https://wa.me/917204017793?text=' + encodeURIComponent(message);
-};
+// Successful place — shows the on-page confirmation; nothing is opened or navigated to.
+const opened = [];
+w.open = function (u) { opened.push(String(u)); };
 
 w.selectPickupDate('2026-11-29');
-// Sheets URL is configured: enqueue, show Order placed, open WhatsApp, flush in the background.
+// Sheets URL is configured: post to /api/order, show the confirmation screen.
 let postCalled = false;
 window.fetch = (...args) => {
   const url = String(args[0] || '');
@@ -425,7 +495,7 @@ window.fetch = (...args) => {
 };
 
 await w.placeOrder();
-assert('redirected to WhatsApp immediately', redirected.startsWith('https://wa.me/917204017793?text='), redirected.slice(0, 80));
+assert('placing an order shows the confirmation screen and opens nothing', confirmShown() && confirmTitle() === 'Order placed' && opened.length === 0, confirmTitle() + ' ' + opened.join(','));
 assert('button shows Order placed',
   document.getElementById('place-order-btn').disabled === true &&
   document.getElementById('place-order-btn').textContent === 'Order placed',
@@ -437,23 +507,37 @@ assert('outbox is empty after a confirmed save',
   typeof w.readOrderOutbox !== 'function' || w.readOrderOutbox().length === 0,
   typeof w.readOrderOutbox === 'function' ? JSON.stringify(w.readOrderOutbox()) : 'no reader');
 
-const decoded = decodeURIComponent(redirected.split('text=')[1] || '');
-assert('redirect message has greeting', decoded.startsWith('✨ *Christmas Cake Order* ✨'), decoded);
-assert('redirect message has name', decoded.includes('*Name:* Asha Rao'));
-assert('redirect message has normalized phone', decoded.includes('*Phone:* 9876543210'));
-assert('redirect message has pickup', decoded.includes('Sun, 29 Nov') && !/after the .*Mass/.test(decoded), decoded);
-assert('redirect message has payment (one of the two contacts)', /\*Payment:\* Pay at pickup, or UPI to (\+91 72040 17793 \(Cyril Martin\)|\+91 80507 64341 \(Aashwin Alfy\))/.test(decoded), decoded);
-assert('redirect has no delivery', !decoded.includes('*Delivery:*') && !decoded.includes('Flat / Block'), decoded);
-assert('redirect message has thank you', decoded.includes('Thank you!'));
-assert('redirect has order id', /\*Order ID:\* PB-\d{6}-[A-Z2-9]{4}/.test(decoded), decoded);
-assert('redirect items include pudding and plum',
-  decoded.includes('Dates & Carrot Pudding (700g)') && decoded.includes('Rich Plum Cake (400g)'),
-  decoded);
+assert('confirmation shows the order id', /^PB-\d{6}-[A-Z2-9]{4}$/.test(document.getElementById('confirm-order-id').textContent), document.getElementById('confirm-order-id').textContent);
+assert('confirmation shows the pickup date', document.getElementById('confirm-pickup').textContent.includes('Sun, 29 Nov') && !/Mass/.test(document.getElementById('confirm-pickup').textContent), document.getElementById('confirm-pickup').textContent);
+assert('confirmation lists the cakes ordered',
+  document.getElementById('confirm-lines').textContent.includes('Dates & Carrot Pudding (700g)') && document.getElementById('confirm-lines').textContent.includes('Rich Plum Cake (400g)'),
+  document.getElementById('confirm-lines').textContent);
+assert('confirmation shows the payment line', document.getElementById('confirm-payment').textContent === w.eval('PAYMENT_LINE'));
+
+// "Place another order" resets the form and goes back to step 1
+{
+  const sentName = document.getElementById('buyer-name').value;
+  const sentPhone = document.getElementById('buyer-phone').value;
+  document.getElementById('place-another').click();
+  assert('place another order: hides the confirmation', confirmView().hidden === true);
+  assert('place another order: empties the cart', Array.from(document.querySelectorAll('.stepper .qty')).every((q) => q.textContent === '0') && /0 items/.test(document.getElementById('summary-count').textContent));
+  assert('place another order: clears name and phone', document.getElementById('buyer-name').value === '' && document.getElementById('buyer-phone').value === '');
+  assert('place another order: goes back to the first step', document.getElementById('tab-date').getAttribute('aria-selected') === 'true');
+  assert('place another order: forgets the finished order id', !window.sessionStorage.getItem('poppinsCheckoutOrderId') && !window.sessionStorage.getItem('poppinsLastPlaced'));
+  assert('place another order: the order button is usable again', document.getElementById('place-order-btn').disabled === false && document.getElementById('place-order-btn').textContent === 'Place order');
+  // restore the details the following tests rely on
+  document.getElementById('buyer-name').value = sentName || 'Asha Rao';
+  document.getElementById('buyer-phone').value = sentPhone || '9876543210';
+  w.selectPickupDate('2026-11-29');
+  zeroCart();
+  firstPlus.click();
+  lastPlus.click();
+}
 
 // pageshow re-enables button
 window.dispatchEvent(new window.Event('pageshow'));
 assert('pageshow re-enables button', document.getElementById('place-order-btn').disabled === false);
-assert('pageshow restores label', document.getElementById('place-order-btn').textContent === 'Place Order via WhatsApp');
+assert('pageshow restores label', document.getElementById('place-order-btn').textContent === 'Place order');
 
 // Invalid phone after +91 strip leaving bad number
 document.getElementById('buyer-phone').value = '12345';
@@ -491,8 +575,8 @@ const nov29Remaining = (n) => ({
   }
 });
 
-// Pre-order: a server "insufficient" response does not block WhatsApp or clamp the cart.
-redirected = '';
+// Pre-order: a server "insufficient" response does not block the order or clamp the cart.
+w.hideOrderConfirmation();
 window.fetch = async function (url, opts) {
   opts = opts || {};
   return {
@@ -501,7 +585,7 @@ window.fetch = async function (url, opts) {
   };
 };
 await w.placeOrder();
-assert('pre-order still opens WhatsApp if the server mentions stock', redirected.startsWith('https://wa.me/'), redirected);
+assert('pre-order still ends on the confirmation (saved on this phone) if the server mentions stock', confirmShown() && /Order saved/.test(confirmTitle()), confirmTitle());
 assert('pre-order does not clamp the cart', cards[0].querySelector('.qty').textContent === '1',
   cards[0].querySelector('.qty').textContent);
 const idAfterFirstQueue = window.sessionStorage.getItem('poppinsCheckoutOrderId');
@@ -520,15 +604,16 @@ window.fetch = async function (url, opts) {
   return { ok: true, json: async () => ({ ok: true, status: 'saved', orderId: bodies[bodies.length - 1].orderId }) };
 };
 if (typeof w.flushOrderOutbox === 'function') await w.flushOrderOutbox({ force: true });
+assert('outbox retries are marked retry:true so the server skips the stock check', bodies.length >= 1 && bodies.every((b) => b.retry === true), JSON.stringify(bodies.map((b) => b.retry)));
 assert('retry flush POSTs the same order id', bodies.length >= 1 && bodies[0].orderId === idAfterFirstQueue,
   JSON.stringify(bodies.map((b) => b.orderId)) + ' kept=' + idAfterFirstQueue);
 assert('confirmed flush clears the outbox',
   typeof w.readOrderOutbox !== 'function' || w.readOrderOutbox().length === 0,
   typeof w.readOrderOutbox === 'function' ? JSON.stringify(w.readOrderOutbox()) : 'no reader');
 
-// duplicate also redirects (idempotent success)
+// duplicate also confirms (idempotent success)
 window.dispatchEvent(new window.Event('pageshow'));
-redirected = '';
+w.hideOrderConfirmation();
 try { window.sessionStorage.setItem('poppinsCheckoutOrderId', 'PB-261123-DUP1'); window.sessionStorage.removeItem('poppinsLastPlaced'); } catch (e) {}
 zeroCart();
 firstPlus.click();
@@ -538,15 +623,12 @@ window.fetch = async function () {
   return { ok: true, json: async () => ({ ok: true, status: 'duplicate', orderId: 'PB-261123-DUP1' }) };
 };
 await w.placeOrder();
-assert('duplicate is ok and redirects to WhatsApp', redirected.startsWith('https://wa.me/'), redirected);
-assert('duplicate payload reused stored id', decodeURIComponent(redirected).includes('PB-261123-DUP1') ||
-  true /* message uses payload id */);
-const decodedDup = decodeURIComponent(redirected.split('text=')[1] || '');
-assert('duplicate WhatsApp uses same order id', decodedDup.includes('*Order ID:* PB-261123-DUP1'), decodedDup);
+assert('duplicate is ok and shows the Order placed confirmation', confirmShown() && confirmTitle() === 'Order placed', confirmTitle());
+assert('duplicate confirmation uses the same order id', document.getElementById('confirm-order-id').textContent === 'PB-261123-DUP1', document.getElementById('confirm-order-id').textContent);
 
-// Network failure: WhatsApp still opens instantly; the outbox keeps the order for retry.
+// Network failure: the confirmation still shows instantly (saved on this phone); the outbox keeps the order for retry.
 window.dispatchEvent(new window.Event('pageshow'));
-redirected = '';
+w.hideOrderConfirmation();
 try { window.sessionStorage.setItem('poppinsCheckoutOrderId', 'PB-261123-FB01'); window.sessionStorage.removeItem('poppinsLastPlaced'); } catch (e) {}
 zeroCart();
 firstPlus.click();
@@ -559,7 +641,7 @@ window.fetch = async function (url, opts) {
   throw new Error('hang');
 };
 await w.placeOrder();
-assert('timeout still opens WhatsApp immediately', redirected.startsWith('https://wa.me/'), redirected);
+assert('timeout still shows the saved-on-this-phone confirmation immediately', confirmShown() && /Order saved/.test(confirmTitle()), confirmTitle());
 await new Promise((r) => setTimeout(r, 40));
 if (typeof w.flushOrderOutbox === 'function') await w.flushOrderOutbox({ force: true });
 assert('failed network flush keeps the order in the outbox',
@@ -592,7 +674,7 @@ document.getElementById('buyer-phone').value = '9876543210';
 zeroCart();
 firstPlus.click();
 try { window.sessionStorage.setItem('poppinsCheckoutOrderId', 'PB-261123-Q1'); window.sessionStorage.removeItem('poppinsLastPlaced'); } catch (e) {}
-redirected = '';
+w.hideOrderConfirmation();
 window.fetch = async function () { throw new Error('offline'); };
 await w.placeOrder();
 window.dispatchEvent(new window.Event('pageshow'));
@@ -625,13 +707,12 @@ assert('both confirmed orders are removed from the outbox',
 w.__setSheetsUrlForTest('');
 
 
-// ---- Netlify /api/order flow: server picks the contact ----
+// ---- Netlify /api/order flow: order is saved, no contact is assigned ----
 {
   try { window.localStorage.removeItem('poppinsOrderOutbox'); window.sessionStorage.clear(); } catch (e) {}
   w.__setSheetsUrlForTest('https://script.google.com/macros/s/TEST/exec');
   window.dispatchEvent(new window.Event('pageshow'));
-  let waUrl = '';
-  w.openWhatsApp = function (message, contact) { waUrl = w.whatsAppUrl(message, contact); };
+  w.hideOrderConfirmation();
   document.getElementById('buyer-name').value = 'Asha Rao';
   document.getElementById('buyer-phone').value = '9876543210';
   zeroCart();
@@ -644,28 +725,27 @@ w.__setSheetsUrlForTest('');
     const body = opts.body ? JSON.parse(opts.body) : {};
     if (String(url) === '/api/order') {
       apiCalls.push(body);
-      return { ok: true, json: async () => ({ ok: true, status: apiCalls.length > 1 ? 'duplicate' : 'queued', orderId: body.orderId,
-        contact: { id: 'aashwin', name: 'Aashwin Alfy', number: '918050764341', display: '+91 80507 64341' } }) };
+      return { ok: true, json: async () => ({ ok: true, status: apiCalls.length > 1 ? 'duplicate' : 'queued', orderId: body.orderId }) };
     }
     sheetCalls.push(body);
     return { ok: true, json: async () => ({ ok: true, status: 'saved' }) };
   };
   await w.placeOrder();
-  const msgApi = decodeURIComponent(waUrl.split('text=')[1] || '');
   assert('api: POSTs the order to /api/order', apiCalls.length === 1 && /^PB-/.test(apiCalls[0].orderId), JSON.stringify(apiCalls));
   assert('api: does not post to Apps Script from the browser', sheetCalls.length === 0, JSON.stringify(sheetCalls));
-  assert('api: WhatsApp opens the assigned contact', waUrl.startsWith('https://api.whatsapp.com/send?phone=918050764341&text='), waUrl.slice(0, 70));
-  assert('api: message payment line names the assigned contact',
-    msgApi.includes('*Payment:* Pay at pickup, or UPI to +91 80507 64341 (Aashwin Alfy)'), msgApi);
-  assert('api: page payment line switches to the assigned contact',
-    document.getElementById('payment-note').textContent === 'Payment: Pay at pickup, or UPI to +91 80507 64341 (Aashwin Alfy)',
-    document.getElementById('payment-note').textContent);
-  const conf = document.getElementById('order-confirm');
-  assert('api: order placed confirmation is shown', !conf.hidden && conf.textContent.includes(apiCalls[0].orderId) && conf.textContent.includes('Aashwin Alfy'), conf.textContent);
+  assert('api: the first send does not carry the retry flag', !('retry' in apiCalls[0]) && !('fallback' in apiCalls[0]), JSON.stringify(Object.keys(apiCalls[0])));
+  assert('api: the order has no contact assignment, no mass and no WhatsApp fields',
+    !('assignedContactId' in apiCalls[0]) && !('assignedTo' in apiCalls[0]) && !('assignedNumber' in apiCalls[0]) && !('contact' in apiCalls[0]) && !('mass' in apiCalls[0]) && !('massLabel' in apiCalls[0]),
+    JSON.stringify(Object.keys(apiCalls[0])));
+  assert('api: the page payment line is the same plain sentence for everyone',
+    document.getElementById('payment-note').textContent === 'Payment: ' + w.eval('PAYMENT_LINE'), document.getElementById('payment-note').textContent);
+  assert('api: the confirmation screen is shown with the order id',
+    confirmShown() && confirmTitle() === 'Order placed' && document.getElementById('confirm-order-id').textContent === apiCalls[0].orderId, confirmTitle());
+  assert('api: no WhatsApp or other window was opened', opened.length === 0, opened.join(','));
   assert('api: button says Order placed', document.getElementById('place-order-btn').textContent === 'Order placed');
   assert('api: nothing left in the browser outbox', w.readOrderOutbox().length === 0, JSON.stringify(w.readOrderOutbox()));
 
-  // Re-tap with the same cart/details → same order id (server answers duplicate, same contact)
+  // Re-tap with the same cart/details → same order id (server answers duplicate)
   window.dispatchEvent(new window.Event('pageshow'));
   await w.placeOrder();
   assert('api: re-tap reuses the same order id', apiCalls.length === 2 && apiCalls[1].orderId === apiCalls[0].orderId,
@@ -678,7 +758,7 @@ w.__setSheetsUrlForTest('');
   assert('api: a changed cart gets a new order id', apiCalls.length === 3 && apiCalls[2].orderId !== apiCalls[0].orderId,
     JSON.stringify(apiCalls.map((b) => b.orderId)));
 
-  // Function unreachable (e.g. plain drag-and-drop deploy → 404): random contact + outbox → Apps Script
+  // Function unreachable (e.g. plain drag-and-drop deploy → 404): outbox → Apps Script, no contact
   window.dispatchEvent(new window.Event('pageshow'));
   try { window.sessionStorage.clear(); } catch (e) {}
   zeroCart();
@@ -691,37 +771,36 @@ w.__setSheetsUrlForTest('');
     direct.push({ url: String(url), body });
     return { ok: true, json: async () => ({ ok: true, status: 'saved', orderId: body.orderId }) };
   };
-  const origRandom = window.Math.random;
-  window.Math.random = () => 0.99; // → second contact
+  w.hideOrderConfirmation();
   await w.placeOrder();
-  window.Math.random = origRandom;
-  const fbMsg = decodeURIComponent(waUrl.split('text=')[1] || '');
-  assert('fallback: WhatsApp still opens (random contact)', waUrl.startsWith('https://api.whatsapp.com/send?phone=918050764341'), waUrl.slice(0, 70));
-  assert('fallback: message payment line matches the random contact', fbMsg.includes('UPI to +91 80507 64341 (Aashwin Alfy)'), fbMsg);
+  assert('fallback: the confirmation shows the saved-on-this-phone variant', confirmShown() && /Order saved/.test(confirmTitle()), confirmTitle());
   await new Promise((r) => setTimeout(r, 40));
   await w.flushOrderOutbox({ force: true });
-  assert('fallback: order goes straight to Apps Script with the contact name',
-    direct.some((d) => d.url.includes('script.google.com') && d.body.assignedTo === 'Aashwin Alfy' && d.body.assignedContactId === 'aashwin'),
-    JSON.stringify(direct.map((d) => [d.url, d.body.assignedTo])));
+  assert('fallback: order goes straight to Apps Script without any contact fields',
+    direct.some((d) => d.url.includes('script.google.com') && /^PB-/.test(d.body.orderId) && !('assignedTo' in d.body) && !('assignedContactId' in d.body) && !('assignedNumber' in d.body) && d.body.retry === true),
+    JSON.stringify(direct.map((d) => [d.url, Object.keys(d.body)])));
   assert('fallback: outbox clears after the Sheet confirms', w.readOrderOutbox().length === 0, JSON.stringify(w.readOrderOutbox()));
 
-  // Outbox retry prefers /api/order and passes the contact hint
+  // Outbox retry prefers /api/order; old queued entries lose their contact fields
   try { window.localStorage.removeItem('poppinsOrderOutbox'); window.sessionStorage.clear(); } catch (e) {}
   window.dispatchEvent(new window.Event('pageshow'));
   window.fetch = async function () { throw new Error('offline'); };
   await w.placeOrder();
   const queuedHint = w.readOrderOutbox()[0];
-  assert('offline: order is queued with its contact', !!(queuedHint && queuedHint.order.assignedContactId), JSON.stringify(queuedHint));
+  assert('offline: order is queued without any contact fields', !!(queuedHint && queuedHint.order) && !('assignedContactId' in queuedHint.order) && !('assignedTo' in queuedHint.order), JSON.stringify(queuedHint));
+  // an entry queued by the old page (with contact + mass fields) is cleaned when read
+  window.localStorage.setItem('poppinsOrderOutbox', JSON.stringify([{ order: Object.assign({}, queuedHint.order, { orderId: 'PB-261123-OLD1', assignedContactId: 'aashwin', assignedTo: 'Aashwin Alfy', assignedNumber: '+91 80507 64341', mass: '06:30', massLabel: '6:30 AM Mass', contact: { id: 'aashwin' } }), queuedAt: Date.now(), attempts: 0, nextAttemptAt: 0 }]));
   const retried = [];
   window.fetch = async function (url, opts) {
     const body = opts && opts.body ? JSON.parse(opts.body) : {};
     retried.push({ url: String(url), body });
-    return { ok: true, json: async () => ({ ok: true, status: 'queued', orderId: body.orderId, contact: { id: body.assignedContactId } }) };
+    return { ok: true, json: async () => ({ ok: true, status: 'queued', orderId: body.orderId }) };
   };
   await w.flushOrderOutbox({ force: true });
-  assert('offline retry: goes to /api/order first with assignedContactId',
-    retried.length === 1 && retried[0].url === '/api/order' && retried[0].body.assignedContactId === queuedHint.order.assignedContactId,
-    JSON.stringify(retried.map((r) => [r.url, r.body.assignedContactId])));
+  assert('offline retry: goes to /api/order first and sends no contact or mass fields',
+    retried.length === 1 && retried[0].url === '/api/order' && retried[0].body.orderId === 'PB-261123-OLD1' &&
+    retried[0].body.retry === true && !('assignedContactId' in retried[0].body) && !('assignedTo' in retried[0].body) && !('assignedNumber' in retried[0].body) && !('contact' in retried[0].body) && !('mass' in retried[0].body) && !('massLabel' in retried[0].body),
+    JSON.stringify(retried.map((r) => [r.url, Object.keys(r.body)])));
   assert('offline retry: outbox cleared', w.readOrderOutbox().length === 0);
   w.__setSheetsUrlForTest('');
   try { window.sessionStorage.clear(); } catch (e) {}
@@ -776,9 +855,10 @@ assert('default cutoff stays 8:30 AM IST when header has no time',
   w.isPickupDateOpen('2026-11-29', new Date('2026-11-29T08:30:00+05:30')) === false);
 
 const payloadFri = w.buildOrderPayload();
-const waFri = w.buildWhatsAppMessage(payloadFri);
-assert('WhatsApp uses Friday short label', waFri.includes('Fri, 25 Dec') && !/after the .*Mass/.test(waFri), waFri);
-assert('Friday WhatsApp has payment line', waFri.includes('*Payment:* Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin)'), waFri);
+w.showOrderConfirmation(payloadFri);
+assert('confirmation uses the Friday short label', document.getElementById('confirm-pickup').textContent.includes('Fri, 25 Dec') && !/Mass/.test(document.getElementById('confirm-pickup').textContent), document.getElementById('confirm-pickup').textContent);
+assert('Friday confirmation has the payment line', document.getElementById('confirm-payment').textContent.includes('Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin)'), document.getElementById('confirm-payment').textContent);
+w.hideOrderConfirmation();
 
 // fetch fail restores the fallback catalog, not the live Friday date
 w.__setStockForTest({}, 'error');
@@ -797,9 +877,9 @@ zeroCart();
 firstPlus.click();
 window.dispatchEvent(new window.Event('pageshow'));
 document.getElementById('pickup-date').value = '2026-12-25';
-redirected = '';
+w.hideOrderConfirmation();
 await w.placeOrder();
-assert('invalid_date blocks WhatsApp', redirected === '', redirected);
+assert('invalid_date does not place an order or show the confirmation', !confirmShown());
 assert('invalid_date shows a date message', /not available|Pick a pickup date/i.test(
     (document.getElementById('field-pickup-date')?.textContent || '') +
     (document.getElementById('cart-error').textContent || '') +
@@ -807,7 +887,7 @@ assert('invalid_date shows a date message', /not available|Pick a pickup date/i.
   ),
   document.getElementById('field-pickup-date')?.textContent + ' | ' + document.getElementById('cart-error').textContent);
 assert('invalid_date leaves the button enabled', document.getElementById('place-order-btn').disabled === false &&
-  document.getElementById('place-order-btn').textContent === 'Place Order via WhatsApp');
+  document.getElementById('place-order-btn').textContent === 'Place order');
 
 w.__setSheetsUrlForTest('');
 w.loadStock = origLoadStock;
@@ -896,7 +976,7 @@ assert('wide desktop summary is minmax(300px, 22%)', appCls.includes('xl:grid-co
 assert('menu grid fills with auto-fill 260px', menuCls.includes('lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]'), menuCls);
 assert('xl (1280px) breakpoint puts the summary in a third column',
   document.querySelector('.sticky-bar').className.includes('xl:col-start-3'));
-assert('CTA text is unchanged for WhatsApp', document.getElementById('place-order-btn').textContent === 'Place Order via WhatsApp');
+assert('CTA says Place order with a check icon and no WhatsApp', document.getElementById('place-order-btn').textContent === 'Place order' && /\.cta::before/.test(html) && !/25D366/i.test(rawIndexHtml) && !/aria-label="[^"]*whatsapp/i.test(rawIndexHtml));
 
 // ---- Stock limits: out of stock, caps, clamp, 409, pre-submit refresh ----
 {
@@ -959,7 +1039,7 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
   w.__setStockForTest({}, 'error');
   assert('stock: fetch failure leaves cakes unlimited', !plumCard.classList.contains('sold-out') && plumCard.querySelector('.plus').disabled === false);
 
-  // ---- checkout: 409 from /api/order -> modal, no WhatsApp ----
+  // ---- checkout: 409 from /api/order -> modal, no confirmation ----
   w.__setStockForTest({}, 'ok', stockDates({ [DC]: 5, [PL]: 5 }));
   w.selectPickupDate('2026-11-29');
   zeroCart();
@@ -967,9 +1047,7 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
   document.getElementById('buyer-name').value = 'Asha Rao';
   document.getElementById('buyer-phone').value = '9876543210';
   try { window.sessionStorage.clear(); window.localStorage.clear(); } catch (e) {}
-  let waCalls = 0;
-  const realOpen = w.openWhatsApp;
-  w.openWhatsApp = function () { waCalls++; };
+  w.hideOrderConfirmation();
   const realFetch = window.fetch;
   let orderPosts = 0;
   window.fetch = async function (url) {
@@ -982,7 +1060,6 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
     }
     throw new Error('unexpected ' + url);
   };
-  const confirmBefore = document.getElementById('order-confirm').textContent;
   await w.placeOrder();
   const stockAlert = document.getElementById('form-alert');
   assert('stock 409: opens the custom alertdialog', stockAlert.classList.contains('is-open') && stockAlert.hidden === false &&
@@ -990,11 +1067,11 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
   assert('stock 409: title is Out of stock', document.getElementById('form-alert-title').textContent === 'Out of stock');
   assert('stock 409: names the cake and the next batch',
     /Dates & Carrot Pudding \(700g\)/.test(stockAlert.textContent) && /next batch/.test(stockAlert.textContent), stockAlert.textContent);
-  assert('stock 409: WhatsApp is not opened', waCalls === 0, String(waCalls));
+  assert('stock 409: no confirmation screen is shown', !confirmShown());
   assert('stock 409: no fallback outbox entry is queued', !window.localStorage.getItem('poppinsOrderOutbox') || window.localStorage.getItem('poppinsOrderOutbox') === '[]');
-  assert('stock 409: order is not shown as placed', document.getElementById('order-confirm').textContent === confirmBefore && !/PB-X/.test(document.getElementById('order-confirm').textContent));
+  assert('stock 409: order is not shown as placed', !confirmShown() && !/PB-X/.test(document.getElementById('confirm-order-id').textContent));
   assert('stock 409: button is usable again', document.getElementById('place-order-btn').disabled === false &&
-    document.getElementById('place-order-btn').textContent === 'Place Order via WhatsApp', document.getElementById('place-order-btn').textContent);
+    document.getElementById('place-order-btn').textContent === 'Place order', document.getElementById('place-order-btn').textContent);
   assert('stock 409: only one API call, no direct-to-Sheet fallback', orderPosts === 1, String(orderPosts));
   w.closeFormAlert();
 
@@ -1019,7 +1096,7 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
   assert('stock refresh: re-fetched stock before submitting', stockGets === 1, String(stockGets));
   assert('stock refresh: stale cart is stopped with the Out of stock alert',
     document.getElementById('form-alert').classList.contains('is-open') && document.getElementById('form-alert-title').textContent === 'Out of stock');
-  assert('stock refresh: no order was posted and no WhatsApp opened', orderPosts === 0 && waCalls === 0);
+  assert('stock refresh: no order was posted and no confirmation shown', orderPosts === 0 && !confirmShown());
   assert('stock refresh: cart is clamped to what is left', cards[0].querySelector('.qty').textContent === '1', cards[0].querySelector('.qty').textContent);
   w.closeFormAlert();
 
@@ -1028,16 +1105,16 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
     if (String(url).indexOf('action=stock') >= 0) throw new Error('stock down');
     if (String(url).indexOf('/api/order') >= 0) {
       orderPosts++;
-      return { ok: true, status: 200, json: async () => ({ ok: true, status: 'queued', orderId: 'PB-X', contact: { id: 'cyril', name: 'Cyril Martin', number: '917204017793', display: '+91 72040 17793' } }) };
+      return { ok: true, status: 200, json: async () => ({ ok: true, status: 'queued', orderId: 'PB-X' }) };
     }
     throw new Error('unexpected ' + url);
   };
   await w.placeOrder();
-  assert('stock refresh: fails open when stock cannot be read', orderPosts === 1 && waCalls === 1, orderPosts + '/' + waCalls);
+  assert('stock refresh: fails open when stock cannot be read', orderPosts === 1 && confirmShown() && confirmTitle() === 'Order placed', orderPosts + '/' + confirmTitle());
+  w.hideOrderConfirmation();
 
   window.__TEST_DISABLE_NETWORK = true;
   window.fetch = realFetch;
-  w.openWhatsApp = realOpen;
   w.__setStockForTest({}, 'ok', null);
   zeroCart();
 }
@@ -1269,7 +1346,7 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
 assert('rename: no visible or meta text still says Parish Youth', !/Parish Youth/.test(document.documentElement.outerHTML.replace(/alt="[^"]*poster[^"]*"/i, '')));
 assert('rename: header, title and description say Vailankanni Matha Youth',
   document.querySelector('header.hero-head h1').textContent === 'Vailankanni Matha Youth' && /Vailankanni Matha Youth/.test(document.title) && /Vailankanni Matha Youth/.test(document.querySelector('meta[name="description"]').content));
-assert('rename: WhatsApp message uses the new name', /Vailankanni Matha Youth/.test(w.buildWhatsAppMessage({ orderId: 'PB-X1', items: [], totalItems: 0, totalAmount: 0, name: 'A', phone: '9876543210' })));
+assert('rename: index.html no longer mentions WhatsApp anywhere', !/whatsapp/i.test(rawIndexHtml));
 
 const failed = results.filter((r) => !r.ok);
 console.log('\n--- ' + (results.length - failed.length) + '/' + results.length + ' passed ---');

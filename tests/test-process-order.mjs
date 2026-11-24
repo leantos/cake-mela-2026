@@ -162,6 +162,10 @@ function makeWorld(codePath) {
       rec('insertRowBefore', { sheet: this.name });
       this.data.splice(row - 1, 0, []);
     }
+    deleteColumn(col) {
+      rec('deleteColumn', { sheet: this.name });
+      for (const row of this.data) row.splice(col - 1, 1);
+    }
     insertColumnAfter(col) {
       rec('insertColumnAfter', { sheet: this.name });
       for (const row of this.data) row.splice(col, 0, '');
@@ -605,20 +609,26 @@ assert('AFTER first saved does not write more often than BEFORE, and skips style
   after.saved.stats.flush <= before.saved.stats.flush,
   'before=' + JSON.stringify(summarize(before.saved.stats)) + ' after=' + JSON.stringify(summarize(after.saved.stats)));
 
-// ---- 'Assigned To' column (v.12) ----
+// ---- No contact assignment: 'Assigned To' is legacy (v.2026-11-24.7) ----
 {
+  const world = makeWorld(CODE_GS);
+  assert('assigned: new sheets do not get an Assigned To column',
+    world.ctx.BASE_HEADERS.indexOf('Assigned To') === -1 && world.ctx.LEGACY_HEADERS.indexOf('Assigned To') !== -1,
+    JSON.stringify(world.ctx.BASE_HEADERS));
+}
+{
+  // Existing live sheet that still has the column: a payload carrying assignedTo is saved, the column stays blank.
   const world = makeWorld(CODE_GS);
   seedHappyPath(world);
   const res = world.ctx.processOrder_(sampleOrder({ orderId: 'PB-TEST-ASG1', assignedTo: 'Aashwin Alfy', assignedContactId: 'aashwin' }), {});
   const data = world.sheets['Orders'].data;
-  const hdr = data[0];
-  const idx = hdr.indexOf('Assigned To');
+  const idx = data[0].indexOf('Assigned To');
   const row = data.find((r) => r && r[1] === 'PB-TEST-ASG1');
-  assert('assigned: order saved', res.ok === true && res.status === 'saved', JSON.stringify(res));
-  assert('assigned: Assigned To column holds the contact name', idx >= 0 && row && row[idx] === 'Aashwin Alfy', JSON.stringify({ idx, row }));
+  assert('assigned: a payload with assignedTo still saves', res.ok === true && res.status === 'saved', JSON.stringify(res));
+  assert('assigned: the legacy Assigned To column is ignored (left blank)', idx >= 0 && row && (row[idx] === '' || row[idx] == null), JSON.stringify({ idx, row }));
 }
 {
-  // Existing live sheet without the column: first order appends it at the right, data stays intact.
+  // Existing sheet without the column: saving an order does not add it back.
   const world = makeWorld(CODE_GS);
   seedHappyPath(world);
   const sheet = world.sheets['Orders'];
@@ -627,21 +637,26 @@ assert('AFTER first saved does not write more often than BEFORE, and skips style
   const before = sheet.data[1].slice();
   const res = world.ctx.processOrder_(sampleOrder({ orderId: 'PB-TEST-ASG2', assignedTo: 'Cyril Martin' }), {});
   const hdr = sheet.data[0];
-  const idx = hdr.indexOf('Assigned To');
   const row = sheet.data.find((r) => r && r[1] === 'PB-TEST-ASG2');
-  assert('migrate: Assigned To appended as the last column', idx === hdr.length - 1, JSON.stringify(hdr));
+  assert('migrate: Assigned To is not re-added to the Orders header', hdr.indexOf('Assigned To') === -1, JSON.stringify(hdr));
   assert('migrate: existing row untouched', JSON.stringify(sheet.data[1].slice(0, before.length)) === JSON.stringify(before));
-  assert('migrate: new row has Assigned To', res.ok && row && row[idx] === 'Cyril Martin', JSON.stringify(row));
+  assert('migrate: the new order row is saved and no Assigned To cell exists in it', res.ok === true && !!row && row.length === hdr.length && hdr.indexOf('Assigned To') === -1, JSON.stringify(row));
 }
 {
-  // Older page (no assignedTo) still saves; column left blank.
+  // Menu item: Remove Assigned To column... deletes it by header name, only when asked.
   const world = makeWorld(CODE_GS);
   seedHappyPath(world);
-  const res = world.ctx.processOrder_(sampleOrder({ orderId: 'PB-TEST-ASG3' }), {});
-  const data = world.sheets['Orders'].data;
-  const idx = data[0].indexOf('Assigned To');
-  const row = data.find((r) => r && r[1] === 'PB-TEST-ASG3');
-  assert('legacy payload: saved with blank Assigned To', res.ok && row && (row[idx] === '' || row[idx] == null), JSON.stringify(row));
+  const sheet = world.sheets['Orders'];
+  const at = sheet.data[0].indexOf('Assigned To');
+  const width = sheet.data[0].length;
+  assert('menu: promptRemoveAssignedToColumn and removeAssignedToColumn_ exist',
+    typeof world.ctx.promptRemoveAssignedToColumn === 'function' && typeof world.ctx.removeAssignedToColumn_ === 'function');
+  assert('menu: onOpen lists Remove Assigned To column…', /addItem\('Remove Assigned To column…', 'promptRemoveAssignedToColumn'\)/.test(fs.readFileSync(CODE_GS, 'utf8')));
+  assert('menu: nothing is deleted just by saving an order or running setup', at >= 0 && sheet.data[0].length === width);
+  const removed = world.ctx.removeAssignedToColumn_(world.ss);
+  assert('menu: removeAssignedToColumn_ deletes exactly the Assigned To column',
+    removed === 1 && sheet.data[0].indexOf('Assigned To') === -1 && sheet.data[0].length === width - 1, JSON.stringify(sheet.data[0]));
+  assert('menu: a second run removes nothing', world.ctx.removeAssignedToColumn_(world.ss) === 0);
 }
 
 // ---- stock: batch caps, carry-forward, OVERSOLD (v.2026-11-24.1) ----

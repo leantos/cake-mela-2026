@@ -795,6 +795,14 @@ async function loadPreview() {
   window.close();
 }
 
+// ---- no assignee label on order cards ----
+{
+  const page = await loadPreview();
+  const cardsText = Array.from(page.document.querySelectorAll('article[data-order]')).map((c) => c.textContent).join(' ');
+  assert('order cards render without any To: assignee label', cardsText.length > 0 && !/To:/.test(cardsText), cardsText.slice(0, 120));
+  page.window.close();
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log('\n' + results.filter((r) => r.ok).length + '/' + results.length + ' passed');
 if (failed.length) process.exit(1);

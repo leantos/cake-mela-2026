@@ -16,7 +16,7 @@
   <style>
     /* Styling is Tailwind (src/tailwind.css -> public/tailwind.css via `npm run build`).
        Only what utilities can't express lives here: the alert keyframes and the
-       WhatsApp icon (an inline SVG mask on the order button's ::before). */
+       check icon (an inline SVG mask on the order button's ::before). */
     @keyframes formAlertFade { from { opacity: 0; } to { opacity: 1; } }
     @keyframes formAlertPop { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
     .cta::before {
@@ -24,9 +24,9 @@
       width: 1.2em;
       height: 1.2em;
       flex-shrink: 0;
-      background-color: #25D366;
-      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.34 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.85 14.13c-.25.7-1.45 1.29-2.01 1.37-.51.07-1.17.1-1.89-.12-.43-.13-.99-.33-1.71-.65-3.01-1.3-4.97-4.34-5.12-4.54-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.61-.37.81-.37.2 0 .4.01.57.01.18 0 .43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.33-.3.5-.15.18-.31.39-.45.53-.15.15-.3.31-.13.61.18.3.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.45 1.51.3.15.48.13.66-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.28.1 1.75.82 2.05.97.3.15.5.22.57.35.08.12.08.7-.17 1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
-      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.34 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.85 14.13c-.25.7-1.45 1.29-2.01 1.37-.51.07-1.17.1-1.89-.12-.43-.13-.99-.33-1.71-.65-3.01-1.3-4.97-4.34-5.12-4.54-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.61-.37.81-.37.2 0 .4.01.57.01.18 0 .43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.33-.3.5-.15.18-.31.39-.45.53-.15.15-.3.31-.13.61.18.3.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.45 1.51.3.15.48.13.66-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.28.1 1.75.82 2.05.97.3.15.5.22.57.35.08.12.08.7-.17 1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+      background-color: currentColor;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
     }
   </style>
 </head>
@@ -118,6 +118,13 @@
         <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="buyer-phone-error"></p>
       </div>
     </form>
+    <details class="pay-upi-card rounded-m3-lg bg-m3-surface-container-low shadow-m3-1" id="pay-upi-card">
+      <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between rounded-m3-lg px-4 text-[1rem] font-medium text-m3-on-surface focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary [&::-webkit-details-marker]:hidden">
+        <span>Pay by UPI</span>
+        <span class="text-m3-on-surface-variant transition-transform [details[open]_&]:rotate-180" aria-hidden="true">▾</span>
+      </summary>
+      <div class="flex flex-col items-center gap-3 px-4 pb-4 text-center" id="pay-upi-body"></div>
+    </details>
     <div class="step-nav flex items-center justify-between gap-3">
       <button type="button" class="step-back inline-flex min-h-12 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary border border-m3-outline bg-transparent text-m3-primary hover:bg-m3-primary/8" id="back-to-cakes"><span aria-hidden="true">←</span> Back</button>
       <span></span>
@@ -132,13 +139,31 @@
         <span class="count text-[0.875rem] font-medium text-m3-on-surface-variant" id="summary-count">0 items</span>
         <span class="total text-[1.375rem] font-medium tabular-nums text-m3-on-surface" id="summary-total">₹0</span>
       </div>
-      <p class="order-confirm mb-[0.3rem] rounded-m3-sm bg-m3-tertiary-container px-2 py-1 text-[0.8125rem] font-medium leading-[1.3] text-m3-on-tertiary-container" id="order-confirm" role="status" aria-live="polite" hidden></p>
-      <p class="payment-note mb-2 text-[0.75rem] font-medium leading-4 tracking-[0.4px] text-m3-on-surface-variant" id="payment-note">Payment: Pay at pickup, or UPI (number shown when you order)</p>
+      <p class="payment-note mb-2 text-[0.75rem] font-medium leading-4 tracking-[0.4px] text-m3-on-surface-variant" id="payment-note">Payment: Pay at pickup, or UPI</p>
       <div class="checkout-alert mb-2 hidden rounded-m3-sm bg-m3-primary-container px-3 pb-2 pt-2 text-[0.8125rem] font-medium leading-[1.4] text-m3-on-primary-container [&.visible]:block" id="checkout-alert" role="alert" aria-live="assertive" hidden></div>
       <div class="cta-wrap w-full" id="place-order-wrap">
-        <button type="button" class="cta inline-flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-m3-lg border-0 bg-m3-primary px-6 py-4 text-[1rem] font-medium tracking-[0.1px] text-m3-on-primary shadow-m3-3 [-webkit-tap-highlight-color:transparent] hover:enabled:bg-[linear-gradient(#ffffff14,#ffffff14)] enabled:active:bg-[linear-gradient(#ffffff1f,#ffffff1f)] disabled:cursor-wait disabled:opacity-75 [&.closed:disabled]:cursor-not-allowed [&.closed:disabled]:bg-pine [&.closed:disabled]:opacity-100 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" id="place-order-btn">Place Order via WhatsApp</button>
+        <button type="button" class="cta inline-flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-m3-lg border-0 bg-m3-primary px-6 py-4 text-[1rem] font-medium tracking-[0.1px] text-m3-on-primary shadow-m3-3 [-webkit-tap-highlight-color:transparent] hover:enabled:bg-[linear-gradient(#ffffff14,#ffffff14)] enabled:active:bg-[linear-gradient(#ffffff1f,#ffffff1f)] disabled:cursor-wait disabled:opacity-75 [&.closed:disabled]:cursor-not-allowed [&.closed:disabled]:bg-pine [&.closed:disabled]:opacity-100 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" id="place-order-btn">Place order</button>
       </div>
     </aside>
+  </div>
+
+  <div class="order-confirmation fixed inset-0 z-[70] overflow-y-auto bg-m3-surface px-4 py-8 md:px-6" id="order-confirmation" role="status" aria-live="polite" hidden>
+    <div class="mx-auto flex w-full flex-col items-center gap-4 text-center lg:max-w-3xl">
+      <svg class="size-20 text-pine" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path fill="#fff" d="M10.2 16.6 6.6 13l-1.2 1.2 4.8 4.8L19 10.2 17.8 9z"/></svg>
+      <h2 class="text-[1.75rem] font-normal leading-9 text-m3-on-surface focus:outline-none" id="order-confirmation-title" tabindex="-1">Order placed</h2>
+      <p class="text-[0.875rem] text-m3-on-surface-variant">Order ID <strong class="font-medium text-m3-on-surface" id="confirm-order-id"></strong></p>
+      <div class="w-full rounded-m3-lg bg-m3-surface-container-low p-4 text-left shadow-m3-1">
+        <p class="mb-2 text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant">Pickup</p>
+        <p class="mb-4 text-[1rem] font-medium text-m3-on-surface" id="confirm-pickup"></p>
+        <p class="mb-1 text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant">Your cakes</p>
+        <ul id="confirm-lines"></ul>
+        <p class="mt-3 flex items-baseline justify-between text-[1.125rem] font-medium text-m3-on-surface"><span>Total</span><span class="tabular-nums" id="confirm-total"></span></p>
+      </div>
+      <p class="w-full rounded-m3-md bg-m3-tertiary-container px-4 py-3 text-left text-[0.875rem] font-medium text-m3-on-tertiary-container" id="confirm-payment"></p>
+      <div class="flex w-full flex-col items-center gap-3 rounded-m3-lg bg-m3-surface-container-low p-4 text-center shadow-m3-1" id="confirm-upi"></div>
+      <div class="flex w-full flex-col items-stretch gap-2 md:flex-row md:justify-center" id="confirm-call"></div>
+      <button type="button" class="inline-flex min-h-14 w-full cursor-pointer items-center justify-center rounded-m3-lg border-0 bg-m3-primary px-6 text-[1rem] font-medium tracking-[0.1px] text-m3-on-primary shadow-m3-3 hover:bg-[linear-gradient(#ffffff14,#ffffff14)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary md:w-auto md:min-w-72" id="place-another">Place another order</button>
+    </div>
   </div>
 
   <div class="form-alert fixed inset-0 z-[80] flex items-center justify-center p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]" id="form-alert" hidden>
@@ -154,7 +179,7 @@
 
   <div class="toast pointer-events-none fixed bottom-[calc(var(--sticky-h)+0.6rem+env(safe-area-inset-bottom,0px))] left-1/2 z-50 w-[calc(100%-2rem)] max-w-[440px] -translate-x-1/2 translate-y-2 rounded-m3-xs bg-ink px-4 py-[0.875rem] text-[0.875rem] font-normal leading-5 tracking-[0.25px] text-cream-light opacity-0 shadow-m3-3 transition-[opacity,translate] duration-200 ease-in-out motion-reduce:transition-none md:max-w-[600px] lg:bottom-6 lg:left-auto lg:right-6 lg:w-96 lg:max-w-[calc(100vw-3rem)] lg:translate-x-0 [&.visible]:translate-y-0 [&.visible]:opacity-100" id="toast" role="status" aria-live="polite"></div>
 
-  <!-- One settings file: poster, WhatsApp contacts, payment line, Sheets URL. -->
+  <!-- One settings file: poster, contacts, payment line, Sheets URL. -->
   <script src="site-config.js"></script>
   <script>
     /* =========================================================================
@@ -164,26 +189,26 @@
     /**
      * Paste the Google Apps Script Web App URL from Code.gs here after you
      * deploy (Deploy → New deployment → Web app, Execute as: Me, Access: Anyone).
-     * If this is still the placeholder, the page skips Sheets and opens WhatsApp.
+     * If this is still the placeholder, the page skips Sheets and keeps the order on this phone.
      * Put the live URL only here — never in SHEETS_PLACEHOLDER below.
      */
     const SITE_CONFIG = (typeof window !== 'undefined' && window.SITE_CONFIG) || {};
     const SHEETS_WEBAPP_URL = SITE_CONFIG.appsScriptUrl || 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec';
 
     /**
-     * WhatsApp contacts orders alternate between (edit in site-config.js).
-     * The Netlify function /api/order picks one per order; if it can't be
-     * reached the page picks one at random.
+     * Contacts shown as call links (edit in site-config.js). Orders are no
+     * longer assigned to a contact.
      */
     const CONTACTS = (SITE_CONFIG.contacts && SITE_CONFIG.contacts.length) ? SITE_CONFIG.contacts : [
       { id: 'cyril', name: 'Cyril Martin', number: '917204017793', display: '+91 72040 17793' },
       { id: 'aashwin', name: 'Aashwin Alfy', number: '918050764341', display: '+91 80507 64341' }
     ];
-    const PAYMENT_LINE_TEMPLATE = SITE_CONFIG.paymentLine || 'Pay at pickup, or UPI to {number} ({name})';
+    const DEFAULT_PAYMENT_LINE = 'Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin) or +91 80507 64341 (Aashwin Alfy)';
+    // A plain sentence. Old configs with {number}/{name} placeholders fall back to the default.
+    const PAYMENT_LINE = (SITE_CONFIG.paymentLine && !/\{(number|name)\}/.test(SITE_CONFIG.paymentLine))
+      ? SITE_CONFIG.paymentLine : DEFAULT_PAYMENT_LINE;
     const ORDER_API_URL = SITE_CONFIG.orderApiPath || '/api/order';
     const ORDER_API_TIMEOUT_MS = 5000;
-    /** Kept for older callers; the first contact. */
-    const WHATSAPP_NUMBER = CONTACTS[0].number;
 
     /**
      * Fallback pickup dates used until a background dates fetch returns
@@ -192,7 +217,7 @@
      * (remaining) come from the Stock tab via ?action=stock; dates without
      * a limit are unlimited. id is ISO yyyy-mm-dd in IST.
      * A date stays available until closesAt (default 8:30 AM IST that
-     * morning). label is the chip text and the WhatsApp short date.
+     * morning). label is the chip text and the short date.
      */
     const PICKUP_DATES = [
       { id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30' },
@@ -573,100 +598,53 @@
       return findPickupDate(els.pickupDate.value);
     }
 
-    /* ---------- WhatsApp message (edit this one function to change wording) ---------- */
-    /**
-     * Default format (the original brief was cut off at "WhatsApp Message Format:"):
-     *
-     * 🎄 *New Order – Vailankanni Matha Youth Cake Sale*
-     *
-     * *Order ID:* PB-YYMMDD-XXXX
-     * <timestamp IST>
-     *
-     * 2 x Rich Plum Cake (400g) – ₹700
-     * 1 x Dates & Carrot Pudding (700g) – ₹650
-     *
-     * Total items: 3
-     * *Total: ₹1,350*
-     *
-     * *Name:* Asha
-     * *Phone:* 9876543210
-     * *Pickup:* Sun, 29 Nov
-     *
-     * Thank you!
-     */
-    /*
-     * WhatsApp message. Written in the buyer's voice so it reads naturally
-     * when it lands in the organiser's chat.
-     * NOTE: only use symbols from the basic Unicode plane (no 🎄-style emoji).
-     * Multi-byte emoji can get garbled into "�" by some WhatsApp
-     * link handlers, while ✨ • ━ ₹ × are safe everywhere.
-     */
-    function buildWhatsAppMessage(order) {
-      const RULE = '━━━━━━━━━━━━━━';
-      const cakeWord = order.totalItems === 1 ? 'cake' : 'cakes';
-      const lines = [];
-      lines.push('✨ *Christmas Cake Order* ✨');
-      lines.push('_Vailankanni Matha Youth × Poppins Bakers_');
-      lines.push(RULE);
-      lines.push('*Order ID:* ' + order.orderId);
-      lines.push(RULE);
-      lines.push('');
-      lines.push('*Items*');
-      order.items.forEach((line) => {
-        const each = line.qty > 1 ? ' (' + formatINR(line.price) + ' each)' : '';
-        lines.push('• ' + line.qty + ' × ' + line.name + ' – ' + formatINR(line.lineTotal) + each);
-      });
-      lines.push('');
-      lines.push('*Total: ' + formatINR(order.totalAmount) + '* (' + order.totalItems + ' ' + cakeWord + ')');
-      lines.push('');
-      if (order.pickupDateShort) {
-        lines.push('*Pickup*');
-        lines.push(order.pickupDateShort);
-        lines.push('Vailankanni Matha Church, Muthanallur');
-        lines.push('');
-      }
-      lines.push('*Name:* ' + order.name);
-      lines.push('*Phone:* ' + order.phone);
-      lines.push('*Payment:* ' + paymentLineFor(order.contact || findContactById(order.assignedContactId) || CONTACTS[0]));
-      lines.push('');
-      lines.push('Please confirm my order. Thank you!');
-      lines.push('_Placed ' + order.timestamp + '_');
-      return lines.join('\n');
-    }
-
-    /* ---------- WhatsApp contacts ---------- */
-
-    function findContactById(id) {
-      if (!id) return null;
-      return CONTACTS.find(function (c) { return c.id === id; }) || null;
-    }
-
-    /** Server reply contact → our contact object (number checked against config). */
-    function resolveContact(raw) {
-      if (!raw) return null;
-      return findContactById(raw.id) ||
-        CONTACTS.find(function (c) { return raw.number && c.number === String(raw.number); }) || null;
-    }
-
-    function pickRandomContact() {
-      return CONTACTS[Math.floor(Math.random() * CONTACTS.length) % CONTACTS.length];
-    }
+    /* ---------- Contacts (call links) ---------- */
 
     function contactDisplay(contact) {
       return contact.display || ('+' + contact.number);
     }
 
-    function paymentLineFor(contact) {
-      const c = contact || CONTACTS[0];
-      return PAYMENT_LINE_TEMPLATE.replace('{number}', contactDisplay(c)).replace('{name}', c.name);
+    /* ---------- Pay by UPI: QR + "send screenshot" ---------- */
+
+    const UPI_QR_SRC = 'cyril-upi-qr.jpg';
+    const UPI_BTN_CLASS = 'upi-screenshot inline-flex min-h-12 items-center justify-center rounded-full bg-m3-secondary-container px-6 text-[0.875rem] font-medium text-m3-on-secondary-container no-underline hover:bg-m3-primary-container focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary';
+
+    function cyrilContact() {
+      return CONTACTS.find(function (c) { return c.id === 'cyril'; }) || { id: 'cyril', name: 'Cyril Martin', number: '917204017793' };
     }
 
-    function applyContactToOrder(order, contact) {
-      order.contact = contact;
-      order.assignedContactId = contact.id;
-      order.assignedTo = contact.name;
-      order.assignedNumber = contactDisplay(contact);
-      return order;
+    /** Short BMP-only message for the screenshot chat. orderId is optional. */
+    function screenshotMessage(total, orderId) {
+      const paid = total > 0 ? 'I have paid ' + formatINR(total) : 'I have paid';
+      const forWhat = orderId ? ' for order ' + orderId : ' for my cake order';
+      return 'Hi Cyril, ' + paid + forWhat + '. Screenshot attached.';
+    }
+
+    function screenshotUrl(total, orderId) {
+      return 'https://wa.me/' + cyrilContact().number + '?text=' + encodeURIComponent(screenshotMessage(total, orderId));
+    }
+
+    /**
+     * Fill (or update) a UPI pay block: the QR, "Pay ₹total", the order ID
+     * reminder and the screenshot button. Built once, then only text/href change.
+     */
+    function renderUpiPay(root, opts) {
+      if (!root) return;
+      opts = opts || {};
+      const total = Number(opts.total) || 0;
+      const orderId = opts.orderId || '';
+      if (!root.querySelector('.upi-qr')) {
+        root.innerHTML =
+          '<img class="upi-qr block h-auto w-full max-w-[280px] rounded-m3-lg shadow-m3-1" src="' + UPI_QR_SRC + '" alt="UPI QR code to pay ' + escapeHtml(cyrilContact().name) + '" width="720" height="1109" loading="lazy">' +
+          '<p class="upi-amount text-[1.25rem] font-medium tabular-nums text-m3-on-surface"></p>' +
+          '<p class="upi-note text-[0.8125rem] leading-5 text-m3-on-surface-variant"></p>' +
+          '<a class="' + UPI_BTN_CLASS + '" href="#" target="_blank" rel="noopener">Send screenshot to ' + escapeHtml(cyrilContact().name.split(' ')[0]) + '</a>';
+      }
+      root.querySelector('.upi-amount').textContent = total > 0 ? 'Pay ' + formatINR(total) : 'Pick your cakes to see the amount';
+      root.querySelector('.upi-note').textContent = orderId
+        ? 'Put order ' + orderId + ' in the UPI note'
+        : 'Scan with any UPI app. Your order ID appears once you place the order.';
+      root.querySelector('.upi-screenshot').setAttribute('href', screenshotUrl(total, orderId));
     }
 
     const CONTACT_PILL_CLASS = 'flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full bg-m3-secondary-container px-4 py-1.5 text-[0.875rem] font-medium text-m3-on-secondary-container no-underline hover:bg-m3-primary-container focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary';
@@ -750,15 +728,66 @@
       }
     }
 
-    /** Show "order placed" + the assigned contact's payment line. */
-    function showOrderPlaced(order, contact) {
-      const confirm = document.getElementById('order-confirm');
-      const note = document.getElementById('payment-note');
-      if (confirm) {
-        confirm.textContent = '✓ Order ' + order.orderId + ' placed · sent to ' + contact.name + ' on WhatsApp';
-        confirm.hidden = false;
-      }
-      if (note) note.textContent = 'Payment: ' + paymentLineFor(contact);
+    /* ---------- Order confirmation screen ---------- */
+
+    function fillConfirmationCalls() {
+      const box = document.getElementById('confirm-call');
+      if (!box) return;
+      box.innerHTML = CONTACTS.map(function (c) {
+        return '<a class="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-m3-secondary-container px-5 text-[0.875rem] font-medium text-m3-on-secondary-container no-underline hover:bg-m3-primary-container focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" href="tel:+' + escapeHtml(c.number) + '"><span aria-hidden="true">\u260E</span> Call ' + escapeHtml(c.name) + ' \u2022 ' + escapeHtml(contactDisplay(c)) + '</a>';
+      }).join('');
+    }
+
+    /**
+     * Full-screen "order placed" view. opts.offline = the order could not be
+     * sent yet and is saved on this phone; it is retried automatically.
+     */
+    function showOrderConfirmation(order, opts) {
+      opts = opts || {};
+      const view = document.getElementById('order-confirmation');
+      if (!view) return;
+      const title = document.getElementById('order-confirmation-title');
+      title.textContent = opts.offline ? 'Order saved \u2014 we\u2019ll send it as soon as you\u2019re online' : 'Order placed';
+      view.classList.toggle('offline', !!opts.offline);
+      document.getElementById('confirm-order-id').textContent = order.orderId;
+      document.getElementById('confirm-pickup').textContent = order.pickupDateShort || order.pickupDateLabel || order.pickupDate || '';
+      document.getElementById('confirm-lines').innerHTML = (order.items || []).map(function (line) {
+        return '<li class="confirm-line flex items-baseline justify-between gap-3 border-b border-m3-outline-variant py-2 text-[0.9375rem]">' +
+          '<span>' + line.qty + ' \u00D7 ' + escapeHtml(line.name) + '</span>' +
+          '<span class="font-medium tabular-nums">' + formatINR(line.lineTotal) + '</span></li>';
+      }).join('');
+      document.getElementById('confirm-total').textContent = formatINR(order.totalAmount);
+      document.getElementById('confirm-payment').textContent = PAYMENT_LINE;
+      renderUpiPay(document.getElementById('confirm-upi'), { total: order.totalAmount, orderId: order.orderId });
+      fillConfirmationCalls();
+      view.hidden = false;
+      try { title.focus({ preventScroll: true }); } catch (err) { title.focus(); }
+      try { window.scrollTo(0, 0); } catch (err) {}
+    }
+
+    function hideOrderConfirmation() {
+      const view = document.getElementById('order-confirmation');
+      if (view) view.hidden = true;
+    }
+
+    /** "Place another order": empty cart and details, fresh Order ID, back to step 1. */
+    function startAnotherOrder() {
+      hideOrderConfirmation();
+      MENU_ITEMS.forEach(function (item) { qtyById[item.id] = 0; syncStepper(item.id); });
+      els.name.value = '';
+      els.phone.value = '';
+      clearFieldError('name');
+      clearFieldError('phone');
+      hideCartError();
+      checkoutTried = false;
+      clearCheckoutOrderId();
+      try { sessionStorage.removeItem(LAST_PLACED_KEY); } catch (err) {}
+      updateSummary();
+      refreshCheckoutErrorSummary();
+      resetSubmitButton();
+      setOrderTab('date', { scroll: true });
+      const t = document.getElementById('tab-date');
+      if (t) { try { t.focus({ preventScroll: true }); } catch (err) { t.focus(); } }
     }
 
     /* ---------- UI: menu, cart, form visibility ---------- */
@@ -857,6 +886,7 @@
         badge.setAttribute('aria-label', totalItems + (totalItems === 1 ? ' cake selected' : ' cakes selected'));
       }
       renderCartLines(cart);
+      renderUpiPay(document.getElementById('pay-upi-body'), { total: totalAmount });
     }
 
     /* ---------- Pickup dates and stock ---------- */
@@ -939,7 +969,7 @@
       }
       els.placeBtn.disabled = false;
       els.placeBtn.classList.remove('closed');
-      els.placeBtn.textContent = 'Place Order via WhatsApp';
+      els.placeBtn.textContent = 'Place order';
     }
 
     function remainingForItemId(itemId) {
@@ -1731,8 +1761,8 @@
     /** Timeout / network fallback: no-cors POST; server dedupes by orderId. */
     async function saveOrderNoCorsFallback(payload) {
       const fallbackPayload = Object.assign({}, payload, { fallback: true });
-      // sendBeacon is queued by the browser and survives navigating to
-      // WhatsApp, so the order still reaches the Sheet on slow networks.
+      // sendBeacon is queued by the browser and survives the page closing,
+      // so the order still reaches the Sheet on slow networks.
       try {
         if (navigator.sendBeacon) {
           const blob = new Blob([JSON.stringify(fallbackPayload)], { type: 'text/plain' });
@@ -1757,30 +1787,25 @@
       await Promise.race([request, timeout]);
     }
 
-    function whatsAppUrl(message, contact) {
-      // api.whatsapp.com/send keeps the text intact more reliably than wa.me's extra redirect.
-      const number = (contact && contact.number) || WHATSAPP_NUMBER;
-      return 'https://api.whatsapp.com/send?phone=' + number + '&text=' + encodeURIComponent(message);
-    }
-
-    function openWhatsApp(message, contact) {
-      window.location.href = whatsAppUrl(message, contact);
-    }
-
     /* ---------- Netlify order API (/api/order) ---------- */
 
     /**
-     * POST the order to the Netlify function. It stores it, picks the
-     * WhatsApp contact and answers in well under a second; the Sheet is
+     * POST the order to the Netlify function. It stores it and answers in
+     * well under a second; the Sheet is
      * updated in the background on the server. Resolves to the reply JSON
      * or throws (unreachable, 404 on a plain drag-and-drop deploy, 5xx).
      */
+    /** Contact assignment and Mass were removed: drop them from old queued orders. */
+    function stripLegacyOrderFields(o) {
+      ['contact', 'assignedContactId', 'assignedTo', 'assignedNumber', 'mass', 'massLabel'].forEach(function (k) { delete o[k]; });
+      return o;
+    }
+
     async function postOrderApi(order, ms) {
       const controller = new AbortController();
       const timer = setTimeout(function () { controller.abort(); }, ms || ORDER_API_TIMEOUT_MS);
       try {
-        const body = Object.assign({}, order);
-        delete body.contact;
+        const body = stripLegacyOrderFields(Object.assign({}, order));
         const res = await fetch(ORDER_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1806,7 +1831,7 @@
     }
 
     /* Same cart + details as the last placed order → reuse its Order ID,
-       so tapping the button again just reopens the same WhatsApp chat. */
+       so tapping the button again just shows the same confirmation. */
     const LAST_PLACED_KEY = 'poppinsLastPlaced';
 
     function orderSignature(order) {
@@ -1825,12 +1850,11 @@
       }
     }
 
-    function writeLastPlaced(order, contact) {
+    function writeLastPlaced(order) {
       try {
         sessionStorage.setItem(LAST_PLACED_KEY, JSON.stringify({
           orderId: order.orderId,
-          sig: orderSignature(order),
-          contactId: contact.id
+          sig: orderSignature(order)
         }));
       } catch (err) {}
     }
@@ -1842,9 +1866,9 @@
         const raw = localStorage.getItem(OUTBOX_KEY);
         const list = raw ? JSON.parse(raw) : [];
         if (!Array.isArray(list)) return [];
-        // Mass time was removed from the order: ignore it on old queued orders.
+        // Mass time and contact assignment were removed: ignore them on old queued orders.
         list.forEach(function (entry) {
-          if (entry && entry.order) { delete entry.order.mass; delete entry.order.massLabel; }
+          if (entry && entry.order) stripLegacyOrderFields(entry.order);
         });
         return list;
       } catch (err) {
@@ -1918,7 +1942,7 @@
     }
 
     /**
-     * Keepalive POST so the save can finish after we navigate to WhatsApp.
+     * Keepalive POST so the save can finish even if the page is closed.
      * sendBeacon is also fired on enqueue, but Apps Script's 302 to
      * googleusercontent.com is often not followed by sendBeacon, so the
      * readable keepalive fetch is the confirmation path.
@@ -1980,12 +2004,15 @@
           const entry = due[i];
           const order = entry.order;
           try {
+            // retry:true tells the server the customer was already told "placed",
+            // so it never rejects the resend as out of stock.
+            const resend = Object.assign({}, order, { retry: true });
             let apiOk = false;
             try {
-              const apiResult = await postOrderApi(order, OUTBOX_POST_MS);
+              const apiResult = await postOrderApi(resend, OUTBOX_POST_MS);
               apiOk = !!(apiResult && apiResult.ok);
             } catch (apiErr) { /* function unreachable: go direct to the Sheet */ }
-            const result = apiOk ? { ok: true, status: 'saved' } : await postOrderKeepalive(order);
+            const result = apiOk ? { ok: true, status: 'saved' } : await postOrderKeepalive(resend);
             if (result && result.ok && (result.status === 'saved' || result.status === 'duplicate')) {
               removeFromOutbox(order.orderId);
               try {
@@ -2019,7 +2046,7 @@
 
     /**
      * Out of stock at checkout: refresh stock, clamp the cart, and tell the
-     * customer which cakes are gone (custom modal, no WhatsApp).
+     * customer which cakes are gone (custom modal).
      */
     async function rejectForStock(names, refetch) {
       if (refetch) {
@@ -2058,7 +2085,7 @@
         return;
       }
 
-      // Same order as last time → same Order ID (server returns the same contact).
+      // Same order as last time → same Order ID (the server answers "duplicate").
       const last = readLastPlaced();
       let order = buildOrderPayload();
       if (last && last.orderId) {
@@ -2081,10 +2108,10 @@
       }
       els.placeBtn.textContent = 'Placing order…';
 
-      let contact = null;
+      let saved = false;
       try {
-        const reply = await postOrderApi(order, ORDER_API_TIMEOUT_MS);
-        contact = resolveContact(reply.contact);
+        await postOrderApi(order, ORDER_API_TIMEOUT_MS);
+        saved = true;
       } catch (err) {
         if (err && err.outOfStock) {
           await rejectForStock(err.outOfStock.length ? err.outOfStock : stockShortfalls(), true);
@@ -2093,32 +2120,26 @@
         /* otherwise fall back below */
       }
 
-      if (contact) {
-        applyContactToOrder(order, contact);
-      } else {
-        // Function unreachable: keep the old path (outbox → Apps Script)
-        // and pick a contact here. The outbox retries /api/order first,
-        // passing assignedContactId so the server keeps the same contact.
-        const previous = last && last.orderId === order.orderId ? findContactById(last.contactId) : null;
-        contact = previous || pickRandomContact();
-        applyContactToOrder(order, contact);
-        const queued = Object.assign({}, order);
-        delete queued.contact;
+      if (!saved) {
+        // Function unreachable: keep the order on this phone (outbox), try the
+        // Sheet directly, and retry /api/order later.
+        const queued = stripLegacyOrderFields(Object.assign({}, order));
         enqueueOrder(queued);
-        if (isSheetsUrlConfigured()) fireSendBeacon(queued);
+        if (isSheetsUrlConfigured()) fireSendBeacon(Object.assign({}, queued, { retry: true }));
         scheduleOutboxFlush(0);
       }
 
-      writeLastPlaced(order, contact);
+      writeLastPlaced(order);
       els.placeBtn.textContent = 'Order placed';
-      showOrderPlaced(order, contact);
-      openWhatsApp(buildWhatsAppMessage(order), contact);
+      showOrderConfirmation(order, { offline: !saved });
     }
 
     /* ---------- Init ---------- */
     applyPosterConfig();
     renderEnquiries();
     initContactMenu();
+    const payNoteEl = document.getElementById('payment-note');
+    if (payNoteEl) payNoteEl.textContent = 'Payment: ' + PAYMENT_LINE;
     renderMenu();
     renderPickupDates();
     selectFirstDateWithStock({ silent: true, skipReload: true });
@@ -2172,6 +2193,8 @@
       setOrderTab('cakes', { focus: true, scroll: true });
     });
 
+    document.getElementById('place-another').addEventListener('click', startAnotherOrder);
+
     els.form.addEventListener('submit', (event) => {
       event.preventDefault();
       placeOrder();
@@ -2183,7 +2206,7 @@
       els.formAlertOk.addEventListener('click', function () { closeFormAlert(); });
     }
 
-    /* Re-enable the CTA if the user returns from WhatsApp (including bfcache),
+    /* Re-enable the CTA when the page is restored (including bfcache),
        and retry any orders still sitting in the outbox. */
     window.addEventListener('pageshow', () => {
       resetSubmitButton();

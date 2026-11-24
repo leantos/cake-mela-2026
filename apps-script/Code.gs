@@ -141,8 +141,7 @@ var BASE_HEADERS = [
   'Total Items',
   'Total Amount (₹)',
   'Status',
-  'Raw JSON',
-  'Assigned To'
+  'Raw JSON'
 ];
 
 /** Older columns we no longer write. Left in place on existing sheets so
@@ -150,7 +149,8 @@ var BASE_HEADERS = [
 var LEGACY_HEADERS = [
   'Delivery Option',
   'Flat/Block',
-  'Status Updated'
+  'Status Updated',
+  'Assigned To' // orders are no longer assigned to a contact; old column is ignored
 ];
 
 /**
@@ -182,7 +182,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-24.6';
+var SCRIPT_VERSION = '2026-11-24.7';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -838,8 +838,6 @@ function appendOrderRow_(sheet, data, status, headers, nextRow) {
   set('Total Amount (₹)', data.totalAmount || 0);
   set('Status', status || 'Pending');
   set('Raw JSON', JSON.stringify(data));
-  // WhatsApp contact the order was sent to (Netlify alternates between them).
-  set('Assigned To', String((data && data.assignedTo) || '').slice(0, 80));
 
   var items = data.items || [];
   for (i = 0; i < items.length; i++) {
@@ -2847,6 +2845,7 @@ function onOpen() {
     .addItem('Set staff PIN…', 'promptSetStaffPin')
     .addItem('Add pickup date…', 'promptAddPickupDate')
     .addItem('Remove Mass columns…', 'promptRemoveMassColumns')
+    .addItem('Remove Assigned To column…', 'promptRemoveAssignedToColumn')
     .addToUi();
 }
 
@@ -2877,6 +2876,41 @@ function promptRemoveMassColumns() {
   if (res !== ui.Button.OK) return;
   var removed = removeMassColumns_(ss);
   ui.alert('Removed ' + removed + ' Mass column(s) and rebuilt the Weekly Summary.');
+}
+
+/**
+ * Orders are no longer assigned to a contact (there is no WhatsApp step).
+ * Existing sheets keep their old "Assigned To" column (it is ignored
+ * everywhere) until you run this menu item, which permanently deletes the
+ * column from Orders after a confirmation. Nothing is deleted automatically.
+ */
+function promptRemoveAssignedToColumn() {
+  var ui = SpreadsheetApp.getUi();
+  var ss = getSpreadsheet_();
+  var tab = ss.getSheetByName(ORDERS_SHEET_NAME);
+  if (!tab || tab.getLastColumn() < 1 || getHeaders_(tab).indexOf('Assigned To') === -1) {
+    ui.alert('No "Assigned To" column found on the Orders tab. Nothing to remove.');
+    return;
+  }
+  var res = ui.alert(
+    'Remove Assigned To column?',
+    'This PERMANENTLY deletes the "Assigned To" column (and its values) from the Orders tab. ' +
+    'This cannot be undone (use File > Version history to recover). Continue?',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (res !== ui.Button.OK) return;
+  var removed = removeAssignedToColumn_(ss);
+  ui.alert('Removed ' + removed + ' Assigned To column.');
+}
+
+function removeAssignedToColumn_(ss) {
+  var tab = ss.getSheetByName(ORDERS_SHEET_NAME);
+  if (!tab || tab.getLastColumn() < 1) return 0;
+  var idx = getHeaders_(tab).indexOf('Assigned To');
+  if (idx < 0) return 0;
+  tab.deleteColumn(idx + 1);
+  invalidateSummaryCache_();
+  return 1;
 }
 
 function removeMassColumns_(ss) {
@@ -3246,8 +3280,7 @@ function staffOrdersFromValues_(values, opts) {
       total: total,
       status: status,
       timestamp: stamp,
-      statusUpdated: formatSummaryTime_(cell(row, 'Status Updated')) || '',
-      assignedTo: String(cell(row, 'Assigned To') || '').trim()
+      statusUpdated: formatSummaryTime_(cell(row, 'Status Updated')) || ''
     });
   }
 

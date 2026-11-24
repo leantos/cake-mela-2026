@@ -619,7 +619,7 @@
       return '<article class="' + CLS.card + '" data-order="' + o.orderId + '" data-status="' + o.status + '">' +
         '<div class="' + CLS.top + '"><div>' +
         '<p class="order-name ' + CLS.name + '">' + escapeHtml(o.name || '') + '</p>' +
-        '<p class="' + CLS.meta + '">' + [phoneHtml, o.assignedTo ? 'To: ' + escapeHtml(o.assignedTo) : ''].filter(Boolean).join(' · ') + '</p>' +
+        '<p class="' + CLS.meta + '">' + [phoneHtml].filter(Boolean).join(' · ') + '</p>' +
         '</div><span class="' + pillClass(o.status) + '">' + escapeHtml(o.status) + '</span>' + queued + '</div>' +
         '<p class="' + CLS.items + '">' + escapeHtml(o.items || '') + '</p>' +
         '<p class="' + CLS.total + '">' + rupee(o.total) + '</p>' +

@@ -148,71 +148,73 @@ assert('config: sweep is scheduled every 5 minutes', sweepCfg.schedule === '*/5 
   assert('a legacy order that still sends Mass (old cached page / outbox) is accepted', legacy.ok === true, JSON.stringify(legacy));
   assert('legacy Mass is dropped from the stored order and the Sheet payload',
     !('mass' in legacy.order) && !('massLabel' in legacy.order) &&
-    !('mass' in lib.sheetPayload({ order: legacy.order, contact: {} })), JSON.stringify(legacy.order));
+    !('mass' in lib.sheetPayload({ order: legacy.order })), JSON.stringify(legacy.order));
   const badMass = lib.validateOrder(order({ mass: 'garbage' }));
   assert('a bogus legacy Mass value no longer rejects the order', badMass.ok === true, JSON.stringify(badMass));
 }
 
-// ---- alternate contacts + fast reply + background forward ----
+// ---- no contact assignment: fast reply + background forward ----
 const placed = [];
 for (let i = 0; i < 4; i++) {
   const o = order();
   const r = await call(o);
   placed.push({ o, r });
 }
-assert('accepts valid orders with ok + orderId + contact',
-  placed.every(({ o, r }) => r.status === 200 && r.json.ok && r.json.orderId === o.orderId && r.json.contact && r.json.contact.number));
-assert('alternates Cyril, Aashwin, Cyril, Aashwin',
-  placed.map(({ r }) => r.json.contact.id).join(',') === 'cyril,aashwin,cyril,aashwin',
-  placed.map(({ r }) => r.json.contact.id).join(','));
+assert('accepts valid orders with ok + status + orderId and no contact',
+  placed.every(({ o, r }) => r.status === 200 && r.json.ok && r.json.status === 'queued' && r.json.orderId === o.orderId && !('contact' in r.json)),
+  JSON.stringify(placed.map(({ r }) => r.json)));
+assert('the response is exactly {ok, status, orderId}',
+  placed.every(({ r }) => Object.keys(r.json).sort().join(',') === 'ok,orderId,status'), JSON.stringify(placed[0].r.json));
 assert('responds fast (before the Sheet write)', placed.every(({ r }) => r.ms < 1500), placed.map(({ r }) => r.ms).join(','));
 await Promise.all(placed.map(({ r }) => r.settle()));
 assert('background forward wrote every order to the (mock) Sheet', placed.every(({ o }) => sheetRows.has(o.orderId)));
 const firstRow = sheetRows.get(placed[1].o.orderId);
-assert('Sheet payload carries assignedTo name', firstRow && firstRow.assignedTo === 'Aashwin Alfy' && firstRow.assignedNumber === '+91 80507 64341',
-  JSON.stringify(firstRow));
+assert('Sheet payload has no assignedTo / assignedContactId / assignedNumber and keeps source',
+  firstRow && !('assignedTo' in firstRow) && firstRow.source === 'netlify', JSON.stringify(firstRow));
 const rec0 = await store.get('order/' + placed[0].o.orderId, { type: 'json' });
 assert('Blobs record marked sent', rec0 && rec0.sent === true && rec0.sheetStatus === 'saved', JSON.stringify(rec0));
+assert('Blobs record carries no contact', rec0 && !('contact' in rec0), JSON.stringify(rec0));
+assert('no round-robin counter blob is ever written', (await store.get('meta/counter', { type: 'json' })) == null);
 assert('pending marker removed after success', (await lib.countPending(store)) === 0);
+assert('the contact/alternation helpers are gone',
+  typeof lib.nextContactIndex === 'undefined' && typeof lib.findContact === 'undefined' && typeof lib.publicContact === 'undefined');
 
 // ---- idempotency ----
 {
   const again = await call(placed[1].o);
-  assert('resubmitting the same orderId returns the same contact', again.json.status === 'duplicate' && again.json.contact.id === 'aashwin', JSON.stringify(again.json));
+  assert('resubmitting the same orderId answers duplicate with no contact',
+    again.json.status === 'duplicate' && !('contact' in again.json) && again.json.orderId === placed[1].o.orderId, JSON.stringify(again.json));
   await again.settle();
-  const next = await call(order());
-  assert('a duplicate does not advance the alternation', next.json.contact.id === 'cyril', next.json.contact.id);
-  await next.settle();
 }
 
 // ---- concurrency ----
-// The local BlobsServer checks If-Match and then writes with an await in
-// between, so it is not atomic under a burst. Netlify's hosted Blobs
-// applies conditional writes atomically; model that with an in-memory
-// store that has the same API and random latency.
 {
   const fake = makeAtomicStore();
   const burst = await Promise.all(Array.from({ length: 10 }, () => lib.acceptOrder(fake, order())));
-  const ids = burst.map((r) => r.body.contact.id);
-  const c = ids.filter((x) => x === 'cyril').length;
-  assert('10 simultaneous orders split 5/5 (atomic conditional writes)', c === 5, ids.join(','));
-  const counter = await fake.get('meta/counter', { type: 'json' });
-  assert('counter advanced exactly 10 times', counter.next === 10, JSON.stringify(counter));
+  assert('10 simultaneous orders are all queued without a contact',
+    burst.every((r) => r.status === 200 && r.body.status === 'queued' && !('contact' in r.body)), JSON.stringify(burst.map((r) => r.body)));
+  assert('and no counter is written', (await fake.get('meta/counter', { type: 'json' })) == null);
   const same = order();
   const twins = await Promise.all([call(same), call(same), call(same)]);
-  assert('simultaneous resubmits of one order all get one contact',
-    new Set(twins.map((r) => r.json.contact.id)).size === 1, twins.map((r) => r.json.contact.id).join(','));
+  assert('simultaneous resubmits of one order all succeed',
+    twins.every((r) => r.status === 200 && r.json.ok && r.json.orderId === same.orderId), JSON.stringify(twins.map((r) => r.json)));
   await Promise.all(twins.map((r) => r.settle()));
   const rows = [...sheetRows.keys()].filter((k) => k === same.orderId).length;
   assert('…and only one Sheet row', rows === 1);
 }
 
-// ---- client fallback hint keeps its contact ----
+// ---- legacy clients still send assignedContactId ----
 {
+  const legacy = lib.validateOrder(order({ assignedContactId: 'aashwin', assignedTo: 'Aashwin Alfy' }));
+  assert('an old page that still sends assignedContactId is accepted and the field is dropped',
+    legacy.ok === true && !('assignedContactId' in legacy.order) && !('assignedTo' in legacy.order), JSON.stringify(legacy));
   const r = await call(order({ assignedContactId: 'aashwin' }));
   const r2 = await call(order({ assignedContactId: 'aashwin' }));
-  assert('assignedContactId hint from the page is honoured', r.json.contact.id === 'aashwin' && r2.json.contact.id === 'aashwin');
+  assert('legacy contact hint is accepted with no contact in the reply',
+    r.status === 200 && r2.status === 200 && !('contact' in r.json) && !('contact' in r2.json), JSON.stringify([r.json, r2.json]));
   await Promise.all([r.settle(), r2.settle()]);
+  const row = sheetRows.get(r.json.orderId);
+  assert('and the Sheet never receives the legacy contact fields', row && !('assignedTo' in row), JSON.stringify(row));
 }
 
 // ---- Sheet down: retry via sweep ----
@@ -340,13 +342,21 @@ assert('pending marker removed after success', (await lib.countPending(store)) =
   setStock({ [PLUM]: 0 });
   const d2 = await call(dup);
   assert('stock: duplicate orderId returns the stored result, not 409',
-    d1.status === 200 && d2.status === 200 && d2.json.status === 'duplicate' && d2.json.contact.id === d1.json.contact.id, JSON.stringify(d2.json));
+    d1.status === 200 && d2.status === 200 && d2.json.status === 'duplicate' && !('contact' in d2.json), JSON.stringify(d2.json));
 
-  // retry from the page's outbox (contact hint) was already promised: never rejected
+  // retry from the page's outbox (retry flag or legacy contact hint) was already promised: never rejected
   setStock({ [PLUM]: 0 });
   const hinted = plum(2); hinted.assignedContactId = 'aashwin';
   const rh = await call(hinted); await rh.settle();
-  assert('stock: outbox retry with a contact hint is accepted', rh.status === 200 && rh.json.contact.id === 'aashwin', JSON.stringify(rh.json));
+  assert('stock: outbox retry with a legacy contact hint is accepted', rh.status === 200 && rh.json.ok && !('contact' in rh.json), JSON.stringify(rh.json));
+  setStock({ [PLUM]: 0 });
+  const flagged = plum(2); flagged.retry = true;
+  const rf2 = await call(flagged); await rf2.settle();
+  assert('stock: outbox retry flagged retry:true is accepted', rf2.status === 200 && rf2.json.ok, JSON.stringify(rf2.json));
+  setStock({ [PLUM]: 0 });
+  const fb = plum(2); fb.fallback = true;
+  const rfb = await call(fb); await rfb.settle();
+  assert('stock: a fallback:true order is accepted', rfb.status === 200 && rfb.json.ok, JSON.stringify(rfb.json));
 
   // fail open
   setStock({ [PLUM]: 0 });

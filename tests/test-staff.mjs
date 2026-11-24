@@ -366,7 +366,7 @@ function seed(world, extra = {}) {
 }
 
 // ---- static source checks ----
-assert('version is 2026-11-24.6', /var SCRIPT_VERSION = '2026-11-24.6'/.test(src));
+assert('version is 2026-11-24.7', /var SCRIPT_VERSION = '2026-11-24.7'/.test(src));
 assert('doPost routes staff actions without using processOrder_ first',
   /isStaffAction_\(data\.action\)/.test(src) &&
   /handleStaffAction_\(data\)/.test(src));
@@ -456,6 +456,13 @@ assert('void walk-ins are skipped in the summary',
     listed.orders[0].total === 650 &&
     listed.orders[0].status === 'Pending' &&
     listed.orders[0].row === 2);
+  // an existing sheet may still have a filled-in legacy 'Assigned To' column: it is ignored
+  const legacyValues = values.map((r) => r.slice());
+  legacyValues[1][headers.indexOf('Assigned To')] = 'Aashwin Alfy';
+  const legacyListed = staffOrdersFromValues_(legacyValues, { dates: DATES, now, pickupDate: '2026-11-29' });
+  assert('staff_orders no longer returns assignedTo, even when a legacy column has values',
+    legacyListed.ok && legacyListed.orders.length === 3 && legacyListed.orders.every((o) => !('assignedTo' in o)),
+    JSON.stringify(legacyListed.orders[0]));
   assert('counters: to collect, picked up, pending',
     listed.counts.toCollect === 1 &&
     listed.counts.toCollectAmount === 650 &&
@@ -531,7 +538,7 @@ assert('void walk-ins are skipped in the summary',
     pin: '2468',
     clientToken: 'deviceTokenE5'
   });
-  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-24.6');
+  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-24.7');
 
   const listed = world.ctx.handleStaffAction_({
     action: 'staff_orders',
@@ -762,7 +769,7 @@ assert('void walk-ins are skipped in the summary',
     postData: { contents: JSON.stringify({ action: 'staff_login', pin: '2468', clientToken: 'deviceTokenF6' }) }
   });
   const staffBody = JSON.parse(staffRes.body);
-  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-24.6');
+  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-24.7');
 
   const beforeRows = world.sheets['Orders'].data.length;
   const order = {

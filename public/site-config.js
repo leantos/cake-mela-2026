@@ -7,10 +7,11 @@
  *
  *   poster       — image files in this folder (swap the files, keep names,
  *                  or change the names here)
- *   contacts     — WhatsApp numbers orders alternate between (in order).
- *                  number = country code + mobile, digits only (for wa.me).
- *                  display = how the number is shown to customers.
- *   paymentLine  — {number} and {name} are filled with the assigned contact.
+ *   contacts     — people customers can call (shown as tap-to-call links in
+ *                  the top bar). number = country code + mobile, digits only
+ *                  (for tel:). display = how the number is shown. Orders are
+ *                  not assigned to anyone: there is no WhatsApp step.
+ *   paymentLine  — one plain sentence shown on the order page.
  *   appsScriptUrl — Google Apps Script web app /exec URL (Sheets backend).
  *                  The Netlify function can override it with the
  *                  APPS_SCRIPT_URL environment variable.
@@ -27,17 +28,10 @@
       { id: 'cyril', name: 'Cyril Martin', number: '917204017793', display: '+91 72040 17793' },
       { id: 'aashwin', name: 'Aashwin Alfy', number: '918050764341', display: '+91 80507 64341' }
     ],
-    paymentLine: 'Pay at pickup, or UPI to {number} ({name})',
+    paymentLine: 'Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin) or +91 80507 64341 (Aashwin Alfy)',
     appsScriptUrl: 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec',
     orderApiPath: '/api/order',
     stockApiPath: '/api/stock'
-  };
-
-  SITE_CONFIG.formatPaymentLine = function (contact) {
-    var c = contact || SITE_CONFIG.contacts[0];
-    return SITE_CONFIG.paymentLine
-      .replace('{number}', c.display || ('+' + c.number))
-      .replace('{name}', c.name);
   };
 
   if (typeof module !== 'undefined' && module.exports) {
