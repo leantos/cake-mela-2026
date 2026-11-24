@@ -498,17 +498,24 @@ for (const [tag, suite] of [['BEFORE', before], ['AFTER', after]]) {
       return sheet.data[sheet.data.length - 1][statusCol] === 'OVERSOLD - CHECK';
     })(), JSON.stringify(suite.oversold.result));
   } else {
-    assert(tag + ' large qty still saves (pre-order, no stock check)',
+    assert(tag + ' large qty is still saved (never rejected), flagged OVERSOLD',
       suite.insuff.result && suite.insuff.result.ok === true && suite.insuff.result.status === 'saved' &&
+      suite.insuff.result.oversold === true &&
       suite.insuff.world.sheets.Orders.data.length === 3,
       JSON.stringify(suite.insuff.result));
-    assert(tag + ' fallback large qty writes Status Pending (no OVERSOLD flag)', (() => {
-      if (!suite.oversold.result || suite.oversold.result.status !== 'saved' || suite.oversold.result.oversold) return false;
+    assert(tag + ' large qty writes Status OVERSOLD', (() => {
+      const sheet = suite.insuff.world.sheets.Orders;
+      const statusCol = sheet.data[0].indexOf('Status');
+      return sheet.data[sheet.data.length - 1][statusCol] === 'OVERSOLD';
+    })());
+    assert(tag + ' fallback large qty is saved with Status OVERSOLD', (() => {
+      if (!suite.oversold.result || suite.oversold.result.status !== 'saved' || suite.oversold.result.oversold !== true) return false;
       const sheet = suite.oversold.world.sheets.Orders;
-      const headers = sheet.data[0];
-      const statusCol = headers.indexOf('Status');
-      return sheet.data[sheet.data.length - 1][statusCol] === 'Pending';
+      const statusCol = sheet.data[0].indexOf('Status');
+      return sheet.data[sheet.data.length - 1][statusCol] === 'OVERSOLD';
     })(), JSON.stringify(suite.oversold.result));
+    assert(tag + ' in-stock order has no oversold flag',
+      suite.saved.result.oversold === undefined, JSON.stringify(suite.saved.result));
   }
 }
 
@@ -562,12 +569,12 @@ assert('AFTER duplicate does not flush (no write)', after.dup.stats.flush === 0,
     totalAmount: 750
   }), {});
   const headers = world.sheets.Orders.data[0];
-  // Pre-order: a new item name still extends the Orders header, and the
-  // row is saved (no stock check).
+  // A new item name still extends the Orders header, and the row is saved
+  // (items with no Stock row have no limit).
   assert('schema slow path appends a new item column',
     headers.includes('Special Marzipan Cake (500g)'),
     JSON.stringify({ status: result.status, headers }));
-  assert('new item is saved on a pre-order (no stock rejection)',
+  assert('new item with no Stock row is saved (never rejected)',
     result.status === 'saved' && result.ok === true, JSON.stringify(result));
   assert('schema slow path styles once because headers changed',
     (countCalls(world.calls).style > 0), JSON.stringify(countCalls(world.calls)));
@@ -632,6 +639,81 @@ assert('AFTER first saved does not write more often than BEFORE, and skips style
   const idx = data[0].indexOf('Assigned To');
   const row = data.find((r) => r && r[1] === 'PB-TEST-ASG3');
   assert('legacy payload: saved with blank Assigned To', res.ok && row && (row[idx] === '' || row[idx] == null), JSON.stringify(row));
+}
+
+// ---- stock: batch caps, carry-forward, OVERSOLD (v.2026-11-24.1) ----
+{
+  const PLUM = 'Rich Plum Cake (400g)';
+  const PUD = 'Dates & Carrot Pudding (700g)';
+  const world = makeWorld(CODE_GS);
+  seedHappyPath(world, { existingOrders: [] });
+  // Plum: 3 on 29 Nov, 2 on 6 Dec. Pudding: 4 on 29 Nov, blank (unlimited) on 6 Dec.
+  const stock = [['Item', '29 Nov 2026', '6 Dec 2026', 'Total']];
+  for (const name of MENU) {
+    stock.push([name, name === PLUM ? 3 : name === PUD ? 4 : '', name === PLUM ? 2 : '', '']);
+  }
+  world.sheets['Stock'] = new world.FakeSheet('Stock', stock);
+  world.sheets['Walk-in Sales'] = new world.FakeSheet('Walk-in Sales', [
+    ['Date', 'Mass', 'Item', 'Qty', 'Price each', 'Amount', 'Payment', 'Notes', 'Walk-in ID', 'Void']
+  ]);
+  const rem = () => world.ctx.getStockRemaining_({ bypassCache: true }).remaining;
+  const place = (id, name, qty, date) => world.ctx.processOrder_(sampleOrder({
+    orderId: id,
+    pickupDate: date || '2026-11-29',
+    items: [{ name, qty, price: 350, lineTotal: qty * 350 }],
+    totalItems: qty,
+    totalAmount: qty * 350
+  }), {});
+  const statusOf = (id) => {
+    const d = world.sheets['Orders'].data;
+    const row = d.find((r) => r && r[1] === id);
+    return row && row[d[0].indexOf('Status')];
+  };
+
+  assert('stock: starts at the batch (plum 3, pudding 4)', rem()['2026-11-29'][PLUM] === 3 && rem()['2026-11-29'][PUD] === 4);
+  const a = place('PB-STK-A', PLUM, 2);
+  assert('stock: order within stock is Pending, no oversold flag', a.status === 'saved' && !a.oversold && statusOf('PB-STK-A') === 'Pending', JSON.stringify(a));
+  assert('stock: remaining drops to 1', rem()['2026-11-29'][PLUM] === 1);
+  assert('stock: leftover carries to next date (1 + 2 = 3)',
+    rem()['2026-12-06'][PLUM] === 3, JSON.stringify(rem()['2026-12-06']));
+  const b = place('PB-STK-B', PLUM, 2);
+  assert('stock: the order that does not fit is still saved, as OVERSOLD',
+    b.ok === true && b.status === 'saved' && b.oversold === true && statusOf('PB-STK-B') === 'OVERSOLD', JSON.stringify(b));
+  assert('stock: sold out (0) after the OVERSOLD order', rem()['2026-11-29'][PLUM] === 0);
+  const un = place('PB-STK-U', PLUM, 40, '2026-12-06');
+  assert('stock: the next date uses leftover + its own batch (not unlimited)', un.oversold === true, JSON.stringify(un));
+  const free = place('PB-STK-F', PUD, 50, '2026-12-06');
+  assert('stock: a date with a blank cell is unlimited', free.oversold === undefined && statusOf('PB-STK-F') === 'Pending', JSON.stringify(free));
+  assert('stock: unlimited date reports null', rem()['2026-12-06'][PUD] === null);
+
+  // Cancelling frees stock again; walk-ins and voided walk-ins move it.
+  const ordersSheet = world.sheets['Orders'];
+  const statusCol = ordersSheet.data[0].indexOf('Status');
+  ordersSheet.data.find((r) => r && r[1] === 'PB-STK-U')[statusCol] = 'Cancelled';
+  ordersSheet.data.find((r) => r && r[1] === 'PB-STK-B')[statusCol] = 'Cancelled';
+  assert('stock: cancelling orders frees their stock', rem()['2026-11-29'][PLUM] === 1, JSON.stringify(rem()['2026-11-29']));
+  const walk = world.sheets['Walk-in Sales'];
+  walk.data.push(['2026-11-29', '6:30 AM Mass', PLUM, 1, 350, 350, 'Cash', '', 'WI-1', '']);
+  assert('stock: a walk-in sale uses the batch', rem()['2026-11-29'][PLUM] === 0);
+  walk.data[1][9] = 'VOID';
+  assert('stock: a voided walk-in gives it back', rem()['2026-11-29'][PLUM] === 1);
+
+  // Cached ?action=stock payload is invalidated by a new order.
+  const warm = world.ctx.getStockRemaining_();
+  assert('stock: public payload has dates[].remaining and version',
+    warm.ok === true && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(warm.version) &&
+    warm.dates.find((d) => d.id === '2026-11-29').remaining[PLUM] === 1, JSON.stringify(warm.dates[0]));
+  place('PB-STK-G', PLUM, 1);
+  const after2 = world.ctx.getStockRemaining_();
+  assert('stock: a new order busts the stock cache', after2.dates.find((d) => d.id === '2026-11-29').remaining[PLUM] === 0,
+    JSON.stringify(after2.dates[0]));
+
+  // Staff: OVERSOLD can be moved out of, never into.
+  ordersSheet.data.find((r) => r && r[1] === 'PB-STK-B')[statusCol] = 'OVERSOLD';
+  const staffFrom = world.ctx.staffSetStatus_({ orderId: 'PB-STK-B', status: 'Paid', expectedStatus: 'OVERSOLD' });
+  assert('stock: staff can move an OVERSOLD order to Paid', staffFrom.ok === true && staffFrom.previousStatus === 'OVERSOLD', JSON.stringify(staffFrom));
+  const staffTo = world.ctx.staffSetStatus_({ orderId: 'PB-STK-A', status: 'OVERSOLD' });
+  assert('stock: staff cannot set OVERSOLD by hand', staffTo.ok === false, JSON.stringify(staffTo));
 }
 
 const failed = results.filter((r) => !r.ok);

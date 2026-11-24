@@ -13,12 +13,13 @@
  *
  * 2. In the editor, select setupSheets and click Run. Authorise when asked.
  *    This creates/repairs the Orders, Weekly Summary, and Stock tabs.
- *    The Stock tab lists pickup dates (column headers) and is an optional
- *    planning sheet (planned quantities). To add a date: type it in the
- *    next empty column header (e.g. 27 Dec 2026). Or use Cake Sale →
- *    Add pickup date…. Use Cake Sale → Refresh Weekly Summary after
- *    adding a date so the summary tab picks up the new column. This is a
- *    pre-order form: there is no stock cap or sold-out check on checkout.
+ *    The Stock tab lists pickup dates (column headers). Each cell is the
+ *    BATCH quantity sent to Poppins for that date + item. A blank cell
+ *    means unlimited for that date; 0 means no new batch. Leftover from a
+ *    capped date carries into the next capped date. To add a date: type
+ *    it in the next empty column header (e.g. 27 Dec 2026). Or use Cake
+ *    Sale → Add pickup date…. Use Cake Sale → Refresh Weekly Summary after
+ *    adding a date so the summary tab picks up the new column.
  *
  * 3. Deploy the web app:
  *      Deploy → New deployment → Web app
@@ -38,19 +39,27 @@
  *
  * Notes
  * -----
- * This is a pre-order logger: there is no stock validation and no
- * OVERSOLD status. POST text/plain JSON or GET ?action=order&payload=.
- * Under a short LockService.waitLock (dedupe + append only):
+ * Stock rules (per item, dates in order):
+ *   blank Stock cell  → unlimited on that date (and it leaves no leftover)
+ *   numeric cell      → remaining = leftover from earlier capped dates
+ *                       + this batch − used on this date (floored at 0)
+ *   used = orders that are not Cancelled (Pending, Paid, Picked up and
+ *          OVERSOLD all count) + non-VOID Walk-in Sales rows.
+ * POST text/plain JSON or GET ?action=order&payload=.
+ * Under a short LockService.waitLock (dedupe + stock check + append):
  *   (a) if orderId already exists (CacheService + bounded TextFinder),
  *       return {ok:true,status:'duplicate'} with no write;
  *   (b) if the pickup date is not on the Stock tab header list and this
  *       is not a fallback POST, return {ok:false,status:'invalid_date'};
- *   (c) otherwise append Status OK (or "INVALID DATE - CHECK" on a
- *       fallback POST with a bad date), flush once, return saved.
+ *   (c) otherwise append the row, flush once, return saved. The order is
+ *       NEVER rejected for stock: if it exceeds what is left it is saved
+ *       with Status OVERSOLD (and oversold:true in the reply) so staff can
+ *       sort it out. Otherwise Status is Pending.
  * Weekly Summary is live formulas over Orders; it is not rebuilt on
  * each order. Refresh it from the Cake Sale menu after adding dates.
- * doGet(?action=stock) returns the pickup date list only (no remaining).
- * ?callback=name wraps the payload as JSONP.
+ * doGet(?action=stock) returns {ok, version, dates:[{id,label,closesAt,
+ * remaining:{item:number|null}}], remaining:{dateId:{item:number|null}}};
+ * null = unlimited. ?callback=name wraps the payload as JSONP.
  */
 
 var ORDERS_SHEET_NAME = 'Orders';
@@ -59,7 +68,7 @@ var STOCK_SHEET_NAME = 'Stock';
 var TALLY_SHEET_NAME = 'Tally';
 var WALKIN_SHEET_NAME = 'Walk-in Sales';
 var ITEM_PRICES_SHEET_NAME = '_ItemPrices';
-var ORDER_STATUS_VALUES = ['Pending', 'Paid', 'Picked up', 'Cancelled'];
+var ORDER_STATUS_VALUES = ['Pending', 'Paid', 'Picked up', 'Cancelled', 'OVERSOLD'];
 var WALKIN_MASS_VALUES = ['6:30 AM Mass', '8:30 AM Mass', 'Other'];
 var WALKIN_PAYMENT_VALUES = ['Cash', 'UPI'];
 var WALKIN_HEADERS = ['Date', 'Mass', 'Item', 'Qty', 'Price each', 'Amount', 'Payment', 'Notes', 'Walk-in ID', 'Void'];
@@ -180,7 +189,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-23.12';
+var SCRIPT_VERSION = '2026-11-24.1';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -229,6 +238,13 @@ function doGet(e) {
         version: SCRIPT_VERSION,
         dates: publicStockDates_(getPickupDatesCached_(sss))
       };
+      try {
+        // Remaining stock per date + item (null = unlimited). If it cannot
+        // be computed the date list is still served and no limits apply.
+        var stockNow = getStockRemaining_({ spreadsheet: sss });
+        payload.dates = stockNow.dates;
+        payload.remaining = stockNow.remaining;
+      } catch (stockErr) {}
     } catch (err) {
       payload = { ok: false, error: String(err && err.message ? err.message : err), dates: [] };
     }
@@ -250,8 +266,8 @@ function doGet(e) {
 
 /**
  * Readable or fallback order intake. Body is text/plain JSON
- * (e.postData.contents). Pre-order: no stock check. A fallback POST
- * with an unknown date is still written as "INVALID DATE - CHECK".
+ * (e.postData.contents). Over-stock orders are saved as OVERSOLD, never
+ * rejected. A fallback POST with an unknown date is still written.
  */
 function doPost(e) {
   var data = null;
@@ -278,10 +294,12 @@ var ORDER_ID_CACHE_PREFIX = 'oid:';
 var ORDER_ID_CACHE_TTL = 21600; // 6 hours, CacheService maximum
 
 /**
- * Short lock around dedupe + append only (pre-order, no stock check):
+ * Short lock around dedupe + stock check + append:
  *   (a) duplicate orderId → {ok:true,status:'duplicate'}, no write
  *   (b) unknown pickup date (non-fallback) → {ok:false,status:'invalid_date'}
- *   (c) else append Status Pending, one flush, {ok:true,status:'saved'}
+ *   (c) else append (Status Pending, or OVERSOLD when it exceeds the stock
+ *       left for that date), one flush, {ok:true,status:'saved'[,oversold:true]}
+ *       An order is never rejected for stock.
  */
 function processOrder_(data, options) {
   options = options || {};
@@ -332,11 +350,26 @@ function processOrder_(data, options) {
     timings.idempotencyMs = Date.now() - t;
 
     var rowStatus = 'Pending';
+    var oversold = false;
+    if (date) {
+      t = Date.now();
+      try {
+        var left = remainingMapForDateId_(ss, date.id, itemNames);
+        if (orderExceedsRemaining_(data && data.items, left)) {
+          rowStatus = 'OVERSOLD';
+          oversold = true;
+        }
+      } catch (stockErr) {
+        // Never lose an order because the stock check failed.
+      }
+      timings.stockMs = Date.now() - t;
+    }
     t = Date.now();
     var newRow = appendOrderRow_(sheet, data, rowStatus, ordersHeaders, ordersLastRow + 1);
     wrote = true;
     if (orderId) rememberOrderId_(orderId);
     invalidateSummaryCache_();
+    invalidateStockCache_();
     timings.writeMs = Date.now() - t;
 
     if (lock.hasLock()) {
@@ -347,12 +380,14 @@ function processOrder_(data, options) {
 
     timings.totalMs = Date.now() - tAll;
     rememberLastTiming_(timings);
-    return {
+    var saved = {
       ok: true,
       status: 'saved',
       orderId: orderId,
       row: newRow
     };
+    if (oversold) saved.oversold = true;
+    return saved;
   } finally {
     try {
       if (wrote && lock.hasLock() && typeof timings.flushMs !== 'number') {
@@ -415,7 +450,7 @@ function orderExceedsRemaining_(items, remainingForDate) {
     var qty = Number(line.qty || 0);
     if (!qty) continue;
     if (!Object.prototype.hasOwnProperty.call(remainingForDate, line.name)) {
-      return true; // not listed on this date = not for sale (0)
+      continue; // no Stock row for this item = no limit (same as a blank cell)
     }
     var rem = remainingForDate[line.name];
     if (rem === null) continue; // blank stock cell = no limit
@@ -1268,7 +1303,7 @@ function ensureStockSheet_(ss, itemNames, options) {
   refreshStockTotals_(sheet);
   styleStockHeader_(sheet);
   sheet.getRange(1, 1).setNote(
-    'To add a date: type it in the next empty column header (e.g. 27 Dec 2026), then fill quantities. Blank = no limit (available). Enter 0 to mark sold out.'
+    'To add a date: type it in the next empty column header (e.g. 27 Dec 2026), then enter the batch quantity sent to Poppins for that date. Leftover carries into the next date that has a number. Blank = unlimited (no batch limit). Enter 0 for no new batch (sold out unless leftover carried in).'
   );
   return sheet;
 }
@@ -1463,15 +1498,14 @@ function getOrderedQtysFromValues_(values, dates) {
 }
 
 /**
- * Remaining stock uses a carry-forward pool per item (see
- * computeRemainingFromTables_). Blank cells add 0; remaining is null
- * (unlimited) only if the item has no numeric cap on this date or earlier.
- * An explicit 0 is numeric and adds nothing. Items not on the Stock tab stay 0.
- * dates is an ordered list of {id, label, closesAt} from Stock headers.
+ * Remaining stock per date + item (see computeRemainingFromTables_ for the
+ * rules). Used = non-Cancelled orders + non-VOID walk-ins, read straight
+ * from the Orders and Walk-in Sales tabs, so cancelling an order or voiding
+ * a walk-in frees the stock again. The Tally tab is not used here.
  *
- * doGet uses CacheService for STOCK_CACHE_TTL seconds. processOrder_
- * always passes bypassCache so the reserve sees fresh remaining, then
- * busts and rewrites the cache after a write.
+ * doGet uses CacheService for STOCK_CACHE_TTL seconds; every order, status
+ * change and walk-in write invalidates it. processOrder_ passes bypassCache
+ * so the check under the lock always sees fresh numbers.
  */
 function getStockRemaining_(options) {
   options = options || {};
@@ -1487,18 +1521,83 @@ function getStockRemaining_(options) {
     stock = ensureStockSheet_(ss, uniqueNames_(MENU_ITEM_COLUMNS.concat(options.itemNames || [])));
     stockValues = getSheetValues_(stock);
   }
-  var orders = options.ordersSheet || ss.getSheetByName(ORDERS_SHEET_NAME);
   var dates = getStockDatesFromHeaderRow_(stockValues[0] || []);
-  var tallyState = loadTallyState_(ss, orders, dates, stockValues, options.ordersLastRow);
-  var payload = computeRemainingFromTables_(stockValues, tallyState.ordered, MENU_ITEM_COLUMNS);
-  payload._tally = tallyState;
-  payload._stockValues = stockValues;
+  var used = {};
+  // Nothing is limited unless some Stock cell holds a number, so skip the
+  // Orders / Walk-in reads in that case.
+  if (stockHasAnyCap_(stockValues)) {
+    used = loadUsedByDate_(ss, dates, stockItemNames_(stockValues));
+  }
+  var payload = computeRemainingFromTables_(stockValues, used, MENU_ITEM_COLUMNS);
 
   if (!options.bypassCache) {
     putStockCache_(payload);
     return publicStockPayload_(payload);
   }
   return payload;
+}
+
+/** Remaining map {item: number|null} for one pickup date id (fresh read). */
+function remainingMapForDateId_(ss, dateId, itemNames) {
+  var payload = getStockRemaining_({
+    spreadsheet: ss,
+    bypassCache: true,
+    itemNames: itemNames
+  });
+  return (payload.remaining && payload.remaining[dateId]) || {};
+}
+
+function stockItemNames_(stockValues) {
+  var names = MENU_ITEM_COLUMNS.slice();
+  var seen = {};
+  names.forEach(function (n) { seen[n] = true; });
+  for (var r = 1; r < (stockValues || []).length; r++) {
+    var n = String((stockValues[r] || [])[0] || '').trim();
+    if (!n || n.toUpperCase() === 'TOTAL' || seen[n]) continue;
+    seen[n] = true;
+    names.push(n);
+  }
+  return names;
+}
+
+function stockHasAnyCap_(stockValues) {
+  var r, c, cell;
+  for (r = 1; r < (stockValues || []).length; r++) {
+    var name = String((stockValues[r] || [])[0] || '').trim();
+    if (!name || name.toUpperCase() === 'TOTAL') continue;
+    for (c = 1; c < stockValues[r].length; c++) {
+      if (!parseStockDateHeader_(stockValues[0][c], c + 1)) continue;
+      cell = stockValues[r][c];
+      if (cell !== '' && cell !== null && typeof cell !== 'undefined' && !isNaN(Number(cell))) return true;
+    }
+  }
+  return false;
+}
+
+/** {dateId: {item: qty}} of stock already used: non-Cancelled orders + non-VOID walk-ins. */
+function loadUsedByDate_(ss, dates, itemNames) {
+  var orders = ss.getSheetByName(ORDERS_SHEET_NAME);
+  var walkIn = ss.getSheetByName(WALKIN_SHEET_NAME);
+  var summary = computeOrderSummaryFromValues_(
+    getSheetValues_(orders), dates, itemNames, ['06:30', '08:30'], new Date(), getSheetValues_(walkIn)
+  );
+  return usedByDateFromSummary_(summary, itemNames);
+}
+
+function usedByDateFromSummary_(summary, itemNames) {
+  var used = {};
+  var list = (summary && summary.dates) || [];
+  for (var i = 0; i < list.length; i++) {
+    var items = list[i].items || {};
+    used[list[i].id] = {};
+    for (var n = 0; n < itemNames.length; n++) {
+      var rec = items[itemNames[n]];
+      if (!rec) continue;
+      var q = (Number(rec.ordered) || 0) + (Number(rec.walkIn) || 0);
+      if (q) used[list[i].id][itemNames[n]] = q;
+    }
+  }
+  return used;
 }
 
 /* ---- stock compute (testable) ---- */
@@ -1526,16 +1625,17 @@ function getStockDatesFromHeaderRow_(headerRow) {
 }
 
 /**
- * Leftover stock carries forward per item.
- *
- * For date D, remaining is a cumulative pool:
- *   raw(D) = max(0, sum(numeric caps on dates <= D) - sum(orders on dates <= D))
- * displayed remaining(D) = min(raw(d) for all limited dates d >= D)
- * so a later order cannot oversell an earlier date.
- *
- * A blank cell adds 0 to the pool. An item is UNLIMITED (null) for date D
- * only if it has no numeric stock entry on any date <= D. A 0 entry is
- * numeric and adds nothing. Items with no Stock-tab row stay 0.
+ * Stock Tab cell = batch quantity sent to Poppins for that date + item.
+ * Per item, dates in order:
+ *   blank cell   -> UNLIMITED (null) for that date, and it leaves no leftover
+ *   numeric cell -> raw(D) = max(0, leftover carried in + cell - used on D)
+ *                   and raw(D) is what carries into the next capped date.
+ *   A numeric 0 means "no new batch": it is sold out unless leftover was
+ *   carried in. An item with no Stock-tab row at all is unlimited.
+ * Guard: remaining(D) = min(raw(D), raw of the capped dates that directly
+ * follow D, stopping at the first unlimited date). An order on D uses the
+ * shared pool, so it must not take stock a later date has already claimed.
+ * An unlimited date resets the pool, which is why the chain stops there.
  * Only the first column for each date id is used (duplicate headers ignored).
  */
 function computeRemainingFromTables_(stockValues, orderedByDate, menuNames) {
@@ -1603,7 +1703,9 @@ function computeRemainingFromTables_(stockValues, orderedByDate, menuNames) {
 /**
  * capsByDate[dateId][item] is a number when a numeric cell exists (0 counts).
  * numericByDate[dateId][item] is true when that cell was numeric.
+ * orderedByDate[dateId][item] is the stock already used on that date.
  * Returns remaining[dateId][item] as a number or null (unlimited).
+ * Rules are described on computeRemainingFromTables_.
  */
 function carryForwardRemainingFromCaps_(dates, capsByDate, numericByDate, orderedByDate, itemNames) {
   dates = dates || [];
@@ -1612,36 +1714,35 @@ function carryForwardRemainingFromCaps_(dates, capsByDate, numericByDate, ordere
   orderedByDate = orderedByDate || {};
   itemNames = itemNames || [];
   var remaining = {};
-  var i, n, name, d, used, cap, hasNumeric, seenNumeric, cumCap, cumUsed, raw, m, j;
+  var i, n, name, d, used, cap, hasNumeric, carry, raw, m, j;
   for (i = 0; i < dates.length; i++) remaining[dates[i].id] = {};
   for (n = 0; n < itemNames.length; n++) {
     name = itemNames[n];
-    seenNumeric = false;
-    cumCap = 0;
-    cumUsed = 0;
+    carry = 0;
     raw = [];
     for (i = 0; i < dates.length; i++) {
       d = dates[i].id;
       hasNumeric = !!(numericByDate[d] && numericByDate[d][name]);
-      cap = hasNumeric ? Number(capsByDate[d][name] || 0) : 0;
+      if (!hasNumeric) {
+        raw.push(null); // unlimited date: nothing is left over from it
+        carry = 0;
+        continue;
+      }
+      cap = Number(capsByDate[d][name] || 0);
       if (isNaN(cap) || cap < 0) cap = 0;
       used = (orderedByDate[d] && orderedByDate[d][name]) ? Number(orderedByDate[d][name]) : 0;
       if (!used || isNaN(used)) used = 0;
-      if (hasNumeric) seenNumeric = true;
-      cumUsed += used;
-      if (!seenNumeric) {
-        remaining[d][name] = null;
-        raw.push(null);
-        continue;
-      }
-      cumCap += cap;
-      raw.push(Math.max(0, cumCap - cumUsed));
+      carry = Math.max(0, carry + cap - used);
+      raw.push(carry);
     }
     for (i = 0; i < dates.length; i++) {
-      if (raw[i] === null) continue;
+      if (raw[i] === null) {
+        remaining[dates[i].id][name] = null;
+        continue;
+      }
       m = raw[i];
-      for (j = i + 1; j < dates.length; j++) {
-        if (raw[j] !== null && raw[j] < m) m = raw[j];
+      for (j = i + 1; j < dates.length && raw[j] !== null; j++) {
+        if (raw[j] < m) m = raw[j];
       }
       remaining[dates[i].id][name] = m;
     }
@@ -1710,11 +1811,25 @@ function stockCacheIsFresh_(cachedJson, gen) {
   }
 }
 
+/**
+ * Public shape of ?action=stock. remaining[dateId][item] is a number or
+ * null (unlimited); it is also repeated on each dates[] entry.
+ */
 function publicStockPayload_(payload) {
+  var remaining = (payload && payload.remaining) || {};
+  var dates = ((payload && payload.dates) || []).map(function (d) {
+    return {
+      id: d.id,
+      label: d.label,
+      closesAt: d.closesAt,
+      remaining: remaining[d.id] || {}
+    };
+  });
   return {
     ok: !!(payload && payload.ok),
-    dates: (payload && payload.dates) || [],
-    remaining: (payload && payload.remaining) || {}
+    version: typeof SCRIPT_VERSION !== 'undefined' ? SCRIPT_VERSION : '',
+    dates: dates,
+    remaining: remaining
   };
 }
 
@@ -1730,7 +1845,10 @@ function normalizeOrderStatus_(status) {
   if (/cancel/.test(s)) return 'Cancelled';
   if (/picked\s*up|collected/.test(s)) return 'Picked up';
   if (/^paid$|\bpaid\b/.test(s) && !/unpaid/.test(s)) return 'Paid';
-  // Legacy values such as OK, New, INVALID DATE - CHECK, OVERSOLD map to Pending.
+  // Saved over stock: kept as its own status until staff handle it
+  // (it moves on to Paid / Picked up / Cancelled like any order).
+  if (/oversold/.test(s)) return 'OVERSOLD';
+  // Legacy values such as OK, New, INVALID DATE - CHECK map to Pending.
   return 'Pending';
 }
 
@@ -1825,6 +1943,7 @@ function emptyItemsMap_(itemNames, massIds) {
 function emptySalesBlock_() {
   return {
     ordered: { cakes: 0, amount: 0, orders: 0 },
+    oversold: { cakes: 0, orders: 0 },
     cancelled: { orders: 0 },
     paid: { cakes: 0, amount: 0 },
     pickedUp: { cakes: 0 },
@@ -1846,6 +1965,8 @@ function addSalesInto_(target, src) {
   target.ordered.cakes += src.ordered.cakes;
   target.ordered.amount += src.ordered.amount;
   target.ordered.orders += src.ordered.orders;
+  target.oversold.cakes += src.oversold.cakes;
+  target.oversold.orders += src.oversold.orders;
   target.cancelled.orders += src.cancelled.orders;
   target.paid.cakes += src.paid.cakes;
   target.paid.amount += src.paid.amount;
@@ -2050,6 +2171,11 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, massIds, now, 
     bucket.sales.ordered.cakes += cakes;
     bucket.sales.ordered.amount += amount;
     bucket.sales.ordered.orders += 1;
+    if (status === 'OVERSOLD') {
+      // Counted in ordered above; listed separately so staff can see them.
+      bucket.sales.oversold.cakes += cakes;
+      bucket.sales.oversold.orders += 1;
+    }
     if (isPaidStatus_(status)) {
       bucket.sales.paid.cakes += cakes;
       bucket.sales.paid.amount += amount;
@@ -2442,9 +2568,9 @@ function remainingMapForDate_(pickupLabel) {
 }
 
 function stockStatusForOrder_(pickupLabel, items) {
-  if (!pickupLabel) return 'OK';
+  if (!pickupLabel) return 'Pending';
   var remaining = remainingMapForDate_(pickupLabel);
-  return orderExceedsRemaining_(items, remaining) ? 'OVERSOLD - CHECK' : 'OK';
+  return orderExceedsRemaining_(items, remaining) ? 'OVERSOLD' : 'Pending';
 }
 
 function normalizeOrdersPickupDates_(ordersSheet, dates) {
@@ -2484,7 +2610,7 @@ function ensureOrdersStatusValidation_(sheet) {
     var rule = SpreadsheetApp.newDataValidation()
       .requireValueInList(ORDER_STATUS_VALUES, true)
       .setAllowInvalid(true)
-      .setHelpText('Pending, Paid, Picked up, or Cancelled')
+      .setHelpText('Pending, Paid, Picked up, Cancelled, or OVERSOLD (saved over stock)')
       .build();
     range.setDataValidation(rule);
 
@@ -2510,10 +2636,13 @@ function ensureOrdersStatusValidation_(sheet) {
       if (strike && builder.setStrikethrough) builder.setStrikethrough(true);
       return builder.build();
     }
-    // Palette: Paid = gold, Picked up = pine green, Cancelled = grey + strikethrough.
+    // Palette: Paid = gold, Picked up = pine green, Cancelled = grey + strikethrough,
+    // OVERSOLD = red-orange.
     kept.push(statusColour('Paid', '#f6e4c1', '#904108', false));
     kept.push(statusColour('Picked up', '#e4edd4', '#435718', false));
     kept.push(statusColour('Cancelled', '#e8e6e0', '#6b6658', true));
+    // OVERSOLD = saved over the stock left for that date: red-orange so staff spot it.
+    kept.push(statusColour('OVERSOLD', '#fbd5cf', '#9c1c10', false));
     if (sheet.setConditionalFormatRules) sheet.setConditionalFormatRules(kept);
   } catch (err) {}
 }
@@ -2639,7 +2768,7 @@ function refreshWeeklySummary_(ss, ordersSheet) {
   tab.getRange(1, 1).setFontWeight('bold');
   tab.getRange(1, 1).setFontSize(14);
   tab.getRange(2, 1).setValue(
-    'Live ordered totals from the Orders tab (Cancelled rows are excluded). Picked up and Walk-in columns are cakes. A Walk-in block by date sits below the total. The Stock tab is an optional planning sheet — add a date there, then use Cake Sale → Refresh Weekly Summary. Placing an order does not rebuild this tab.'
+    'Live ordered totals from the Orders tab (Cancelled rows are excluded; OVERSOLD orders count as ordered). Picked up and Walk-in columns are cakes. A Walk-in block by date sits below the total. The Stock tab holds the batch quantity per date — add a date there, then use Cake Sale → Refresh Weekly Summary. Placing an order does not rebuild this tab.'
   );
 
   var headers = ['Pickup Date', 'Mass', 'Orders'].concat(itemNames).concat(['Total Cakes', 'Total ₹', 'Picked up', 'Walk-in']);
@@ -3224,7 +3353,9 @@ function staffSetStatus_(data) {
     ? normalizeOrderStatus_(expectedRaw)
     : '';
   if (!orderId) return { ok: false, error: 'Missing orderId' };
-  if (ORDER_STATUS_VALUES.indexOf(nextStatus) === -1) {
+  // OVERSOLD is set by the system when an order is saved over stock. Staff
+  // move an order out of it (expectedStatus may be OVERSOLD), never into it.
+  if (ORDER_STATUS_VALUES.indexOf(nextStatus) === -1 || nextStatus === 'OVERSOLD') {
     return { ok: false, error: 'Invalid status' };
   }
   var lock = LockService.getScriptLock();
@@ -3266,6 +3397,7 @@ function staffSetStatus_(data) {
       sheet.getRange(row, updatedCol + 1).setValue(stamp);
     }
     invalidateSummaryCache_();
+    invalidateStockCache_(); // Cancelled frees stock; un-cancelling takes it again
     return {
       ok: true,
       status: nextStatus,
@@ -3470,6 +3602,7 @@ function staffAddWalkIn_(data) {
     if (voidCol >= 0) tab.getRange(nextRow, voidCol + 1).setValue('');
     var price = Number(MENU_ITEM_PRICES[item] || 0) || 0;
     invalidateSummaryCache_();
+    invalidateStockCache_(); // a walk-in sale uses up the batch
     return {
       ok: true,
       walkinId: walkinId,
@@ -3509,6 +3642,7 @@ function staffDeleteWalkIn_(data) {
       }
     }
     invalidateSummaryCache_();
+    invalidateStockCache_(); // a voided walk-in gives the stock back
     return { ok: true, walkinId: walkinId, row: row, voided: true };
   } finally {
     lock.releaseLock();

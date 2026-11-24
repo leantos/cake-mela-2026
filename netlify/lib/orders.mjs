@@ -124,6 +124,78 @@ export function validateOrder(raw) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* ---------- stock check (fails open) ---------- */
+
+const STOCK_TIMEOUT_MS = 2000;
+const STOCK_TTL_MS = 15000;
+let stockCache = { url: '', at: 0, data: null };
+
+export function resetStockCache() {
+  stockCache = { url: '', at: 0, data: null };
+}
+
+function stockUrlFor(url) {
+  return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'action=stock';
+}
+
+/**
+ * GET ?action=stock from Apps Script ({dates:[{id, remaining:{item:n|null}}]}),
+ * cached ~15s in memory. Returns null on ANY failure so callers fail open.
+ */
+export async function fetchStock(opts = {}) {
+  const fetchImpl = opts.fetch || fetch;
+  const url = opts.url || appsScriptUrl(opts.env || {});
+  const now = opts.now || Date.now;
+  if (!/^https?:\/\//.test(url) || /PASTE_YOUR_/i.test(url)) return null;
+  const ttl = opts.ttlMs == null ? STOCK_TTL_MS : opts.ttlMs;
+  if (stockCache.data && stockCache.url === url && now() - stockCache.at < ttl) return stockCache.data;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs || STOCK_TIMEOUT_MS);
+  try {
+    const res = await fetchImpl(stockUrlFor(url), { method: 'GET', redirect: 'follow', signal: controller.signal });
+    if (!res.ok) return null;
+    const data = JSON.parse(await res.text());
+    if (!data || !data.ok || !Array.isArray(data.dates)) return null;
+    stockCache = { url, at: now(), data };
+    return data;
+  } catch (err) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Names of order lines that exceed the date's remaining stock. null / missing = unlimited. */
+export function stockShortfalls(order, stock) {
+  if (!stock || !Array.isArray(stock.dates)) return [];
+  const date = stock.dates.find((d) => d && d.id === order.pickupDate);
+  if (!date || !date.remaining || typeof date.remaining !== 'object') return [];
+  const wanted = new Map();
+  for (const line of order.items || []) wanted.set(line.name, (wanted.get(line.name) || 0) + line.qty);
+  const short = [];
+  for (const [name, qty] of wanted) {
+    const rem = date.remaining[name];
+    if (rem === null || typeof rem === 'undefined' || rem === '' || isNaN(Number(rem))) continue;
+    if (qty > Number(rem)) short.push(name);
+  }
+  return short;
+}
+
+/**
+ * Keep the cached remaining in step with orders we just accepted so a
+ * burst inside the cache window doesn't all see the same stale numbers.
+ */
+export function noteOrderInStockCache(order) {
+  const data = stockCache.data;
+  const date = data && data.dates && data.dates.find((d) => d && d.id === order.pickupDate);
+  if (!date || !date.remaining) return;
+  for (const line of order.items || []) {
+    const rem = date.remaining[line.name];
+    if (rem === null || typeof rem === 'undefined' || isNaN(Number(rem))) continue;
+    date.remaining[line.name] = Math.max(0, Number(rem) - line.qty);
+  }
+}
+
 /**
  * Round-robin pointer with compare-and-swap (onlyIfNew / onlyIfMatch),
  * so two orders landing at the same moment don't both get the same slot.
@@ -163,6 +235,16 @@ export async function acceptOrder(store, raw, opts = {}) {
       record: existing,
       body: { ok: true, status: 'duplicate', orderId: order.orderId, contact: publicContact(existing.contact) }
     };
+  }
+
+  // Stock check for NEW orders only (duplicates answered above). A retry
+  // from the page's outbox carries a contact hint: the customer was already
+  // told "placed", so it is never rejected here (the Sheet flags OVERSOLD).
+  if (!v.contactHint && typeof opts.stockCheck === 'function') {
+    const short = await opts.stockCheck(order);
+    if (short && short.length) {
+      return { status: 409, body: { ok: false, error: 'out_of_stock', items: short } };
+    }
   }
 
   // A client that already fell back to a random contact (function was

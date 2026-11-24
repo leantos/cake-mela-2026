@@ -31,10 +31,21 @@ process.env.NETLIFY_BLOBS_CONTEXT = Buffer.from(JSON.stringify({
 const sheetRows = new Map();
 let sheetMode = 'ok'; // ok | fail | invalid_date
 const sheetHits = [];
+let stockMode = 'ok'; // ok | fail | slow
+let stockDates = []; // [{id, label, closesAt, remaining}]
+let stockGets = 0;
 const mock = http.createServer((req, res) => {
   let body = '';
   req.on('data', (c) => { body += c; });
   req.on('end', () => {
+    if (req.method === 'GET') {
+      stockGets++;
+      res.setHeader('Content-Type', 'application/json');
+      if (stockMode === 'fail') { res.statusCode = 500; return res.end('{"ok":false}'); }
+      const payload = JSON.stringify({ ok: true, version: 'test', dates: stockDates });
+      if (stockMode === 'slow') return setTimeout(() => res.end(payload), 3500);
+      return res.end(payload);
+    }
     const data = JSON.parse(body || '{}');
     sheetHits.push(data);
     res.setHeader('Content-Type', 'application/json');
@@ -231,6 +242,95 @@ assert('pending marker removed after success', (await lib.countPending(store)) =
   const row = sheetRows.get(o.orderId);
   assert('invalid_date is re-sent with fallback:true and saved', row && row.fallback === true, JSON.stringify(row));
   sheetMode = 'ok';
+}
+
+// ---- stock limits ----
+{
+  const PLUM = 'Rich Plum Cake (400g)';
+  const setStock = (remaining, date = '2026-11-29') => {
+    stockDates = [{ id: date, label: 'Sun', closesAt: date + 'T08:30:00+05:30', remaining }];
+    lib.resetStockCache();
+  };
+  const plum = (qty) => order({
+    items: [{ id: 'rich-plum-cake-400', name: PLUM, qty, price: 350, lineTotal: qty * 350 }],
+    totalItems: qty, totalAmount: qty * 350
+  });
+
+  // the 11th buyer: 10 left, order of 11 is rejected and not stored
+  setStock({ [PLUM]: 10 });
+  const tenOk = plum(10);
+  const rOk = await call(tenOk); await rOk.settle();
+  assert('stock: ordering exactly what is left is accepted', rOk.status === 200 && rOk.json.ok === true, JSON.stringify(rOk.json));
+
+  setStock({ [PLUM]: 0 });
+  const hitsBefore = sheetHits.length;
+  const over = plum(1);
+  const rOver = await call(over); await rOver.settle();
+  assert('stock: sold-out item gets 409 out_of_stock with the item name',
+    rOver.status === 409 && rOver.json.ok === false && rOver.json.error === 'out_of_stock' && rOver.json.items.join() === PLUM,
+    JSON.stringify(rOver));
+  assert('stock: rejected order is not stored or forwarded',
+    (await store.get('order/' + over.orderId, { type: 'json' })) === null && sheetHits.length === hitsBefore && !sheetRows.has(over.orderId));
+
+  setStock({ [PLUM]: 3 });
+  const r4 = await call(plum(4)); await r4.settle();
+  assert('stock: more than remaining is rejected', r4.status === 409, JSON.stringify(r4.json));
+
+  // null / missing = unlimited; other dates unlimited
+  setStock({ [PLUM]: null });
+  const rNull = await call(plum(50)); await rNull.settle();
+  assert('stock: null remaining is unlimited', rNull.status === 200, JSON.stringify(rNull.json));
+  setStock({});
+  const rMissing = await call(plum(50)); await rMissing.settle();
+  assert('stock: item missing from remaining is unlimited', rMissing.status === 200);
+  setStock({ [PLUM]: 0 }, '2026-12-06');
+  const rOther = await call(plum(5)); await rOther.settle();
+  assert('stock: a date with no limit entry is unlimited', rOther.status === 200);
+
+  // a burst inside the cache window sees the accepted orders
+  setStock({ [PLUM]: 3 });
+  const a = await call(plum(2)); await a.settle();
+  const b = await call(plum(2)); await b.settle();
+  assert('stock: accepted orders use up the cached remaining', a.status === 200 && b.status === 409, a.status + '/' + b.status);
+
+  // duplicates of an already-stored order still return the stored result, even if now sold out
+  setStock({ [PLUM]: 5 });
+  const dup = plum(2);
+  const d1 = await call(dup); await d1.settle();
+  setStock({ [PLUM]: 0 });
+  const d2 = await call(dup);
+  assert('stock: duplicate orderId returns the stored result, not 409',
+    d1.status === 200 && d2.status === 200 && d2.json.status === 'duplicate' && d2.json.contact.id === d1.json.contact.id, JSON.stringify(d2.json));
+
+  // retry from the page's outbox (contact hint) was already promised: never rejected
+  setStock({ [PLUM]: 0 });
+  const hinted = plum(2); hinted.assignedContactId = 'aashwin';
+  const rh = await call(hinted); await rh.settle();
+  assert('stock: outbox retry with a contact hint is accepted', rh.status === 200 && rh.json.contact.id === 'aashwin', JSON.stringify(rh.json));
+
+  // fail open
+  setStock({ [PLUM]: 0 });
+  stockMode = 'fail'; lib.resetStockCache();
+  const rf = await call(plum(2)); await rf.settle();
+  assert('stock: fails open when Apps Script stock returns 500', rf.status === 200, JSON.stringify(rf.json));
+  stockMode = 'slow'; lib.resetStockCache();
+  const t0 = Date.now();
+  const rs = await call(plum(2)); await rs.settle();
+  assert('stock: fails open on a slow stock fetch (~2s timeout)', rs.status === 200 && Date.now() - t0 < 3400, rs.status + ' ' + (Date.now() - t0) + 'ms');
+  stockMode = 'ok'; lib.resetStockCache();
+
+  // cache: a second order inside the TTL does not refetch
+  setStock({});
+  const g0 = stockGets;
+  const c1 = await call(plum(1)); await c1.settle();
+  const c2 = await call(plum(1)); await c2.settle();
+  assert('stock: fetched once per cache window', stockGets - g0 === 1, String(stockGets - g0));
+
+  assert('stockShortfalls sums repeated lines',
+    lib.stockShortfalls({ pickupDate: '2026-11-29', items: [{ name: PLUM, qty: 2 }, { name: PLUM, qty: 2 }] },
+      { dates: [{ id: '2026-11-29', remaining: { [PLUM]: 3 } }] }).join() === PLUM);
+  stockDates = [];
+  lib.resetStockCache();
 }
 
 // ---- backoff ----

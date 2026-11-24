@@ -872,6 +872,151 @@ assert('xl (1280px) breakpoint puts the summary in a third column',
   document.querySelector('.sticky-bar').className.includes('xl:col-start-3'));
 assert('CTA text is unchanged for WhatsApp', document.getElementById('place-order-btn').textContent === 'Place Order via WhatsApp');
 
+// ---- Stock limits: out of stock, caps, clamp, 409, pre-submit refresh ----
+{
+  const DC = 'Dates & Carrot Pudding (700g)';
+  const BS = 'Butterscotch Pudding (700g)';
+  const PL = 'Rich Plum Cake (400g)';
+  const stockDates = (remaining29) => [
+    { id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30', remaining: remaining29 },
+    { id: '2026-12-06', label: 'Sun, 6 Dec', closesAt: '2026-12-06T08:30:00+05:30' },
+    { id: '2026-12-13', label: 'Sun, 13 Dec', closesAt: '2026-12-13T08:30:00+05:30', remaining: { [PL]: null } }
+  ];
+  window.__TEST_NOW = new Date('2026-11-23T12:00:00+05:30');
+  w.loadStock = async function () {};
+  w.__setStockForTest({}, 'ok', stockDates({ [DC]: 3, [PL]: 0, [BS]: 12 }));
+  w.selectPickupDate('2026-11-29');
+  zeroCart();
+  const bsCard = cards[2];
+  const plumCard = cards[5];
+  const note = (c) => c.querySelector('.stock-note');
+
+  assert('stock: sold-out cake is dimmed (sold-out class)', plumCard.classList.contains('sold-out'));
+  assert('stock: sold-out note says Out of stock and next batch',
+    !note(plumCard).hidden && /Out of stock/.test(note(plumCard).textContent) && /More will arrive in the next batch/.test(note(plumCard).textContent),
+    note(plumCard).textContent);
+  assert('stock: plus is disabled when out of stock', plumCard.querySelector('.plus').disabled === true);
+  lastPlus.click();
+  assert('stock: cannot add an out-of-stock cake', plumCard.querySelector('.qty').textContent === '0');
+
+  for (let i = 0; i < 6; i++) firstPlus.click();
+  assert('stock: stepper is capped at the remaining count', cards[0].querySelector('.qty').textContent === '3', cards[0].querySelector('.qty').textContent);
+  assert('stock: plus disabled at the cap', cards[0].querySelector('.plus').disabled === true);
+  assert('stock: low stock shows "Only N left"', /Only 3 left/.test(note(cards[0]).textContent), note(cards[0]).textContent);
+  assert('stock: low-stock cake is not marked sold-out', !cards[0].classList.contains('sold-out'));
+  assert('stock: a bigger remainder shows no note', note(bsCard).hidden === true && note(bsCard).textContent === '', note(bsCard).textContent);
+  for (let i = 0; i < 15; i++) bsCard.querySelector('.plus').click();
+  assert('stock: cap applies to larger remainders too (12)', bsCard.querySelector('.qty').textContent === '12', bsCard.querySelector('.qty').textContent);
+
+  // unlimited date: no label, no cap
+  w.selectPickupDate('2026-12-06');
+  assert('stock: date without limits clears labels and sold-out', !plumCard.classList.contains('sold-out') && note(plumCard).hidden === true);
+  assert('stock: unlimited remaining is Infinity', w.remainingForItem({ name: 'Rich Plum Cake', weight: '400g' }, '2026-12-06') === Infinity);
+  assert('stock: plus is enabled again on an unlimited date', plumCard.querySelector('.plus').disabled === false);
+  assert('stock: cart within limits is untouched on switch', cards[0].querySelector('.qty').textContent === '3');
+  for (let i = 0; i < 4; i++) firstPlus.click();
+  assert('stock: unlimited date has no cap', cards[0].querySelector('.qty').textContent === '7', cards[0].querySelector('.qty').textContent);
+
+  // null remaining = unlimited too
+  w.selectPickupDate('2026-12-13');
+  assert('stock: null remaining is unlimited', w.remainingForItem({ name: 'Rich Plum Cake', weight: '400g' }) === Infinity && !plumCard.classList.contains('sold-out'));
+
+  // switching back to the limited date clamps the cart and tells the customer
+  document.getElementById('toast').classList.remove('visible');
+  w.selectPickupDate('2026-11-29');
+  assert('stock: cart is clamped when switching to a limited date', cards[0].querySelector('.qty').textContent === '3', cards[0].querySelector('.qty').textContent);
+  assert('stock: clamp shows a toast', document.getElementById('toast').classList.contains('visible') && /only 3 left/i.test(document.getElementById('toast').textContent),
+    document.getElementById('toast').textContent);
+  assert('stock: summary reflects the clamped cart', /3\s*×/.test(document.getElementById('cart-lines').textContent));
+
+  // fail open: stock unknown -> no limits
+  w.__setStockForTest({}, 'error');
+  assert('stock: fetch failure leaves cakes unlimited', !plumCard.classList.contains('sold-out') && plumCard.querySelector('.plus').disabled === false);
+
+  // ---- checkout: 409 from /api/order -> modal, no WhatsApp ----
+  w.__setStockForTest({}, 'ok', stockDates({ [DC]: 5, [PL]: 5 }));
+  w.selectPickupDate('2026-11-29');
+  zeroCart();
+  firstPlus.click();
+  document.getElementById('buyer-name').value = 'Asha Rao';
+  document.getElementById('buyer-phone').value = '9876543210';
+  w.selectMass('06:30');
+  try { window.sessionStorage.clear(); window.localStorage.clear(); } catch (e) {}
+  let waCalls = 0;
+  const realOpen = w.openWhatsApp;
+  w.openWhatsApp = function () { waCalls++; };
+  const realFetch = window.fetch;
+  let orderPosts = 0;
+  window.fetch = async function (url) {
+    if (String(url).indexOf('/api/order') >= 0) {
+      orderPosts++;
+      return {
+        ok: false, status: 409,
+        json: async () => ({ ok: false, error: 'out_of_stock', items: [DC] })
+      };
+    }
+    throw new Error('unexpected ' + url);
+  };
+  const confirmBefore = document.getElementById('order-confirm').textContent;
+  await w.placeOrder();
+  const stockAlert = document.getElementById('form-alert');
+  assert('stock 409: opens the custom alertdialog', stockAlert.classList.contains('is-open') && stockAlert.hidden === false &&
+    document.getElementById('form-alert-dialog').getAttribute('role') === 'alertdialog');
+  assert('stock 409: title is Out of stock', document.getElementById('form-alert-title').textContent === 'Out of stock');
+  assert('stock 409: names the cake and the next batch',
+    /Dates & Carrot Pudding \(700g\)/.test(stockAlert.textContent) && /next batch/.test(stockAlert.textContent), stockAlert.textContent);
+  assert('stock 409: WhatsApp is not opened', waCalls === 0, String(waCalls));
+  assert('stock 409: no fallback outbox entry is queued', !window.localStorage.getItem('poppinsOrderOutbox') || window.localStorage.getItem('poppinsOrderOutbox') === '[]');
+  assert('stock 409: order is not shown as placed', document.getElementById('order-confirm').textContent === confirmBefore && !/PB-X/.test(document.getElementById('order-confirm').textContent));
+  assert('stock 409: button is usable again', document.getElementById('place-order-btn').disabled === false &&
+    document.getElementById('place-order-btn').textContent === 'Place Order via WhatsApp', document.getElementById('place-order-btn').textContent);
+  assert('stock 409: only one API call, no direct-to-Sheet fallback', orderPosts === 1, String(orderPosts));
+  w.closeFormAlert();
+
+  // ---- checkout: pre-submit stock refresh blocks a stale cart ----
+  w.__setStockForTest({}, 'ok', stockDates({ [DC]: 5, [PL]: 5 }));
+  w.selectPickupDate('2026-11-29');
+  zeroCart();
+  firstPlus.click();
+  firstPlus.click();
+  window.__TEST_DISABLE_NETWORK = false;
+  orderPosts = 0;
+  let stockGets = 0;
+  window.fetch = async function (url) {
+    if (String(url).indexOf('action=stock') >= 0) {
+      stockGets++;
+      return { ok: true, status: 200, json: async () => ({ ok: true, dates: stockDates({ [DC]: 1, [PL]: 5 }) }) };
+    }
+    if (String(url).indexOf('/api/order') >= 0) orderPosts++;
+    throw new Error('should not post: ' + url);
+  };
+  await w.placeOrder();
+  assert('stock refresh: re-fetched stock before submitting', stockGets === 1, String(stockGets));
+  assert('stock refresh: stale cart is stopped with the Out of stock alert',
+    document.getElementById('form-alert').classList.contains('is-open') && document.getElementById('form-alert-title').textContent === 'Out of stock');
+  assert('stock refresh: no order was posted and no WhatsApp opened', orderPosts === 0 && waCalls === 0);
+  assert('stock refresh: cart is clamped to what is left', cards[0].querySelector('.qty').textContent === '1', cards[0].querySelector('.qty').textContent);
+  w.closeFormAlert();
+
+  // refresh failing must not block ordering (fail open)
+  window.fetch = async function (url) {
+    if (String(url).indexOf('action=stock') >= 0) throw new Error('stock down');
+    if (String(url).indexOf('/api/order') >= 0) {
+      orderPosts++;
+      return { ok: true, status: 200, json: async () => ({ ok: true, status: 'queued', orderId: 'PB-X', contact: { id: 'cyril', name: 'Cyril Martin', number: '917204017793', display: '+91 72040 17793' } }) };
+    }
+    throw new Error('unexpected ' + url);
+  };
+  await w.placeOrder();
+  assert('stock refresh: fails open when stock cannot be read', orderPosts === 1 && waCalls === 1, orderPosts + '/' + waCalls);
+
+  window.__TEST_DISABLE_NETWORK = true;
+  window.fetch = realFetch;
+  w.openWhatsApp = realOpen;
+  w.__setStockForTest({}, 'ok', null);
+  zeroCart();
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log('\n--- ' + (results.length - failed.length) + '/' + results.length + ' passed ---');
 if (failed.length) {

@@ -165,8 +165,9 @@
     /**
      * Fallback pickup dates used until a background dates fetch returns
      * Stock tab headers (or when there is no Sheets URL). Every listed
-     * date that has not yet closed is orderable — this is a pre-order
-     * form, not a POS with live stock. id is ISO yyyy-mm-dd in IST.
+     * date that has not yet closed is orderable. Per-date stock limits
+     * (remaining) come from the Stock tab via ?action=stock; dates without
+     * a limit are unlimited. id is ISO yyyy-mm-dd in IST.
      * A date stays available until closesAt (default 8:30 AM IST that
      * morning). label is the chip text and the WhatsApp short date.
      */
@@ -187,9 +188,8 @@
     ];
 
     /**
-     * Opening planned quantities (optional). Not used to limit or hide
-     * items — this is a pre-order form. Kept so older tests can still
-     * read the documented 29 Nov plan.
+     * Opening planned quantities (optional, informational). Live limits
+     * come from the server's per-date remaining, not from this table.
      */
     const STOCK_FALLBACK = {
       '2026-11-29': {
@@ -265,6 +265,7 @@
     const OUTBOX_MAX_AGE_MS = 48 * 60 * 60 * 1000;
     const OUTBOX_POST_MS = 15000;
     const MAX_QTY = 99;
+    const LOW_STOCK_NOTE_AT = 10;
     var sheetsUrlOverride = '';
 
     /* ---------- State ---------- */
@@ -420,6 +421,18 @@
       return PICKUP_DATES;
     }
 
+    /** {item name: number|null}; null / missing / non-numeric = unlimited. */
+    function normalizeDateRemaining(raw) {
+      const out = {};
+      if (!raw || typeof raw !== 'object') return out;
+      Object.keys(raw).forEach(function (name) {
+        const v = raw[name];
+        if (v === null || v === '' || typeof v === 'undefined' || isNaN(Number(v))) out[name] = null;
+        else out[name] = Math.max(0, Math.floor(Number(v)));
+      });
+      return out;
+    }
+
     function applyStockDates(dates) {
       if (dates && dates.length) {
         stockState.dates = dates.map(function (d) {
@@ -427,7 +440,8 @@
             id: d.id,
             label: d.label,
             shortLabel: d.shortLabel || d.label,
-            closesAt: d.closesAt || (d.id + 'T08:30:00+05:30')
+            closesAt: d.closesAt || (d.id + 'T08:30:00+05:30'),
+            remaining: normalizeDateRemaining(d.remaining)
           };
         });
       } else {
@@ -630,6 +644,7 @@
             '<p class="desc mt-[0.28rem] text-[0.8rem] text-muted">' + escapeHtml(item.description) + '</p>' +
             '<p class="price mt-2 text-[1.05rem] font-extrabold text-ink">' + formatINR(item.price) +
               ' <span class="weight ml-[0.15rem] text-[0.78rem] font-semibold text-muted">· ' + escapeHtml(item.weight) + '</span></p>' +
+            '<p class="stock-note mt-[0.3rem] text-[0.78rem] font-bold text-gold-dark" hidden></p>' +
           '</div>' +
           '<div class="stepper flex shrink-0 items-center gap-[0.35rem] self-end" data-id="' + escapeHtml(item.id) + '">' +
             '<button type="button" class="minus size-11 shrink-0 cursor-pointer rounded-full border-[1.5px] border-maroon p-0 text-[1.45rem] font-semibold leading-none inline-flex items-center justify-center [-webkit-tap-highlight-color:transparent] disabled:cursor-default disabled:opacity-35 enabled:active:scale-[0.94] motion-reduce:enabled:active:scale-100 focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 bg-cream-light text-maroon hover:enabled:bg-maroon-soft" aria-label="Decrease quantity of ' + escapeHtml(displayName(item)) + '" disabled>−</button>' +
@@ -655,7 +670,7 @@
 
     function changeQty(id, delta) {
       const next = (qtyById[id] || 0) + delta;
-      qtyById[id] = Math.max(0, Math.min(MAX_QTY, next));
+      qtyById[id] = Math.max(0, Math.min(maxQtyForItemId(id), next));
       syncStepper(id);
       updateSummary();
       if (cartTotals(getCart()).totalItems > 0) hideCartError();
@@ -668,7 +683,12 @@
       const qty = qtyById[id];
       root.querySelector('.qty').textContent = String(qty);
       root.querySelector('.minus').disabled = qty <= 0;
-      root.querySelector('.plus').disabled = qty >= MAX_QTY;
+      root.querySelector('.plus').disabled = qty >= maxQtyForItemId(id);
+    }
+
+    function maxQtyForItemId(id) {
+      const rem = remainingForItemId(id);
+      return Math.min(MAX_QTY, rem === Infinity ? MAX_QTY : rem);
     }
 
     function renderCartLines(cart) {
@@ -755,10 +775,11 @@
         btn.setAttribute('aria-pressed', btn.dataset.id === id ? 'true' : 'false');
       });
       clearFieldError('pickupDate');
+      applyStockToMenu();
       refreshCheckoutErrorSummary();
     }
 
-    // Pre-order: dates are never sold out. Helpers kept so older tests still resolve.
+    // Dates are never hidden for stock (only individual cakes sell out). Helpers kept so older tests still resolve.
     function dateHasAvailableStock(dateId) {
       return !!dateId;
     }
@@ -806,11 +827,15 @@
     }
 
     /**
-     * Pre-order: every listed item is always available. Kept so older
-     * tests that call remainingForItem still resolve (unlimited).
+     * Units still available for an item on a pickup date (default: the
+     * selected date). Infinity = unlimited (no limit set, or stock unknown).
      */
     function remainingForItem(item, dateId) {
-      return Infinity;
+      const date = findPickupDate(dateId || els.pickupDate.value);
+      if (!date || !date.remaining) return Infinity;
+      const v = date.remaining[displayName(item)];
+      if (v === null || typeof v === 'undefined') return Infinity;
+      return Math.max(0, Math.floor(Number(v)));
     }
 
     function normalizeStockRemaining(raw) {
@@ -917,23 +942,52 @@
       }, 4200);
     }
 
-    /** Pre-order: no remaining counts or sold-out notes on the cards. */
+    /**
+     * Apply the selected date's remaining stock to the menu: out-of-stock
+     * cakes are dimmed with a note and cannot be added; small remainders cap
+     * the stepper ("Only N left"); a cart that exceeds the limit is clamped.
+     * Returns the list of clamped lines ({name, qty, remaining}).
+     */
     function applyStockToMenu(opts) {
+      opts = opts || {};
+      const clamped = [];
       MENU_ITEMS.forEach(function (item) {
         const card = els.menuList.querySelector('.stepper[data-id="' + item.id + '"]');
         const wrap = card && card.closest('.menu-card');
+        const rem = remainingForItem(item);
+        if (isFinite(rem) && (qtyById[item.id] || 0) > rem) {
+          clamped.push({ name: displayName(item), qty: qtyById[item.id], remaining: rem });
+          qtyById[item.id] = rem;
+        }
         if (wrap) {
-          wrap.classList.remove('sold-out');
+          const out = isFinite(rem) && rem <= 0;
+          wrap.classList.toggle('sold-out', out);
           const note = wrap.querySelector('.stock-note');
           if (note) {
-            note.textContent = '';
-            note.hidden = true;
+            let text = '';
+            if (out) text = 'Out of stock · More will arrive in the next batch';
+            else if (isFinite(rem) && rem <= LOW_STOCK_NOTE_AT) text = 'Only ' + rem + ' left';
+            note.textContent = text;
+            note.hidden = !text;
           }
         }
         syncStepper(item.id);
       });
       updateSummary();
-      return false;
+      if (clamped.length && !opts.silent) {
+        showToast('Cart updated: ' + clamped.map(function (c) {
+          return c.remaining > 0 ? 'only ' + c.remaining + ' left of ' + c.name : c.name + ' is out of stock';
+        }).join('; '));
+      }
+      return clamped;
+    }
+
+    /** Lines in the cart that exceed the selected date's remaining stock. */
+    function stockShortfalls() {
+      return getCart().filter(function (line) {
+        const item = MENU_ITEMS.find(function (it) { return it.id === line.id; });
+        return item && line.qty > remainingForItem(item);
+      }).map(function (line) { return line.name; });
     }
 
     function fetchJsonWithTimeout(url, ms) {
@@ -1004,6 +1058,7 @@
           setStockStatus('ok', '');
           renderPickupDates();
           selectFirstDateWithStock({ silent: true, skipReload: true });
+          applyStockToMenu();
         }
       } catch (err) {
         // Keep the current catalog (PICKUP_DATES or last successful list).
@@ -1021,9 +1076,30 @@
       setStockStatus('ok', '');
       renderPickupDates();
       selectFirstDateWithStock({ silent: true, skipReload: true });
+      applyStockToMenu({ silent: true });
     }
 
-    /** Test helper: inject an optional dates list (remaining is ignored). */
+    /**
+     * Re-read stock just before submitting so a stale page can't oversell.
+     * Fails open: if stock can't be fetched the order goes ahead.
+     * Resolves to the names of cart lines that are now short.
+     */
+    async function refreshStockBeforeSubmit() {
+      if (!isSheetsUrlConfigured(getSheetsWebAppUrl())) return [];
+      if (typeof window !== 'undefined' && window.__TEST_DISABLE_NETWORK) return [];
+      try {
+        const data = await fetchStockPayload(2000);
+        if (data && data.dates && data.dates.length) {
+          const selected = els.pickupDate.value;
+          applyStockDates(data.dates);
+          if (selected && !findPickupDate(selected)) return [];
+          return stockShortfalls();
+        }
+      } catch (err) { /* fail open */ }
+      return [];
+    }
+
+    /** Test helper: inject a dates list; each date may carry `remaining` ({item name: number|null}). The first argument is legacy and ignored. */
     function __setStockForTest(remaining, status, dates) {
       if (typeof dates !== 'undefined') applyStockDates(dates);
       stockState.status = status || 'ok';
@@ -1034,7 +1110,7 @@
       setStockStatus('ok', '');
       renderPickupDates();
       selectFirstDateWithStock({ silent: true, skipReload: true });
-      return applyStockToMenu();
+      return applyStockToMenu({ silent: true });
     }
 
     function __setSheetsUrlForTest(url) {
@@ -1271,8 +1347,9 @@
       formAlertFirstIssue = issues[0];
       formAlertPrevFocus = document.activeElement;
       const closed = issues.length === 1 && issues[0].key === 'closed';
-      els.formAlertTitle.textContent = closed ? 'Pre-orders closed' : 'Almost there!';
-      els.formAlertOk.textContent = closed ? 'OK' : 'OK, fix it';
+      const stock = issues.every(function (issue) { return issue.key === 'stock'; });
+      els.formAlertTitle.textContent = closed ? 'Pre-orders closed' : (stock ? 'Out of stock' : 'Almost there!');
+      els.formAlertOk.textContent = (closed || stock) ? 'OK' : 'OK, fix it';
       if (closed) {
         els.formAlertBody.innerHTML = '<p class="mb-4 text-[0.95rem] font-semibold text-ink" id="form-alert-list">' + escapeHtml(issues[0].message) + '</p>';
       } else {
@@ -1503,6 +1580,15 @@
           keepalive: true,
           signal: controller.signal
         });
+        if (res && res.status === 409) {
+          let body = null;
+          try { body = await res.json(); } catch (e) { /* not JSON */ }
+          if (body && body.error === 'out_of_stock') {
+            const stockErr = new Error('out_of_stock');
+            stockErr.outOfStock = Array.isArray(body.items) ? body.items : [];
+            throw stockErr;
+          }
+        }
         const data = await readJsonResponse(res);
         if (!data || !data.ok) throw new Error((data && data.error) || 'order api error');
         return data;
@@ -1718,6 +1804,32 @@
       }
     }
 
+    /**
+     * Out of stock at checkout: refresh stock, clamp the cart, and tell the
+     * customer which cakes are gone (custom modal, no WhatsApp).
+     */
+    async function rejectForStock(names, refetch) {
+      if (refetch) {
+        try {
+          if (isSheetsUrlConfigured(getSheetsWebAppUrl()) && !window.__TEST_DISABLE_NETWORK) {
+            const data = await fetchStockPayload(2000);
+            if (data && data.dates && data.dates.length) applyStockDates(data.dates);
+          }
+        } catch (err) { /* keep what we have */ }
+      }
+      applyStockToMenu({ silent: true });
+      resetSubmitButton();
+      const list = (names && names.length) ? names : ['One of the cakes in your cart'];
+      showFormAlert(list.map(function (name) {
+        return {
+          key: 'stock',
+          message: name + ' is out of stock for this date. More will arrive in the next batch, so please pick another date or cake.',
+          target: els.menuList,
+          focus: null
+        };
+      }));
+    }
+
     async function placeOrder() {
       if (els.placeBtn.disabled && !els.placeBtn.classList.contains('closed')) return;
       if (getOpenPickupDates().length === 0) {
@@ -1747,13 +1859,26 @@
 
       els.placeBtn.disabled = true;
       els.placeBtn.classList.remove('closed');
+      els.placeBtn.textContent = 'Checking stock…';
+
+      const short = await refreshStockBeforeSubmit();
+      if (short.length) {
+        await rejectForStock(short);
+        return;
+      }
       els.placeBtn.textContent = 'Placing order…';
 
       let contact = null;
       try {
         const reply = await postOrderApi(order, ORDER_API_TIMEOUT_MS);
         contact = resolveContact(reply.contact);
-      } catch (err) { /* fall back below */ }
+      } catch (err) {
+        if (err && err.outOfStock) {
+          await rejectForStock(err.outOfStock.length ? err.outOfStock : stockShortfalls(), true);
+          return;
+        }
+        /* otherwise fall back below */
+      }
 
       if (contact) {
         applyContactToOrder(order, contact);
@@ -1783,6 +1908,7 @@
     renderMenu();
     renderPickupDates();
     selectFirstDateWithStock({ silent: true, skipReload: true });
+    applyStockToMenu({ silent: true });
     renderMassTimes();
     updateSummary();
     loadPickupDates();

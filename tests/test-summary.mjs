@@ -315,6 +315,30 @@ assert('paid includes Paid plus Picked up cakes',
 assert('pending pickup is ordered minus picked up',
   stNov.sales.pendingPickup.cakes === 4, JSON.stringify(stNov.sales));
 
+// ---- OVERSOLD (saved over stock) ----
+assert('normalizeOrderStatus_ keeps OVERSOLD as its own status (incl. legacy text)',
+  context.normalizeOrderStatus_('OVERSOLD') === 'OVERSOLD' &&
+  context.normalizeOrderStatus_('OVERSOLD - CHECK') === 'OVERSOLD' &&
+  context.normalizeOrderStatus_('Paid') === 'Paid');
+assert('OVERSOLD is neither paid, picked up nor cancelled',
+  context.isPaidStatus_('OVERSOLD') === false && context.isCancelledStatus_('OVERSOLD') === false &&
+  context.isPickedUpStatus_('OVERSOLD') === false);
+{
+  const ovGrid = statusGrid.concat([
+    row({ orderId: 'PB-S6', pickupDate: '2026-11-29', mass: '6:30 AM Mass', amount: 1050, totalItems: 3, name: 'Fay', status: 'OVERSOLD' },
+      { 'Rich Plum Cake (400g)': 3 })
+  ]);
+  const ov = context.computeOrderSummaryFromValues_(ovGrid, DATES, MENU, ['06:30', '08:30'], now);
+  const ovNov = ov.dates[0];
+  assert('OVERSOLD counts as ordered', ovNov.sales.ordered.orders === 5 && ovNov.totals.cakes === 9 &&
+    ovNov.items['Rich Plum Cake (400g)'].ordered === 8, JSON.stringify(ovNov.sales));
+  assert('OVERSOLD is listed separately per date and in the grand total',
+    ovNov.sales.oversold.orders === 1 && ovNov.sales.oversold.cakes === 3 &&
+    ov.grand.sales.oversold.orders === 1 && ov.grand.sales.oversold.cakes === 3 &&
+    ov.dates[1].sales.oversold.orders === 0, JSON.stringify(ovNov.sales.oversold));
+  assert('OVERSOLD is not counted as paid', ovNov.sales.paid.cakes === 3, JSON.stringify(ovNov.sales));
+}
+
 const walkHeaders = ['Date', 'Mass', 'Item', 'Qty', 'Price each', 'Amount', 'Payment', 'Notes'];
 const walkGrid = [
   walkHeaders,

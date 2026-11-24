@@ -127,6 +127,7 @@
     pillPaid: 'bg-[#dce8c8] text-pine',
     pillPicked: 'bg-[#d9e4fb] text-brand-blue-dark',
     pillCancelled: 'bg-[#ece8e1] text-muted',
+    pillOversold: 'bg-[#fbd9cc] text-maroon-dark',
     pillQueued: 'bg-[#fff4d6] text-gold-dark',
     empty: 'my-[0.6rem] rounded-card bg-cream-light px-[0.8rem] py-[1.1rem] text-center text-muted',
     card: 'rounded-card bg-cream-light px-[0.9rem] pt-[0.85rem] pb-[0.9rem] shadow-card',
@@ -261,6 +262,7 @@
     if (status === 'Paid') return CLS.pill + ' ' + CLS.pillPaid;
     if (status === 'Picked up') return CLS.pill + ' ' + CLS.pillPicked;
     if (status === 'Cancelled') return CLS.pill + ' ' + CLS.pillCancelled;
+    if (status === 'OVERSOLD') return CLS.pill + ' ' + CLS.pillOversold;
     return CLS.pill + ' ' + CLS.pillPending;
   }
 

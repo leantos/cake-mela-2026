@@ -68,9 +68,19 @@ assert('fresh cache requires matching gen',
 assert('stale cache gen is rejected',
   context.stockCacheIsFresh_(JSON.stringify({ ok: true, remaining: {}, _gen: '7' }), '8') === false);
 assert('empty cache is not fresh', context.stockCacheIsFresh_(null, '7') === false);
-assert('public payload strips _gen',
-  JSON.stringify(context.publicStockPayload_({ ok: true, dates: [], remaining: { a: 1 }, _gen: '9' })) ===
-  JSON.stringify({ ok: true, dates: [], remaining: { a: 1 } }));
+{
+  const pub = context.publicStockPayload_({
+    ok: true,
+    dates: [{ id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: 'x' }, { id: '2026-12-06', label: 'Sun, 6 Dec', closesAt: 'y' }],
+    remaining: { '2026-11-29': { A: 1 }, '2026-12-06': { A: null } },
+    _gen: '9'
+  });
+  assert('public payload strips _gen', !('_gen' in pub));
+  assert('public payload repeats remaining on each dates[] entry (null = unlimited)',
+    pub.dates[0].remaining.A === 1 && pub.dates[1].remaining.A === null &&
+    pub.remaining['2026-11-29'].A === 1 && pub.ok === true && typeof pub.version === 'string',
+    JSON.stringify(pub));
+}
 
 
 function extractFunction(src, name) {
@@ -239,52 +249,76 @@ assert('duplicate later blank date column does not wipe the first column cap',
   JSON.stringify(dupPayload.remaining));
 
 
-// ---- carry-forward leftover stock ----
+vm.runInContext(extractFunction(src, 'usedByDateFromSummary_'), context);
+// ---- carry-forward leftover stock (blank = unlimited, batch + leftover) ----
+const D = 'Dates & Carrot Pudding (700g)';
+const P = 'Rich Plum Cake (400g)';
 const cfStock = [
   ['Item', '29 Nov 2026', '6 Dec 2026'],
-  ['Dates & Carrot Pudding (700g)', 15, ''],
-  ['Rich Plum Cake (400g)', 0, 10]
+  [D, 15, ''],
+  [P, 0, 10]
 ];
-const cf1 = context.computeRemainingFromTables_(cfStock, {
-  '2026-11-29': { 'Dates & Carrot Pudding (700g)': 5 }
-}, MENU);
-assert('29 Nov stock 15 minus 5 orders is 10', cf1.remaining['2026-11-29']['Dates & Carrot Pudding (700g)'] === 10, JSON.stringify(cf1.remaining));
-assert('blank 6 Dec inherits the leftover 10', cf1.remaining['2026-12-06']['Dates & Carrot Pudding (700g)'] === 10, JSON.stringify(cf1.remaining));
-assert('explicit 0 on 29 Nov is sold out (not unlimited)', cf1.remaining['2026-11-29']['Rich Plum Cake (400g)'] === 0);
-assert('later cap of 10 after a 0 still offers 10 (0 adds nothing)', cf1.remaining['2026-12-06']['Rich Plum Cake (400g)'] === 10);
+const cf1 = context.computeRemainingFromTables_(cfStock, { '2026-11-29': { [D]: 5 } }, MENU);
+assert('29 Nov batch 15 minus 5 used is 10', cf1.remaining['2026-11-29'][D] === 10, JSON.stringify(cf1.remaining));
+assert('blank 6 Dec is UNLIMITED even though 29 Nov had a cap', cf1.remaining['2026-12-06'][D] === null, JSON.stringify(cf1.remaining));
+assert('29 Nov stays 10: an unlimited later date claims nothing from it', cf1.remaining['2026-11-29'][D] === 10);
+assert('explicit 0 with no leftover is sold out (not unlimited)', cf1.remaining['2026-11-29'][P] === 0);
+assert('0 leftover + batch 10 offers 10 on 6 Dec', cf1.remaining['2026-12-06'][P] === 10);
 
-const cf2 = context.computeRemainingFromTables_(cfStock, {
-  '2026-11-29': { 'Dates & Carrot Pudding (700g)': 5 },
-  '2026-12-06': { 'Dates & Carrot Pudding (700g)': 10 }
-}, MENU);
-assert('order of 10 on 6 Dec empties the shared pool', cf2.remaining['2026-12-06']['Dates & Carrot Pudding (700g)'] === 0);
-assert('earlier date also drops to 0 after the later order (min over later raw remaining)', cf2.remaining['2026-11-29']['Dates & Carrot Pudding (700g)'] === 0, JSON.stringify(cf2.remaining));
+// Two capped dates in a row: leftover + new batch.
+const cf2Stock = [['Item', '29 Nov 2026', '6 Dec 2026'], [D, 10, 5]];
+const cf2 = context.computeRemainingFromTables_(cf2Stock, { '2026-11-29': { [D]: 7 } }, [D]);
+assert('29 Nov: 10 - 7 = 3 left', cf2.remaining['2026-11-29'][D] === 3, JSON.stringify(cf2.remaining));
+assert('6 Dec = leftover 3 + new batch 5 = 8', cf2.remaining['2026-12-06'][D] === 8, JSON.stringify(cf2.remaining));
 
-const cf3Stock = [
-  ['Item', '29 Nov 2026', '6 Dec 2026'],
-  ['Dates & Carrot Pudding (700g)', 15, 10]
-];
-const cf3 = context.computeRemainingFromTables_(cf3Stock, {
-  '2026-12-06': { 'Dates & Carrot Pudding (700g)': 20 }
-}, ['Dates & Carrot Pudding (700g)']);
-assert('later extra cap: raw 6 Dec is 25-20=5', cf3.remaining['2026-12-06']['Dates & Carrot Pudding (700g)'] === 5, JSON.stringify(cf3.remaining));
-assert('earlier date is min(15, 5)=5 so a later order cannot oversell it', cf3.remaining['2026-11-29']['Dates & Carrot Pudding (700g)'] === 5, JSON.stringify(cf3.remaining));
+const cf3 = context.computeRemainingFromTables_(cf2Stock, {
+  '2026-11-29': { [D]: 7 },
+  '2026-12-06': { [D]: 6 }
+}, [D]);
+assert('6 Dec: 3 + 5 - 6 = 2', cf3.remaining['2026-12-06'][D] === 2, JSON.stringify(cf3.remaining));
+assert('29 Nov is capped at 2 so an order there cannot take stock 6 Dec already claimed',
+  cf3.remaining['2026-11-29'][D] === 2, JSON.stringify(cf3.remaining));
 
-const cf4 = context.computeRemainingFromTables_(
-  [['Item', '29 Nov 2026', '6 Dec 2026'], ['Dates & Carrot Pudding (700g)', '', 10]],
-  { '2026-11-29': { 'Dates & Carrot Pudding (700g)': 8 } },
-  ['Dates & Carrot Pudding (700g)']
-);
-assert('unlimited on 29 Nov when no earlier numeric cap', cf4.remaining['2026-11-29']['Dates & Carrot Pudding (700g)'] === null);
-assert('later cap still sees earlier unlimited-date orders (10-8=2)', cf4.remaining['2026-12-06']['Dates & Carrot Pudding (700g)'] === 2, JSON.stringify(cf4.remaining));
+const cf3b = context.computeRemainingFromTables_(cf2Stock, {
+  '2026-11-29': { [D]: 2 },
+  '2026-12-06': { [D]: 99 }
+}, [D]);
+assert('sold out everywhere: floors at 0, never negative',
+  cf3b.remaining['2026-11-29'][D] === 0 && cf3b.remaining['2026-12-06'][D] === 0, JSON.stringify(cf3b.remaining));
 
+// An unlimited date in the middle resets the pool and ends the guard chain.
+const cf4Stock = [['Item', '29 Nov 2026', '6 Dec 2026', '13 Dec 2026'], [D, 10, '', 4]];
+const cf4 = context.computeRemainingFromTables_(cf4Stock, {
+  '2026-11-29': { [D]: 2 },
+  '2026-12-13': { [D]: 4 }
+}, [D]);
+assert('29 Nov keeps 8: the unlimited 6 Dec leaves nothing behind and 13 Dec cannot claim it',
+  cf4.remaining['2026-11-29'][D] === 8, JSON.stringify(cf4.remaining));
+assert('unlimited middle date is null', cf4.remaining['2026-12-06'][D] === null);
+assert('13 Dec starts a fresh pool (leftover 8 from 29 Nov is not carried across the unlimited date)',
+  cf4.remaining['2026-12-13'][D] === 0, JSON.stringify(cf4.remaining));
+
+// Orders on an unlimited date never reduce a later batch.
 const cf5 = context.computeRemainingFromTables_(
-  [['Item', '29 Nov 2026', '6 Dec 2026'], ['Dates & Carrot Pudding (700g)', 3, 0]],
-  { '2026-12-06': { 'Dates & Carrot Pudding (700g)': 5 } },
-  ['Dates & Carrot Pudding (700g)']
+  [['Item', '29 Nov 2026', '6 Dec 2026'], [D, '', 10]],
+  { '2026-11-29': { [D]: 8 } },
+  [D]
 );
-assert('pool is clamped at 0 (cannot go negative)', cf5.remaining['2026-12-06']['Dates & Carrot Pudding (700g)'] === 0);
-assert('earlier date also 0 when later orders exhaust the 3-unit pool', cf5.remaining['2026-11-29']['Dates & Carrot Pudding (700g)'] === 0);
+assert('unlimited 29 Nov', cf5.remaining['2026-11-29'][D] === null);
+assert('later batch is untouched by orders on the earlier unlimited date (10)', cf5.remaining['2026-12-06'][D] === 10, JSON.stringify(cf5.remaining));
+
+// Items with no Stock row are unlimited.
+const cf6 = context.computeRemainingFromTables_(
+  [['Item', '29 Nov 2026'], [D, 5]], {}, [D, P]
+);
+assert('item with no Stock row is unlimited', cf6.remaining['2026-11-29'][P] === null, JSON.stringify(cf6.remaining));
+
+// Pool used for stock = non-cancelled orders + non-void walk-ins (via the summary).
+const usedSummary = {
+  dates: [{ id: '2026-11-29', items: { [D]: { ordered: 3, walkIn: 2 }, [P]: { ordered: 0, walkIn: 0 } } }]
+};
+const usedMap = context.usedByDateFromSummary_(usedSummary, [D, P]);
+assert('used = ordered + walk-in per item', usedMap['2026-11-29'][D] === 5 && !usedMap['2026-11-29'][P], JSON.stringify(usedMap));
 
 vm.runInContext(extractFunction(src, 'orderExceedsRemaining_'), context);
 const remMap = { 'Dates & Carrot Pudding (700g)': 2, 'Rich Plum Cake (400g)': null };
@@ -294,8 +328,10 @@ assert('ok when qty is within a numeric cap',
   context.orderExceedsRemaining_([{ name: 'Dates & Carrot Pudding (700g)', qty: 2 }], remMap) === false);
 assert('unlimited null never exceeds',
   context.orderExceedsRemaining_([{ name: 'Rich Plum Cake (400g)', qty: 99 }], remMap) === false);
-assert('unlisted item is treated as sold out',
-  context.orderExceedsRemaining_([{ name: 'Unknown Cake', qty: 1 }], remMap) === true);
+assert('item with no Stock row has no limit',
+  context.orderExceedsRemaining_([{ name: 'Unknown Cake', qty: 1 }], remMap) === false);
+assert('0 remaining means any quantity exceeds',
+  context.orderExceedsRemaining_([{ name: 'Dates & Carrot Pudding (700g)', qty: 1 }], { 'Dates & Carrot Pudding (700g)': 0 }) === true);
 
 
 const failed = results.filter((r) => !r.ok);

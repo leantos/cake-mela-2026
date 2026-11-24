@@ -8,7 +8,8 @@
  */
 import { getStore } from '@netlify/blobs';
 import {
-  STORE_NAME, blobsConsistency, acceptOrder, forwardOrder, countPending, appsScriptUrl
+  STORE_NAME, blobsConsistency, acceptOrder, forwardOrder, countPending, appsScriptUrl,
+  fetchStock, stockShortfalls, noteOrderInStockCache
 } from '../lib/orders.mjs';
 
 const JSON_HEADERS = {
@@ -43,7 +44,14 @@ export default async (req, context) => {
 
   let result;
   try {
-    result = await acceptOrder(store, raw);
+    // Fails open: if the stock can't be read, the order is accepted.
+    const url = appsScriptUrl({ APPS_SCRIPT_URL: process.env.APPS_SCRIPT_URL });
+    result = await acceptOrder(store, raw, {
+      stockCheck: async (order) => stockShortfalls(order, await fetchStock({ url }))
+    });
+    if (result.status === 200 && result.body.status === 'queued' && result.record) {
+      noteOrderInStockCache(result.record.order);
+    }
   } catch (err) {
     console.error('acceptOrder failed', err);
     // 503 tells the page to use its own fallback (direct to the Sheet).
