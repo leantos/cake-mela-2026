@@ -1,7 +1,7 @@
 # Netlify build settings for the Vailankanni Parish Youth cake pre-order site.
 [build]
   publish = "public"
-  command = "echo 'static site, no build step'"
+  command = "npm run build"
 
 [functions]
   directory = "netlify/functions"

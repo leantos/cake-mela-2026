@@ -30,7 +30,7 @@ assert('outbox uses localStorage and retries',
 assert('orders auto-refresh every 30s', /REFRESH_MS = 30000/.test(staffHtml));
 assert('search is debounced', /SEARCH_DEBOUNCE_MS/.test(staffHtml));
 assert('tap targets are at least 44px',
-  /min-height: 48px/.test(staffHtml) &&
+  /min-h-12/.test(staffHtml) &&
   /Mark Paid/.test(staffHtml) &&
   /Picked up/.test(staffHtml));
 
@@ -284,8 +284,10 @@ async function loadPreview() {
 
 {
   const html = (await import('node:fs')).readFileSync(new URL('../public/staff.html', import.meta.url), 'utf8');
-  assert('desktop layout: wide container media query', /@media \(min-width: 720px\)[\s\S]*\.app \{ max-width: 1100px/.test(html));
-  assert('desktop layout: order cards grid', /\.order-list \{ display: grid; grid-template-columns: repeat\(2/.test(html));
+  assert('uses Tailwind (stylesheet linked, no big inline <style>)', html.includes('href="/tailwind.css"') && !/\.order-card\s*\{/.test(html));
+  assert('desktop layout: wide container at 720px+', html.includes('min-[720px]:max-w-[1100px]'));
+  assert('desktop layout: order cards grid 2 then 3 columns',
+    /id="order-list"/.test(html) && html.includes('min-[720px]:grid-cols-2') && html.includes('min-[1000px]:grid-cols-3'));
   assert('desktop layout: walk-in form and list columns',
     /walkin-form">[\s\S]*id="record-sale"[\s\S]*<\/div>\s*<div class="walkin-side">[\s\S]*id="walkin-list"/.test(html));
 }

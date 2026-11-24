@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "netlify dev",
     "test": "node tests/run-all.mjs",
-    "zip": "node scripts/make-drop-zip.mjs"
+    "zip": "npm run build && node scripts/make-drop-zip.mjs",
+    "build": "tailwindcss -i src/tailwind.css -o public/tailwind.css --minify",
+    "build:watch": "tailwindcss -i src/tailwind.css -o public/tailwind.css --watch"
   },
   "engines": {
     "node": ">=20"
@@ -15,6 +17,8 @@
     "@netlify/blobs": "^11.1.10"
   },
   "devDependencies": {
-    "jsdom": "^31.0.1"
+    "@tailwindcss/cli": "^4.3.5",
+    "jsdom": "^31.0.1",
+    "tailwindcss": "^4.3.5"
   }
 }

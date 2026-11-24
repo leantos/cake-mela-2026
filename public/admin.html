@@ -11,544 +11,107 @@
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="preconnect" href="https://script.google.com">
   <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+  <link rel="stylesheet" href="tailwind.css">
   <style>
-    /* Palette matches index.html (from poster.png and logo.png). */
-    :root {
-      --maroon: #7a0a10;
-      --maroon-dark: #520505;
-      --maroon-soft: #ead6d0;
-      --gold: #c27b13;
-      --gold-dark: #904108;
-      --cream: #f7ede5;
-      --cream-light: #fbf9f7;
-      --cream-deep: #eadace;
-      --page-bg: #dff3fa;
-      --ink: #2a2306;
-      --muted: #5d563e;
-      --pine: #435718;
-      --blue: #0544b3;
-      --blue-dark: #0c3c98;
-      --line: #eadace;
-      --card: var(--cream-light);
-      --bg: var(--cream);
-      --shadow: 0 8px 24px rgba(42, 35, 6, 0.1);
-      --radius: 16px;
-      --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
-      --serif: Georgia, "Palatino Linotype", Palatino, "Times New Roman", serif;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      font-family: var(--font);
-      background: var(--page-bg);
-      color: var(--ink);
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .app {
-      max-width: 480px;
-      margin: 0 auto;
-      min-height: 100vh;
-      background: var(--bg);
-      box-shadow: 0 0 40px rgba(42, 35, 6, 0.12);
-      padding-bottom: 2.5rem;
-    }
-
-    header.hero-head {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      background: var(--card);
-      color: var(--blue);
-      padding: 0.7rem 0.9rem;
-      border-bottom: 3px solid var(--maroon);
-    }
-    header.hero-head .logo {
-      display: block;
-      width: 56px;
-      height: 56px;
-      flex-shrink: 0;
-    }
-    header.hero-head .brand { min-width: 0; text-align: left; flex: 1; }
-    .staff-link {
-      margin-left: auto;
-      flex-shrink: 0;
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--maroon);
-      text-decoration: none;
-      padding: 0.4rem 0.75rem;
-      border: 1.5px solid var(--maroon);
-      border-radius: 999px;
-      white-space: nowrap;
-      align-self: center;
-    }
-    .staff-link:hover, .staff-link:focus-visible {
-      background: var(--maroon);
-      color: #fff;
-      outline: none;
-    }
-    header.hero-head h1 {
-      margin: 0;
-      font-family: var(--serif);
-      font-size: 1.12rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      line-height: 1.2;
-      color: var(--blue);
-    }
-    header.hero-head .tagline {
-      margin: 0.2rem 0 0;
-      font-size: 0.75rem;
-      font-weight: 600;
-      line-height: 1.3;
-      color: var(--muted);
-    }
-
-    .example-banner {
-      display: none;
-      margin: 0;
-      padding: 0.4rem 0.9rem;
-      background: var(--gold);
-      color: #fff;
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-align: center;
-    }
-    .example-banner.visible { display: block; }
-
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.45rem 0.6rem;
-      padding: 0.85rem 0.9rem 0.4rem;
-    }
-    .updated {
-      flex: 1 1 12rem;
-      margin: 0;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--muted);
-    }
-    .toolbar-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-    .btn {
-      appearance: none;
-      border: 1.5px solid var(--maroon);
-      background: var(--card);
-      color: var(--maroon);
-      font: inherit;
-      font-size: 0.82rem;
-      font-weight: 700;
-      border-radius: 999px;
-      padding: 0.4rem 0.8rem;
-      min-height: 40px;
-      cursor: pointer;
-    }
-    .btn:hover { background: var(--maroon-soft); }
-    .btn:focus { outline: none; }
-    .btn:focus-visible {
-      outline: 3px solid rgba(122, 10, 16, 0.45);
-      outline-offset: 2px;
-    }
-    .btn-primary {
-      background: var(--maroon);
-      color: var(--cream-light);
-    }
-    .btn-primary:hover { background: var(--maroon-dark); }
-
-    .status {
-      min-height: 1.2rem;
-      margin: 0 0.9rem 0.5rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--muted);
-    }
-    .status.is-error { color: var(--maroon-dark); }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
-      padding: 0 0.9rem 0.85rem;
-    }
-    .sales-cards {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      padding-top: 0;
-    }
-    @media (min-width: 600px) {
-      .sales-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
-    .progress {
-      margin: 0.85rem 0 1rem;
-      background: var(--cream-deep);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      overflow: hidden;
-      position: relative;
-      min-height: 1.6rem;
-    }
-    .progress-fill {
-      display: block;
-      height: 1.6rem;
-      background: var(--pine);
-      width: 0;
-      max-width: 100%;
-    }
-    .progress-label {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-    .sold-table { margin-top: 0.85rem; }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 0.7rem 0.55rem 0.65rem;
-      text-align: center;
-    }
-    .card .label {
-      margin: 0;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .card .value {
-      margin: 0.2rem 0 0;
-      font-family: var(--serif);
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--maroon);
-      font-variant-numeric: tabular-nums;
-      line-height: 1.15;
-    }
-
-    .date-picker {
-      padding: 0 0.9rem 0.85rem;
-    }
-    .date-picker h2 {
-      margin: 0 0 0.45rem;
-      font-size: 0.8rem;
-      font-weight: 700;
-    }
-    .date-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-    }
-    .date-chip {
-      appearance: none;
-      border: 1.5px solid var(--line);
-      background: var(--card);
-      color: var(--ink);
-      border-radius: 999px;
-      padding: 0.45rem 0.8rem;
-      min-height: 40px;
-      font: inherit;
-      font-size: 0.82rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .date-chip[aria-pressed="true"] {
-      background: var(--maroon-soft);
-      border-color: var(--maroon);
-      color: var(--maroon-dark);
-    }
-    .date-chip:focus { outline: none; }
-    .date-chip:focus-visible {
-      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.45);
-    }
-
-    .panels { padding: 0 0.9rem 1rem; }
-
-    details.date-panel,
-    details.past-group,
-    details.matrix-panel {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      margin: 0 0 0.65rem;
-      overflow: hidden;
-    }
-    details.past-group { background: #f3ece4; }
-    details > summary {
-      list-style: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-      padding: 0.8rem 0.9rem;
-      font-weight: 700;
-    }
-    details > summary::-webkit-details-marker { display: none; }
-    details > summary::marker { content: ""; }
-    .chevron {
-      width: 0.65rem;
-      height: 0.65rem;
-      flex-shrink: 0;
-      border-right: 2px solid var(--maroon);
-      border-bottom: 2px solid var(--maroon);
-      transform: rotate(-45deg);
-      transition: transform 0.2s ease;
-      margin: 0 0.15rem 0 0.1rem;
-    }
-    details[open] > summary .chevron { transform: rotate(45deg); }
-    .summary-text { flex: 1 1 auto; min-width: 0; }
-    .summary-title { display: block; font-size: 1rem; }
-    .summary-meta {
-      display: block;
-      margin-top: 0.15rem;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--muted);
-    }
-
-    .panel-body {
-      display: grid;
-      grid-template-rows: 0fr;
-      transition: grid-template-rows 0.22s ease;
-    }
-    details[open] > .panel-body { grid-template-rows: 1fr; }
-    .panel-inner {
-      overflow: hidden;
-      padding: 0 0.85rem 0.9rem;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-    }
-    caption {
-      text-align: left;
-      font-weight: 800;
-      font-size: 0.95rem;
-      margin: 0 0 0.5rem;
-      color: var(--ink);
-    }
-    th, td {
-      padding: 0.4rem 0.35rem;
-      text-align: right;
-      border-bottom: 1px solid var(--line);
-      font-variant-numeric: tabular-nums;
-    }
-    th:first-child, td:first-child { text-align: left; }
-    thead th {
-      font-size: 0.72rem;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    tfoot th, tfoot td {
-      font-weight: 800;
-      border-bottom: 0;
-      color: var(--maroon-dark);
-    }
-    .table-actions { margin-top: 0.7rem; }
-
-    .matrix-wrap { overflow-x: auto; }
-    .matrix-panel { display: none; }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 1.25rem;
-      transform: translateX(-50%) translateY(8px);
-      max-width: calc(100vw - 2rem);
-      background: var(--ink);
-      color: var(--cream-light);
-      padding: 0.6rem 0.9rem;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      z-index: 40;
-    }
-    .toast.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .chevron, .panel-body, .toast { transition: none; }
-    }
-
-    @media (min-width: 768px) {
-      .app { max-width: 720px; }
-      .card .value { font-size: 1.4rem; }
-    }
-
-    /* Desktop: full-width fluid shell, larger type, readable tables. */
-    @media (min-width: 1024px) {
-      .app {
-        width: 100%;
-        max-width: 1600px;
-        margin: 0 auto;
-        box-shadow: none;
-        background: transparent;
-        padding: clamp(16px, 3vw, 48px);
-        padding-bottom: clamp(16px, 3vw, 48px);
-      }
-      header.hero-head {
-        border-radius: 14px 14px 0 0;
-        border-bottom: 3px solid var(--maroon);
-        padding: 0.85rem 1.35rem;
-      }
-      header.hero-head .logo { width: 64px; height: 64px; }
-      header.hero-head h1 { font-size: 1.45rem; }
-      header.hero-head .tagline { font-size: 0.9rem; }
-      .page-body {
-        background: var(--bg);
-        border-radius: 0 0 14px 14px;
-        box-shadow: var(--shadow);
-        padding-bottom: 1.75rem;
-      }
-      .toolbar, .cards, .date-picker, .panels { padding-left: 1.35rem; padding-right: 1.35rem; }
-      .status { margin-left: 1.35rem; margin-right: 1.35rem; font-size: 0.95rem; }
-      .updated { font-size: 0.92rem; }
-      .btn, .date-chip { font-size: 0.92rem; padding: 0.45rem 0.95rem; }
-      .date-picker h2 { font-size: 0.9rem; }
-      .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; padding-bottom: 0.7rem; }
-      .sales-cards { grid-template-columns: repeat(5, minmax(0, 1fr)); padding-bottom: 0.85rem; }
-      .card { padding: 0.95rem 1rem; }
-      .card .label { font-size: 0.78rem; }
-      .card .value { font-size: 2rem; }
-      .date-picker { padding-bottom: 0.7rem; }
-      .summary-title { font-size: 1.18rem; }
-      .summary-meta { font-size: 0.92rem; }
-      details > summary { padding: 0.85rem 1.15rem; }
-      table { font-size: 1.05rem; }
-      caption { font-size: 1.12rem; margin-bottom: 0.5rem; }
-      th, td { padding: 0.48rem 0.6rem; }
-      thead th { font-size: 0.8rem; }
-      .matrix-panel { display: block; }
-    }
-
-    /* Wide desktop: date panels left, all-dates matrix right. */
-    @media (min-width: 1100px) {
-      .dashboard {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(520px, 1.15fr);
-        column-gap: 1.25rem;
-        align-items: start;
-        padding: 0 1.35rem 0.5rem;
-      }
-      .dashboard > .panels { padding: 0; }
-      .dashboard:has(#matrix-wrap:empty) {
-        display: block;
-        padding: 0 1.35rem 0.5rem;
-      }
-      details.matrix-panel {
-        position: sticky;
-        top: 1rem;
-        margin-bottom: 0;
-      }
-    }
-
+    /* Print only: utilities can't express the "expand everything" rules. */
     @media print {
-      body, .app { background: #fff; box-shadow: none; max-width: none; }
-      .toolbar-actions, .date-picker, .toast, .example-banner, .copy-btn { display: none !important; }
-      .dashboard { display: block; padding: 0; }
-      details, details[open] > .panel-body {
-        display: block;
-        box-shadow: none;
-        break-inside: avoid;
-      }
-      .panel-body, .panel-inner { display: block !important; overflow: visible; }
-      .matrix-panel { display: block !important; position: static; }
+      body, .app { background: #fff !important; box-shadow: none !important; max-width: none !important; }
+      .toolbar-actions, .date-picker, .toast, .example-banner, .copy-btn, .staff-link { display: none !important; }
+      .dashboard { display: block !important; padding: 0 !important; }
+      details, details[open] > .panel-body { display: block; box-shadow: none; break-inside: avoid; }
+      .panel-body, .panel-inner { display: block !important; overflow: visible !important; }
+      .matrix-panel { display: block !important; position: static !important; }
       header.hero-head { border-bottom: 2px solid #7a0a10; }
-      .staff-link { display: none; }
     }
   </style>
 </head>
-<body>
-  <div class="app">
-    <header class="hero-head">
-      <img class="logo" src="logo.png" width="56" height="56" alt="Vailankanni Parish Youth logo">
-      <div class="brand">
-        <h1>Vailankanni Parish Youth</h1>
-        <p class="tagline">Order dashboard • Christmas Cake Sale</p>
+<body class="bg-page font-sans text-ink antialiased">
+  <div class="app mx-auto min-h-screen max-w-[480px] bg-cream pb-10 shadow-[0_0_40px_rgba(42,35,6,0.12)] md:max-w-[720px] lg:w-full lg:max-w-[1600px] lg:bg-transparent lg:p-[clamp(16px,3vw,48px)] lg:shadow-none">
+    <header class="hero-head flex items-center gap-[0.7rem] border-b-[3px] border-maroon bg-cream-light px-[0.9rem] py-[0.7rem] text-brand-blue lg:rounded-t-[14px] lg:px-[1.35rem] lg:py-[0.85rem]">
+      <img class="logo block size-14 shrink-0 lg:size-16" src="logo.png" width="56" height="56" alt="Vailankanni Parish Youth logo">
+      <div class="brand min-w-0 flex-1 text-left">
+        <h1 class="m-0 font-serif text-[1.12rem] leading-[1.2] font-bold tracking-[0.01em] text-brand-blue lg:text-[1.45rem]">Vailankanni Parish Youth</h1>
+        <p class="tagline mt-[0.2rem] text-[0.75rem] leading-[1.3] font-semibold text-muted lg:text-[0.9rem]">Order dashboard • Christmas Cake Sale</p>
       </div>
-      <a class="staff-link" href="staff.html">Staff mode</a>
+      <a class="staff-link ml-auto shrink-0 self-center rounded-full border-[1.5px] border-maroon px-3 py-[0.4rem] text-[0.8rem] font-bold whitespace-nowrap text-maroon no-underline hover:bg-maroon hover:text-white focus-visible:bg-maroon focus-visible:text-white focus-visible:outline-none" href="staff.html">Staff mode</a>
     </header>
-    <div class="page-body">
-      <p class="example-banner" id="example-banner">Example data — not live orders</p>
-      <div class="toolbar">
-        <p class="updated" id="updated">Loading totals…</p>
-        <div class="toolbar-actions">
-          <button type="button" class="btn" id="expand-all">Expand all</button>
-          <button type="button" class="btn" id="collapse-all">Collapse all</button>
-          <button type="button" class="btn btn-primary" id="copy-selected">Copy for Poppins</button>
-          <button type="button" class="btn btn-primary" id="refresh-btn">Refresh</button>
+    <div class="page-body lg:rounded-b-[14px] lg:bg-cream lg:pb-7 lg:shadow-card">
+      <p class="example-banner m-0 hidden bg-gold px-[0.9rem] py-[0.4rem] text-center text-[0.78rem] font-bold text-white [&.visible]:block" id="example-banner">Example data — not live orders</p>
+      <div class="toolbar flex flex-wrap items-center gap-x-[0.6rem] gap-y-[0.45rem] px-[0.9rem] pt-[0.85rem] pb-[0.4rem] lg:px-[1.35rem]">
+        <p class="updated m-0 flex-[1_1_12rem] text-[0.8rem] font-semibold text-muted lg:text-[0.92rem]" id="updated">Loading totals…</p>
+        <div class="toolbar-actions flex flex-wrap gap-[0.4rem]">
+          <button type="button" class="btn min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-cream-light text-maroon hover:bg-maroon-soft" id="expand-all">Expand all</button>
+          <button type="button" class="btn min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-cream-light text-maroon hover:bg-maroon-soft" id="collapse-all">Collapse all</button>
+          <button type="button" class="btn btn-primary min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-maroon text-cream-light hover:bg-maroon-dark" id="copy-selected">Copy for Poppins</button>
+          <button type="button" class="btn btn-primary min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-maroon text-cream-light hover:bg-maroon-dark" id="refresh-btn">Refresh</button>
         </div>
       </div>
-      <p class="status" id="status" role="status" aria-live="polite"></p>
-      <section class="cards" aria-label="Orders">
-        <article class="card">
-          <p class="label">Ordered cakes</p>
-          <p class="value" id="card-cakes">—</p>
+      <p class="status mx-[0.9rem] mt-0 mb-2 min-h-[1.2rem] text-[0.85rem] font-semibold text-muted [&.is-error]:text-maroon-dark lg:mx-[1.35rem] lg:text-[0.95rem]" id="status" role="status" aria-live="polite"></p>
+      <section class="cards grid grid-cols-3 gap-2 px-[0.9rem] pb-[0.85rem] lg:gap-[0.85rem] lg:px-[1.35rem] lg:pb-[0.7rem]" aria-label="Orders">
+        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
+          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Ordered cakes</p>
+          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-cakes">—</p>
         </article>
-        <article class="card">
-          <p class="label">Ordered ₹</p>
-          <p class="value" id="card-amount">—</p>
+        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
+          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Ordered ₹</p>
+          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-amount">—</p>
         </article>
-        <article class="card">
-          <p class="label">Orders</p>
-          <p class="value" id="card-orders">—</p>
-        </article>
-      </section>
-      <section class="cards sales-cards" aria-label="Sales">
-        <article class="card">
-          <p class="label">Ordered</p>
-          <p class="value" id="card-ordered">—</p>
-        </article>
-        <article class="card">
-          <p class="label">Picked up</p>
-          <p class="value" id="card-pickedup">—</p>
-        </article>
-        <article class="card">
-          <p class="label">Walk-in</p>
-          <p class="value" id="card-walkin">—</p>
-        </article>
-        <article class="card">
-          <p class="label">Total sold</p>
-          <p class="value" id="card-sold">—</p>
-        </article>
-        <article class="card">
-          <p class="label">Collected ₹</p>
-          <p class="value" id="card-collected">—</p>
+        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
+          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Orders</p>
+          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-orders">—</p>
         </article>
       </section>
-      <div class="date-picker">
-        <h2 id="date-picker-label">Pickup date</h2>
-        <div class="date-chips" id="date-chips" role="group" aria-labelledby="date-picker-label"></div>
+      <section class="cards sales-cards grid grid-cols-2 gap-2 px-[0.9rem] pb-[0.85rem] min-[600px]:grid-cols-3 lg:grid-cols-5 lg:gap-[0.85rem] lg:px-[1.35rem]" aria-label="Sales">
+        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
+          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Ordered</p>
+          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-ordered">—</p>
+        </article>
+        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
+          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Picked up</p>
+          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-pickedup">—</p>
+        </article>
+        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
+          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Walk-in</p>
+          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-walkin">—</p>
+        </article>
+        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
+          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Total sold</p>
+          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-sold">—</p>
+        </article>
+        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
+          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Collected ₹</p>
+          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-collected">—</p>
+        </article>
+      </section>
+      <div class="date-picker px-[0.9rem] pb-[0.85rem] lg:px-[1.35rem] lg:pb-[0.7rem]">
+        <h2 class="mb-[0.45rem] text-[0.8rem] font-bold lg:text-[0.9rem]" id="date-picker-label">Pickup date</h2>
+        <div class="date-chips flex flex-wrap gap-[0.4rem]" id="date-chips" role="group" aria-labelledby="date-picker-label"></div>
       </div>
-      <div class="dashboard">
-        <div class="panels" id="date-panels"></div>
-        <div class="panels" id="matrix-wrap"></div>
+      <div class="dashboard min-[1100px]:grid min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(520px,1.15fr)] min-[1100px]:items-start min-[1100px]:gap-x-5 min-[1100px]:px-[1.35rem] min-[1100px]:pb-2 min-[1100px]:[&:has(#matrix-wrap:empty)]:block">
+        <div class="panels px-[0.9rem] pb-4 lg:px-[1.35rem] min-[1100px]:p-0" id="date-panels"></div>
+        <div class="panels px-[0.9rem] pb-4 lg:px-[1.35rem] min-[1100px]:p-0" id="matrix-wrap"></div>
       </div>
     </div>
   </div>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="toast pointer-events-none fixed bottom-5 left-1/2 z-40 max-w-[calc(100vw-2rem)] -translate-x-1/2 translate-y-2 rounded-[10px] bg-ink px-[0.9rem] py-[0.6rem] text-[0.85rem] font-semibold text-cream-light opacity-0 transition-[opacity,translate] duration-200 motion-reduce:transition-none [&.visible]:translate-y-0 [&.visible]:opacity-100" id="toast" role="status" aria-live="polite"></div>
 
   <script src="site-config.js"></script>
   <script>
     const SHEETS_WEBAPP_URL = (window.SITE_CONFIG && window.SITE_CONFIG.appsScriptUrl) || 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec';
     const REFRESH_MS = 60000;
+    // Tailwind class strings for markup generated below (kept here so the
+    // Tailwind CLI sees them; the plain class names are test/JS hooks).
+    const C_BTN_PRIMARY = 'min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-maroon text-cream-light hover:bg-maroon-dark';
+    const C_TABLE = 'w-full border-collapse text-[0.88rem] lg:text-[1.05rem] [&_caption]:mb-2 [&_caption]:text-left [&_caption]:text-[0.95rem] [&_caption]:font-extrabold [&_caption]:text-ink lg:[&_caption]:text-[1.12rem] [&_th]:border-b [&_th]:border-line [&_th]:px-[0.35rem] [&_th]:py-[0.4rem] [&_th]:text-right [&_th]:tabular-nums [&_td]:border-b [&_td]:border-line [&_td]:px-[0.35rem] [&_td]:py-[0.4rem] [&_td]:text-right [&_td]:tabular-nums lg:[&_th]:px-[0.6rem] lg:[&_th]:py-[0.48rem] lg:[&_td]:px-[0.6rem] lg:[&_td]:py-[0.48rem] [&_:is(th,td):first-child]:text-left [&_thead_th]:text-[0.72rem] [&_thead_th]:uppercase [&_thead_th]:tracking-[0.03em] [&_thead_th]:text-muted lg:[&_thead_th]:text-[0.8rem] [&_tfoot_:is(th,td)]:border-b-0 [&_tfoot_:is(th,td)]:font-extrabold [&_tfoot_:is(th,td)]:text-maroon-dark';
+    const C_DETAILS = 'mb-[0.65rem] overflow-hidden rounded-card border border-line shadow-card';
+    const C_SUMMARY = 'flex cursor-pointer list-none items-center gap-[0.55rem] px-[0.9rem] py-[0.8rem] font-bold [&::-webkit-details-marker]:hidden lg:px-[1.15rem] lg:py-[0.85rem]';
+    const C_CHEVRON = 'ml-[0.1rem] mr-[0.15rem] size-[0.65rem] shrink-0 -rotate-45 border-r-2 border-b-2 border-maroon transition-transform duration-200 motion-reduce:transition-none [details[open]>summary_&]:rotate-45';
+    const C_SUMMARY_TEXT = 'min-w-0 flex-auto';
+    const C_SUMMARY_TITLE = 'block text-base lg:text-[1.18rem]';
+    const C_SUMMARY_META = 'mt-[0.15rem] block text-[0.78rem] font-semibold text-muted lg:text-[0.92rem]';
+    const C_PANEL_BODY = 'grid grid-rows-[0fr] transition-[grid-template-rows] duration-200 motion-reduce:transition-none [details[open]>&]:grid-rows-[1fr]';
+    const C_PANEL_INNER = 'overflow-hidden px-[0.85rem] pb-[0.9rem]';
+    const C_CHIP = 'min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-line bg-cream-light px-[0.8rem] py-[0.45rem] text-[0.82rem] font-bold text-ink aria-pressed:border-maroon aria-pressed:bg-maroon-soft aria-pressed:text-maroon-dark focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(122,10,16,0.45)] lg:px-[0.95rem] lg:text-[0.92rem]';
     const PANEL_STATE_KEY = 'poppinsAdminPanels';
     const MENU_ITEMS = [
       'Dates & Carrot Pudding (700g)',
@@ -880,9 +443,9 @@
 
     function renderChips(data) {
       var dates = (data && data.dates) || [];
-      var html = '<button type="button" class="date-chip" data-id="all" aria-pressed="' + (selectedId === 'all' ? 'true' : 'false') + '">All dates</button>';
+      var html = '<button type="button" class="date-chip ' + C_CHIP + '" data-id="all" aria-pressed="' + (selectedId === 'all' ? 'true' : 'false') + '">All dates</button>';
       dates.forEach(function (date) {
-        html += '<button type="button" class="date-chip" data-id="' + escapeHtml(date.id) + '" aria-pressed="' +
+        html += '<button type="button" class="date-chip ' + C_CHIP + '" data-id="' + escapeHtml(date.id) + '" aria-pressed="' +
           (selectedId === date.id ? 'true' : 'false') + '">' + escapeHtml(date.label) + '</button>';
       });
       els.chips.innerHTML = html;
@@ -906,7 +469,7 @@
         foot.total += q.total;
         return '<tr><th scope="row">' + escapeHtml(name) + '</th><td>' + q.m630 + '</td><td>' + q.m830 + '</td><td>' + q.total + '</td></tr>';
       }).join('');
-      return '<table id="' + escapeHtml(tableId) + '">' +
+      return '<table class="' + C_TABLE + '" id="' + escapeHtml(tableId) + '">' +
         '<caption>' + escapeHtml(caption) + '</caption>' +
         '<thead><tr><th scope="col">Item</th><th scope="col">6:30 AM</th><th scope="col">8:30 AM</th><th scope="col">Total</th></tr></thead>' +
         '<tbody>' + rows + '</tbody>' +
@@ -920,10 +483,10 @@
       var picked = sales.pickedUp.cakes;
       var pct = ordered > 0 ? Math.min(100, Math.round((picked / ordered) * 100)) : 0;
       var label = ordered > 0 ? (picked + ' of ' + ordered + ' picked up') : 'No orders yet';
-      return '<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="' + ordered +
+      return '<div class="progress relative mt-[0.85rem] mb-4 min-h-[1.6rem] overflow-hidden rounded-full border border-line bg-cream-deep" role="progressbar" aria-valuemin="0" aria-valuemax="' + ordered +
         '" aria-valuenow="' + picked + '" aria-label="' + escapeHtml(label) + '">' +
-        '<span class="progress-fill" style="width:' + pct + '%"></span>' +
-        '<span class="progress-label">' + escapeHtml(label) + '</span></div>';
+        '<span class="progress-fill block h-[1.6rem] w-0 max-w-full bg-pine" style="width:' + pct + '%"></span>' +
+        '<span class="progress-label absolute inset-0 flex items-center justify-center text-[0.78rem] font-bold text-ink">' + escapeHtml(label) + '</span></div>';
     }
 
     function soldTable(date, tableId) {
@@ -941,7 +504,7 @@
         return '<tr><th scope="row">' + escapeHtml(name) + '</th><td>' + ordered + '</td><td>' + picked +
           '</td><td>' + walk + '</td><td>' + sold + '</td></tr>';
       }).join('');
-      return '<table class="sold-table" id="' + escapeHtml(tableId) + '">' +
+      return '<table class="sold-table mt-[0.85rem] ' + C_TABLE + '" id="' + escapeHtml(tableId) + '">' +
         '<caption>Ordered vs sold — ' + escapeHtml(date.label) + '</caption>' +
         '<thead><tr><th scope="col">Item</th><th scope="col">Ordered</th><th scope="col">Picked up</th>' +
         '<th scope="col">Walk-in</th><th scope="col">Total sold</th></tr></thead>' +
@@ -953,20 +516,20 @@
     function datePanelHtml(date, open) {
       var meta = date.totals.cakes + (date.totals.cakes === 1 ? ' cake' : ' cakes') + ' · ' + formatINR(date.totals.amount) + ' · ' +
         date.totals.orders + (date.totals.orders === 1 ? ' order' : ' orders');
-      return '<details class="date-panel" data-panel-id="' + escapeHtml(date.id) + '"' + (open ? ' open' : '') + '>' +
-        '<summary>' +
-          '<span class="chevron" aria-hidden="true"></span>' +
-          '<span class="summary-text">' +
-            '<span class="summary-title">' + escapeHtml(date.label) + '</span>' +
-            '<span class="summary-meta">' + escapeHtml(meta) + '</span>' +
+      return '<details class="date-panel bg-cream-light ' + C_DETAILS + '" data-panel-id="' + escapeHtml(date.id) + '"' + (open ? ' open' : '') + '>' +
+        '<summary class="' + C_SUMMARY + '">' +
+          '<span class="chevron ' + C_CHEVRON + '" aria-hidden="true"></span>' +
+          '<span class="summary-text ' + C_SUMMARY_TEXT + '">' +
+            '<span class="summary-title ' + C_SUMMARY_TITLE + '">' + escapeHtml(date.label) + '</span>' +
+            '<span class="summary-meta ' + C_SUMMARY_META + '">' + escapeHtml(meta) + '</span>' +
           '</span>' +
         '</summary>' +
-        '<div class="panel-body"><div class="panel-inner">' +
+        '<div class="panel-body ' + C_PANEL_BODY + '"><div class="panel-inner ' + C_PANEL_INNER + '">' +
           cakesTable(date.items, 'Cakes to order — ' + date.label, 'table-' + date.id) +
           pickupProgress(date) +
           soldTable(date, 'sold-' + date.id) +
-          '<div class="table-actions">' +
-            '<button type="button" class="btn btn-primary copy-btn" data-copy-id="' + escapeHtml(date.id) + '">Copy for Poppins</button>' +
+          '<div class="table-actions mt-[0.7rem]">' +
+            '<button type="button" class="btn btn-primary copy-btn ' + C_BTN_PRIMARY + '" data-copy-id="' + escapeHtml(date.id) + '">Copy for Poppins</button>' +
           '</div>' +
         '</div></div>' +
       '</details>';
@@ -989,11 +552,11 @@
       });
       if (selectedId === 'all' && past.length) {
         var pastOpen = panelShouldOpen('past', defaults);
-        html += '<details class="past-group" data-panel-id="past"' + (pastOpen ? ' open' : '') + '>' +
-          '<summary><span class="chevron" aria-hidden="true"></span><span class="summary-text">' +
-          '<span class="summary-title">Past dates</span>' +
-          '<span class="summary-meta">' + past.length + (past.length === 1 ? ' date' : ' dates') + '</span>' +
-          '</span></summary><div class="panel-body"><div class="panel-inner" id="past-inner"></div></div></details>';
+        html += '<details class="past-group bg-[#f3ece4] ' + C_DETAILS + '" data-panel-id="past"' + (pastOpen ? ' open' : '') + '>' +
+          '<summary class="' + C_SUMMARY + '"><span class="chevron ' + C_CHEVRON + '" aria-hidden="true"></span>' + '<span class="summary-text ' + C_SUMMARY_TEXT + '">' +
+          '<span class="summary-title ' + C_SUMMARY_TITLE + '">Past dates</span>' +
+          '<span class="summary-meta ' + C_SUMMARY_META + '">' + past.length + (past.length === 1 ? ' date' : ' dates') + '</span>' +
+          '</span></summary><div class="panel-body ' + C_PANEL_BODY + '"><div class="panel-inner ' + C_PANEL_INNER + '" id="past-inner"></div></div></details>';
       } else if (selectedId !== 'all') {
         past.forEach(function (date) {
           html += datePanelHtml(date, true);
@@ -1033,12 +596,12 @@
         footCells += '<td>' + d.totals.cakes + '</td>';
         footTotal += d.totals.cakes;
       });
-      els.matrixWrap.innerHTML = '<details class="matrix-panel" data-panel-id="matrix"' + (open ? ' open' : '') + '>' +
-        '<summary><span class="chevron" aria-hidden="true"></span><span class="summary-text">' +
-        '<span class="summary-title">All dates at a glance</span>' +
-        '<span class="summary-meta">Cakes by item and pickup date</span></span></summary>' +
-        '<div class="panel-body"><div class="panel-inner matrix-wrap">' +
-        '<table id="matrix-table"><caption>Cakes to order across all pickup dates</caption>' +
+      els.matrixWrap.innerHTML = '<details class="matrix-panel hidden bg-cream-light lg:block min-[1100px]:sticky min-[1100px]:top-4 min-[1100px]:mb-0 ' + C_DETAILS + '" data-panel-id="matrix"' + (open ? ' open' : '') + '>' +
+        '<summary class="' + C_SUMMARY + '"><span class="chevron ' + C_CHEVRON + '" aria-hidden="true"></span>' + '<span class="summary-text ' + C_SUMMARY_TEXT + '">' +
+        '<span class="summary-title ' + C_SUMMARY_TITLE + '">All dates at a glance</span>' +
+        '<span class="summary-meta ' + C_SUMMARY_META + '">Cakes by item and pickup date</span></span></summary>' +
+        '<div class="panel-body ' + C_PANEL_BODY + '"><div class="panel-inner matrix-wrap overflow-x-auto overflow-y-hidden px-[0.85rem] pb-[0.9rem]">' +
+        '<table class="' + C_TABLE + '" id="matrix-table"><caption>Cakes to order across all pickup dates</caption>' +
         '<thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody>' +
         '<tfoot><tr><th scope="row">Total</th>' + footCells + '<td>' + footTotal + '</td></tr></tfoot>' +
         '</table></div></div></details>';

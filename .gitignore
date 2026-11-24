@@ -5,3 +5,4 @@ dist/
 .env
 drop-zip/
 preview-*.png
+public/tailwind.css

@@ -12,864 +12,41 @@
   <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="https://script.google.com">
   <link rel="dns-prefetch" href="https://script.googleusercontent.com">
+  <link rel="stylesheet" href="tailwind.css">
   <style>
-    /* --------------------------------------------------------------------------
-       Vailankanni Parish Youth — Menu-to-WhatsApp Christmas cake sale
-       (cakes by Poppins Bakers). Mobile-first, no frameworks, no build step.
-       Palette is taken from poster.png and logo.png (white backgrounds
-       and transparent logo pixels ignored). WhatsApp green is used only
-       on the small icon in the order button.
-       -------------------------------------------------------------------------- */
-    :root {
-      --maroon: #7a0a10;
-      --maroon-dark: #520505;
-      --maroon-soft: #ead6d0;
-      --gold: #c27b13;
-      --gold-dark: #904108;
-      --cream: #f7ede5;
-      --cream-light: #fbf9f7;
-      --cream-deep: #eadace;
-      --page-bg: #dff3fa;
-      --ink: #2a2306;
-      --muted: #5d563e;
-      --pine: #435718;
-      --blue: #0544b3;
-      --blue-dark: #0c3c98;
-      --line: #eadace;
-      --card: var(--cream-light);
-      --bg: var(--cream);
-      --wa: #25D366;
-      --shadow: 0 8px 24px rgba(42, 35, 6, 0.1);
-      --radius: 16px;
-      --sticky-h: 11.25rem;
-      --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
-      --serif: Georgia, "Palatino Linotype", Palatino, "Times New Roman", serif;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      font-family: var(--font);
-      background: var(--page-bg);
-      color: var(--ink);
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Centered phone-width shell */
-    .app {
-      max-width: 480px;
-      margin: 0 auto;
-      min-height: 100vh;
-      background: var(--bg);
-      box-shadow: 0 0 40px rgba(42, 35, 6, 0.12);
-      padding-bottom: calc(var(--sticky-h) + env(safe-area-inset-bottom, 0px) + 1rem);
-    }
-
-    /* ---------- Header: Vailankanni Parish Youth (white + logo, red accent) ---------- */
-    header.hero-head {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      background: var(--card);
-      color: var(--blue);
-      padding: 0.7rem 0.9rem 0.7rem;
-      border-bottom: 3px solid var(--maroon);
-    }
-    header.hero-head .logo {
-      display: block;
-      width: 56px;
-      height: 56px;
-      flex-shrink: 0;
-    }
-    header.hero-head .brand {
-      min-width: 0;
-      text-align: left;
-    }
-    header.hero-head h1 {
-      margin: 0;
-      font-family: var(--serif);
-      font-size: 1.12rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      line-height: 1.2;
-      color: var(--blue);
-    }
-    header.hero-head .tagline {
-      margin: 0.2rem 0 0;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      line-height: 1.3;
-      color: var(--muted);
-    }
-
-    /* ---------- Poster hero (relative poster.jpg, no lazy-load) ---------- */
-    .poster-wrap {
-      padding: 0.9rem 0.9rem 0;
-    }
-    .poster-wrap img {
-      display: block;
-      width: 100%;
-      height: auto;
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-    }
-
-    /* ---------- Parish / pickup info from the poster ---------- */
-    .fundraiser-info {
-      margin: 0.9rem;
-      padding: 1rem 1.05rem 1.05rem;
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid var(--line);
-    }
-    .fundraiser-info .assoc {
-      margin: 0 0 0.65rem;
-      font-family: var(--serif);
-      font-size: 0.98rem;
-      font-weight: 700;
-      color: var(--maroon-dark);
-      text-align: center;
-      line-height: 1.35;
-    }
-    .fundraiser-info .pickup {
-      margin: 0;
-      font-size: 0.84rem;
-      color: var(--muted);
-      text-align: center;
-    }
-    .fundraiser-info .enquire {
-      margin: 0.75rem 0 0;
-      padding-top: 0.7rem;
-      border-top: 1px dashed var(--line);
-      text-align: center;
-      font-size: 0.88rem;
-    }
-    .fundraiser-info .enquire a {
-      color: var(--maroon);
-      font-weight: 700;
-      text-decoration: none;
-    }
-    .fundraiser-info .enquire a { white-space: nowrap; }
-    .fundraiser-info .enquire .enquire-sep { color: var(--line); margin: 0 0.25rem; }
-    .fundraiser-info .enquire a:hover { text-decoration: underline; }
-    .fundraiser-info .enquire a:focus { outline: none; }
-    .fundraiser-info .enquire a:focus-visible {
-      outline: 3px solid rgba(122, 10, 16, 0.45);
-      outline-offset: 2px;
-      border-radius: 4px;
-    }
-
-    /* ---------- Menu ---------- */
-    .section-title {
-      margin: 0.4rem 1.05rem 0.55rem;
-      font-size: 0.72rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--muted);
-    }
-
-    .menu-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.7rem;
-      padding: 0 0.9rem;
-    }
-
-    .menu-card {
-      display: flex;
-      justify-content: space-between;
-      gap: 0.75rem;
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid var(--line);
-      padding: 0.95rem 0.95rem 0.9rem;
-    }
-    .menu-card .info { flex: 1; min-width: 0; }
-    .menu-card .name-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .menu-card h2 {
-      margin: 0;
-      font-size: 1.02rem;
-      font-weight: 700;
-      line-height: 1.3;
-    }
-    .tag {
-      display: inline-block;
-      background: var(--maroon);
-      color: var(--cream-light);
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      padding: 0.15rem 0.4rem;
-      border-radius: 999px;
-    }
-    .menu-card .desc {
-      margin: 0.28rem 0 0;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    .menu-card .price {
-      margin: 0.5rem 0 0;
-      font-size: 1.05rem;
-      font-weight: 800;
-      color: var(--ink);
-    }
-    .menu-card .price .weight {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--muted);
-      margin-left: 0.15rem;
-    }
-
-    /* Large circular + / − steppers */
-    .stepper {
-      display: flex;
-      align-items: center;
-      align-self: flex-end;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-    .stepper button {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 1.5px solid var(--maroon);
-      background: var(--card);
-      color: var(--maroon);
-      font-size: 1.45rem;
-      font-weight: 600;
-      line-height: 1;
-      padding: 0;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .stepper button.plus {
-      background: var(--maroon);
-      color: var(--cream-light);
-    }
-    .stepper button:disabled {
-      opacity: 0.35;
-      cursor: default;
-    }
-    .stepper button:not(:disabled):active { transform: scale(0.94); }
-    .stepper button:focus { outline: none; }
-    .stepper button:focus-visible {
-      outline: 3px solid rgba(122, 10, 16, 0.45);
-      outline-offset: 2px;
-    }
-    .stepper .qty {
-      min-width: 1.4rem;
-      text-align: center;
-      font-weight: 800;
-      font-size: 1.05rem;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .cart-error {
-      margin: 0.7rem 0.9rem 0;
-      padding: 0.55rem 0.75rem;
-      background: var(--maroon-soft);
-      color: var(--maroon-dark);
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      display: none;
-    }
-    .cart-error.visible { display: block; }
-
-    /* ---------- Order form ---------- */
-    .order-form {
-      margin: 1.15rem 0.9rem 0;
-      padding: 1rem 1rem 1.1rem;
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid var(--line);
-    }
-    .order-form h2 {
-      margin: 0 0 0.85rem;
-      font-size: 1.05rem;
-    }
-    .field { margin-bottom: 0.85rem; }
-    .field:last-of-type { margin-bottom: 0; }
-    .field label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 700;
-      margin-bottom: 0.3rem;
-    }
-    .field label .req { color: var(--maroon); }
-    .field input,
-    .field select {
-      width: 100%;
-      font: inherit;
-      font-size: 1rem;
-      padding: 0.7rem 0.75rem;
-      border: 1.5px solid var(--line);
-      border-radius: 10px;
-      background: var(--card);
-      color: var(--ink);
-      appearance: none;
-      -webkit-appearance: none;
-    }
-    .field select {
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%2357534e' d='M1 1l5 5 5-5'/></svg>");
-      background-repeat: no-repeat;
-      background-position: right 0.85rem center;
-      padding-right: 2.2rem;
-    }
-    .field input:focus,
-    .field select:focus,
-    .field input:focus-visible,
-    .field select:focus-visible {
-      outline: none;
-      border-color: var(--maroon);
-      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.45);
-    }
-    .field.invalid input,
-    .field.invalid select {
-      border-color: var(--maroon);
-      background: var(--maroon-soft);
-    }
-    .field .error {
-      display: none;
-      margin: 0.3rem 0 0;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--maroon);
-    }
-    .field.invalid .error { display: block; }
-    .field.hidden { display: none; }
-    #menu-heading,
-    #menu-list,
-    .field {
-      scroll-margin-top: 0.85rem;
-      scroll-margin-bottom: calc(var(--sticky-h) + env(safe-area-inset-bottom, 0px) + 0.75rem);
-    }
-    .hint {
-      margin: 0.3rem 0 0;
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-
-    .date-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-    }
-    .date-chip {
-      appearance: none;
-      -webkit-appearance: none;
-      border: 1.5px solid var(--line);
-      background: var(--card);
-      color: var(--ink);
-      border-radius: 999px;
-      padding: 0.55rem 0.85rem;
-      min-height: 44px;
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font: inherit;
-      font-size: 0.86rem;
-      font-weight: 700;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .date-chip[aria-pressed="true"] {
-      background: var(--maroon-soft);
-      border-color: var(--maroon);
-      color: var(--maroon-dark);
-    }
-    .date-chip.awaiting {
-      border-radius: 14px;
-      opacity: 0.62;
-      cursor: not-allowed;
-      text-align: center;
-      line-height: 1.2;
-    }
-    .date-chip.awaiting .chip-sub {
-      display: block;
-      margin-top: 0.18rem;
-      font-size: 0.66rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      text-transform: none;
-      color: var(--muted);
-    }
-    .date-chip:disabled {
-      cursor: not-allowed;
-    }
-    .date-chip:focus { outline: none; }
-    .date-chip:focus-visible {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.45);
-    }
-    .field.invalid .date-chips,
-    .field.invalid .mass-options {
-      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.15);
-      border-radius: 12px;
-    }
-    .mass-options {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
-    }
-    .mass-option {
-      appearance: none;
-      -webkit-appearance: none;
-      border: 1.5px solid var(--line);
-      background: var(--card);
-      color: var(--ink);
-      border-radius: 14px;
-      padding: 0.9rem 0.6rem;
-      min-height: 56px;
-      font: inherit;
-      font-size: 0.95rem;
-      font-weight: 800;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .mass-option[aria-pressed="true"] {
-      background: var(--maroon-soft);
-      border-color: var(--maroon);
-      color: var(--maroon-dark);
-    }
-    .mass-option:focus { outline: none; }
-    .mass-option:focus-visible {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.45);
-    }
-    .pickup-place {
-      margin: 0.15rem 0 0.5rem;
-      font-size: 0.8rem;
-      color: var(--muted);
-      line-height: 1.4;
-    }
-    .closed-banner {
-      display: none;
-      margin: 0;
-      padding: 0.7rem 0.8rem;
-      background: var(--maroon-soft);
-      color: var(--maroon-dark);
-      border-radius: 10px;
-      font-size: 0.88rem;
-      font-weight: 700;
-    }
-    .closed-banner.visible { display: block; }
-    #stock-status {
-      min-height: 0;
-    }
-    #stock-status.is-error { color: var(--gold-dark); }
-
-    .menu-card.sold-out { opacity: 0.58; }
-    .menu-card .stock-note {
-      margin: 0.28rem 0 0;
-      font-size: 0.75rem;
-      font-weight: 800;
-      color: var(--maroon);
-    }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: calc(var(--sticky-h) + 0.6rem + env(safe-area-inset-bottom, 0px));
-      transform: translateX(-50%) translateY(8px);
-      width: calc(100% - 2rem);
-      max-width: 440px;
-      background: var(--ink);
-      color: var(--cream-light);
-      border-radius: 12px;
-      padding: 0.75rem 0.95rem;
-      font-size: 0.86rem;
-      font-weight: 600;
-      box-shadow: 0 10px 24px rgba(42, 35, 6, 0.25);
-      z-index: 50;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-    }
-    .toast.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .toast { transition: none; }
-    }
-
-    /* ---------- Sticky bottom summary + CTA ---------- */
-    .sticky-bar {
-      position: fixed;
-      left: 50%;
-      bottom: 0;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      background: var(--card);
-      border-top: 1px solid var(--line);
-      box-shadow: 0 -8px 24px rgba(42, 35, 6, 0.1);
-      padding: 0.7rem 0.9rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
-      z-index: 40;
-    }
-    .sticky-bar .summary {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 0.3rem;
-      font-weight: 700;
-    }
-    .sticky-bar .payment-note {
-      margin: 0 0 0.5rem;
-      font-size: 0.75rem;
-      line-height: 1.35;
-      color: var(--muted);
-      font-weight: 600;
-    }
-    .sticky-bar .order-confirm {
-      margin: 0 0 0.3rem;
-      padding: 0.3rem 0.55rem;
-      border-radius: 8px;
-      background: #e8f3dc;
-      color: var(--pine);
-      font-size: 0.8rem;
-      font-weight: 700;
-      line-height: 1.3;
-    }
-    .sticky-bar .order-confirm[hidden] { display: none; }
-    .sticky-bar .summary .count { font-size: 0.92rem; color: var(--muted); }
-    .sticky-bar .summary .total {
-      font-size: 1.2rem;
-      font-variant-numeric: tabular-nums;
-    }
-    .sticky-bar .cta {
-      width: 100%;
-      border: 0;
-      border-radius: 12px;
-      background: var(--maroon);
-      color: var(--cream-light);
-      font: inherit;
-      font-size: 1.02rem;
-      font-weight: 800;
-      padding: 0.85rem 1rem;
-      min-height: 44px;
-      cursor: pointer;
-      letter-spacing: 0.01em;
-      -webkit-tap-highlight-color: transparent;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-    .sticky-bar .cta::before {
+    /* Styling is Tailwind (src/tailwind.css -> public/tailwind.css via `npm run build`).
+       Only what utilities can't express lives here: the alert keyframes and the
+       WhatsApp icon (an inline SVG mask on the order button's ::before). */
+    @keyframes formAlertFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes formAlertPop { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+    .cta::before {
       content: "";
       width: 1.2em;
       height: 1.2em;
       flex-shrink: 0;
-      background-color: var(--wa);
+      background-color: #25D366;
       -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.34 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.85 14.13c-.25.7-1.45 1.29-2.01 1.37-.51.07-1.17.1-1.89-.12-.43-.13-.99-.33-1.71-.65-3.01-1.3-4.97-4.34-5.12-4.54-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.61-.37.81-.37.2 0 .4.01.57.01.18 0 .43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.33-.3.5-.15.18-.31.39-.45.53-.15.15-.3.31-.13.61.18.3.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.45 1.51.3.15.48.13.66-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.28.1 1.75.82 2.05.97.3.15.5.22.57.35.08.12.08.7-.17 1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
       mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.34 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.85 14.13c-.25.7-1.45 1.29-2.01 1.37-.51.07-1.17.1-1.89-.12-.43-.13-.99-.33-1.71-.65-3.01-1.3-4.97-4.34-5.12-4.54-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.61-.37.81-.37.2 0 .4.01.57.01.18 0 .43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.33-.3.5-.15.18-.31.39-.45.53-.15.15-.3.31-.13.61.18.3.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.45 1.51.3.15.48.13.66-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.28.1 1.75.82 2.05.97.3.15.5.22.57.35.08.12.08.7-.17 1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
     }
-    .sticky-bar .cta:active:not(:disabled) { background: var(--maroon-dark); }
-    .sticky-bar .cta:focus { outline: none; }
-    .sticky-bar .cta:focus-visible {
-      outline: 3px solid rgba(122, 10, 16, 0.45);
-      outline-offset: 2px;
-    }
-    .sticky-bar .summary-heading,
-    .sticky-bar .cart-lines { display: none; }
-    .sticky-bar .cta:disabled {
-      opacity: 0.75;
-      cursor: wait;
-    }
-    .sticky-bar .cta:disabled.closed {
-      cursor: not-allowed;
-      background: var(--pine);
-      opacity: 1;
-    }
-    .sticky-bar .cta-wrap { width: 100%; }
-    .sticky-bar .checkout-alert {
-      display: none;
-      margin: 0 0 0.5rem;
-      padding: 0.55rem 0.7rem 0.5rem;
-      background: var(--maroon-soft);
-      color: var(--maroon-dark);
-      border: 1.5px solid var(--maroon);
-      border-radius: 10px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      line-height: 1.4;
-    }
-    .sticky-bar .checkout-alert.visible { display: block; }
-    .sticky-bar .checkout-alert p {
-      margin: 0 0 0.25rem;
-    }
-    .sticky-bar .checkout-alert ul {
-      margin: 0;
-      padding: 0 0 0 1.1rem;
-    }
-    .sticky-bar .checkout-alert li { margin: 0.05rem 0; }
-
-    /* Custom alert dialog (not window.alert) */
-    .form-alert {
-      position: fixed;
-      inset: 0;
-      z-index: 80;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.25rem;
-      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
-    }
-    .form-alert[hidden] { display: none; }
-    .form-alert-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(82, 5, 5, 0.55);
-    }
-    .form-alert:not([hidden]) .form-alert-backdrop {
-      animation: formAlertFade 0.2s ease forwards;
-    }
-    .form-alert-dialog {
-      position: relative;
-      width: 100%;
-      max-width: 21.5rem;
-      background: var(--cream-light);
-      color: var(--ink);
-      border: 2px solid var(--maroon);
-      border-radius: var(--radius);
-      box-shadow: 0 16px 40px rgba(42, 35, 6, 0.28);
-      padding: 1.2rem 1.15rem 1.1rem;
-    }
-    .form-alert:not([hidden]) .form-alert-dialog {
-      animation: formAlertPop 0.2s ease forwards;
-    }
-    @keyframes formAlertFade {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes formAlertPop {
-      from { opacity: 0; transform: scale(0.94); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    .form-alert-dialog h2 {
-      margin: 0 0 0.65rem;
-      font-family: var(--serif);
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: var(--maroon);
-      letter-spacing: 0.01em;
-    }
-    .form-alert-dialog ul {
-      margin: 0 0 1rem;
-      padding: 0 0 0 1.15rem;
-      color: var(--ink);
-      font-size: 0.95rem;
-      font-weight: 600;
-      line-height: 1.45;
-    }
-    .form-alert-dialog li { margin: 0.2rem 0; }
-    .form-alert-dialog p {
-      margin: 0 0 1rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--ink);
-    }
-    .form-alert-ok {
-      width: 100%;
-      border: 0;
-      border-radius: 12px;
-      background: var(--maroon);
-      color: var(--cream-light);
-      font: inherit;
-      font-size: 1.02rem;
-      font-weight: 800;
-      padding: 0.8rem 1rem;
-      min-height: 44px;
-      cursor: pointer;
-    }
-    .form-alert-ok:active { background: var(--maroon-dark); }
-    .form-alert-ok:focus { outline: none; }
-    .form-alert-ok:focus-visible {
-      outline: 3px solid var(--gold);
-      outline-offset: 2px;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .form-alert:not([hidden]) .form-alert-backdrop,
-      .form-alert:not([hidden]) .form-alert-dialog {
-        animation: none;
-        opacity: 1;
-        transform: none;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .stepper button:not(:disabled):active { transform: none; }
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-      .date-chip:hover:not(:disabled):not([aria-pressed="true"]) {
-        border-color: var(--maroon);
-        background: var(--maroon-soft);
-      }
-      .mass-option:hover:not([aria-pressed="true"]) {
-        border-color: var(--maroon);
-        background: var(--maroon-soft);
-      }
-      .stepper button.plus:hover:not(:disabled) { background: var(--maroon-dark); }
-      .stepper button.minus:hover:not(:disabled) { background: var(--maroon-soft); }
-      .sticky-bar .cta:hover:not(:disabled) { background: var(--maroon-dark); }
-    }
-
-    /* Tablet: wider single column, 2-column menu grid */
-    @media (min-width: 768px) {
-      .app { max-width: 640px; }
-      .sticky-bar { max-width: 640px; }
-      .toast { max-width: 600px; }
-      .menu-list {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        align-items: stretch;
-      }
-    }
-
-    /* Desktop: full width. 1024–1279: summary sits in the right column.
-       >=1280: sticky summary becomes a third column. */
-    @media (min-width: 1024px) {
-      .app {
-        width: 100%;
-        max-width: none;
-        margin: 0;
-        display: grid;
-        grid-template-columns: minmax(340px, 32%) minmax(0, 1fr);
-        grid-template-areas:
-          "left summary"
-          "left main";
-        column-gap: 1.35rem;
-        row-gap: 1rem;
-        padding: clamp(16px, 3vw, 48px);
-        padding-bottom: clamp(16px, 3vw, 48px);
-        align-items: start;
-      }
-      .menu-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        align-items: stretch;
-      }
-      .left-col {
-        grid-area: left;
-        position: sticky;
-        top: 1rem;
-        max-height: calc(100vh - 2rem);
-        overflow: auto;
-        padding-bottom: 0.5rem;
-      }
-      header.hero-head { border-radius: 14px 14px 0 0; }
-      .fundraiser-info { margin-bottom: 0; }
-      .right-col {
-        grid-area: main;
-        min-width: 0;
-      }
-      .right-col .section-title { margin-top: 0; }
-      .sticky-bar {
-        grid-area: summary;
-        position: sticky;
-        top: 1rem;
-        left: auto;
-        bottom: auto;
-        transform: none;
-        width: auto;
-        max-width: none;
-        border: 1px solid var(--line);
-        border-top: 1px solid var(--line);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        padding: 1rem 1.05rem 1.05rem;
-      }
-      .sticky-bar .summary-heading {
-        display: block;
-        margin: 0 0 0.65rem;
-        font-size: 1.02rem;
-        font-weight: 800;
-      }
-      .sticky-bar .cart-lines {
-        display: block;
-        list-style: none;
-        margin: 0 0 0.75rem;
-        padding: 0;
-        max-height: min(42vh, 22rem);
-        overflow: auto;
-      }
-      .sticky-bar .cart-line {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        gap: 0.35rem 0.5rem;
-        align-items: baseline;
-        padding: 0.35rem 0;
-        border-bottom: 1px solid var(--line);
-        font-size: 0.86rem;
-      }
-      .sticky-bar .cart-line-qty { font-weight: 800; color: var(--muted); }
-      .sticky-bar .cart-line-name { min-width: 0; }
-      .sticky-bar .cart-line-total { font-weight: 800; font-variant-numeric: tabular-nums; }
-      .sticky-bar .cart-empty {
-        color: var(--muted);
-        font-size: 0.88rem;
-        padding: 0.2rem 0 0.5rem;
-      }
-      .toast {
-        left: auto;
-        right: 1.5rem;
-        bottom: 1.5rem;
-        transform: translateY(8px);
-        width: 24rem;
-        max-width: calc(100vw - 3rem);
-      }
-      .toast.visible { transform: translateY(0); }
-      #menu-heading,
-      #menu-list,
-      .field {
-        scroll-margin-bottom: 1.25rem;
-      }
-    }
-
-    @media (min-width: 1280px) {
-      .app {
-        grid-template-columns: minmax(340px, 32%) minmax(0, 1fr) minmax(300px, 22%);
-        grid-template-areas:
-          "left main summary";
-      }
-    }
   </style>
 </head>
-<body>
-  <div class="app">
-    <aside class="left-col">
-    <header class="hero-head">
-      <img class="logo" src="logo.png" alt="Vailankanni Matha Youth logo" width="192" height="192">
-      <div class="brand">
-        <h1>Vailankanni Parish Youth</h1>
-        <p class="tagline">Christmas Cake Sale • with Poppins Bakers</p>
+<body class="bg-page font-sans leading-normal text-ink antialiased [--sticky-h:11.25rem]">
+  <div class="app mx-auto min-h-screen max-w-[480px] bg-page pb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+1rem)] shadow-[0_0_40px_rgba(42,35,6,0.12)] md:max-w-[640px] lg:m-0 lg:grid lg:w-full lg:max-w-none lg:grid-cols-[minmax(340px,32%)_minmax(0,1fr)] lg:items-start lg:gap-x-[1.35rem] lg:gap-y-4 lg:p-[clamp(16px,3vw,48px)] xl:grid-cols-[minmax(340px,32%)_minmax(0,1fr)_minmax(300px,22%)]">
+    <aside class="left-col lg:sticky lg:top-4 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100vh-2rem)] lg:overflow-auto lg:pb-2 xl:row-span-1">
+    <header class="hero-head flex items-center gap-[0.7rem] border-b-[3px] border-maroon bg-cream-light px-[0.9rem] py-[0.7rem] text-brand-blue lg:rounded-t-[14px]">
+      <img class="logo block size-14 shrink-0" src="logo.png" alt="Vailankanni Matha Youth logo" width="192" height="192">
+      <div class="brand min-w-0 text-left">
+        <h1 class="font-serif text-[1.12rem] font-bold leading-[1.2] tracking-[0.01em] text-brand-blue">Vailankanni Parish Youth</h1>
+        <p class="tagline mt-[0.2rem] text-[0.75rem] font-semibold leading-[1.3] tracking-[0.01em] text-muted">Christmas Cake Sale • with Poppins Bakers</p>
       </div>
     </header>
 
     <!-- Hero: WebP with JPEG fallback. Deploy poster.webp and poster.jpg alongside this file. -->
-    <div class="poster-wrap">
+    <div class="poster-wrap px-[0.9rem] pt-[0.9rem]">
       <picture>
         <source type="image/webp" srcset="poster.webp">
         <img
+          class="block h-auto w-full rounded-[14px] shadow-card"
           src="poster.jpg"
           alt="Festive Plum Cakes Cake Sale poster for Vailankanni Parish Youth in association with Poppins Bakers, listing Dates &amp; Carrot Pudding, Butterscotch Pudding, and Rich Plum Cake prices, sold every Sunday from Nov 29 after the 6:30 and 8:30 AM Mass at Vailankanni Matha Church, Muthanallur."
           width="1024"
@@ -878,81 +55,81 @@
       </picture>
     </div>
 
-    <section class="fundraiser-info" aria-label="Sale details">
-      <p class="assoc">Vailankanni Parish Youth in association with Poppins Bakers</p>
-      <p class="pickup">Pickup every Sunday from Nov 29 after 6:30 AM &amp; 8:30 AM Mass at Vailankanni Matha Church, Muthanallur, Harohalli, Sarjapura Road, Bengaluru 560099</p>
-      <p class="enquire" id="enquire">Enquiries: <a href="tel:+917204017793">Cyril Martin • +91 72040 17793</a> <span class="enquire-sep" aria-hidden="true">|</span> <a href="tel:+918050764341">Aashwin Alfy • +91 80507 64341</a></p>
+    <section class="fundraiser-info m-[0.9rem] rounded-card border border-line bg-cream-light px-[1.05rem] pb-[1.05rem] pt-4 shadow-card lg:mb-0" aria-label="Sale details">
+      <p class="assoc mb-[0.65rem] text-center font-serif text-[0.98rem] font-bold leading-[1.35] text-maroon-dark">Vailankanni Parish Youth in association with Poppins Bakers</p>
+      <p class="pickup text-center text-[0.84rem] text-muted">Pickup every Sunday from Nov 29 after 6:30 AM &amp; 8:30 AM Mass at Vailankanni Matha Church, Muthanallur, Harohalli, Sarjapura Road, Bengaluru 560099</p>
+      <p class="enquire mt-3 border-t border-dashed border-line pt-[0.7rem] text-center text-[0.88rem]" id="enquire">Enquiries: <a class="font-bold text-maroon no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 focus-visible:rounded-sm" href="tel:+917204017793">Cyril Martin • +91 72040 17793</a> <span class="enquire-sep mx-1 text-line" aria-hidden="true">|</span> <a class="font-bold text-maroon no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 focus-visible:rounded-sm" href="tel:+918050764341">Aashwin Alfy • +91 80507 64341</a></p>
     </section>
     </aside>
 
-    <div class="right-col">
-    <h2 class="section-title" id="menu-heading">Cake varieties</h2>
-    <div class="menu-list" id="menu-list" role="list" aria-labelledby="menu-heading"></div>
-    <p class="cart-error" id="cart-error" role="alert" aria-live="assertive"></p>
+    <div class="right-col lg:col-start-2 lg:row-start-2 lg:min-w-0 xl:row-start-1">
+    <h2 class="section-title mx-[1.05rem] mb-[0.55rem] mt-[0.4rem] scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] text-[0.72rem] font-bold uppercase tracking-[0.14em] text-muted lg:mt-0 lg:scroll-mb-5" id="menu-heading">Cake varieties</h2>
+    <div class="menu-list flex scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] flex-col gap-[0.7rem] px-[0.9rem] md:grid md:grid-cols-2 md:items-stretch lg:scroll-mb-5 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]" id="menu-list" role="list" aria-labelledby="menu-heading"></div>
+    <p class="cart-error mx-[0.9rem] mt-[0.7rem] hidden rounded-[10px] bg-maroon-soft px-3 py-[0.55rem] text-[0.85rem] font-semibold text-maroon-dark [&.visible]:block" id="cart-error" role="alert" aria-live="assertive"></p>
 
-    <form class="order-form" id="order-form" novalidate>
-      <h2>Your details</h2>
+    <form class="order-form mx-[0.9rem] mt-[1.15rem] rounded-card border border-line bg-cream-light px-4 pb-[1.1rem] pt-4 shadow-card" id="order-form" novalidate>
+      <h2 class="mb-[0.85rem] text-[1.05rem] font-bold">Your details</h2>
 
-      <div class="field" id="field-name">
-        <label for="buyer-name">Buyer Name <span class="req" aria-hidden="true">*</span></label>
-        <input type="text" id="buyer-name" name="name" autocomplete="name" required placeholder="Full name">
-        <p class="error" id="buyer-name-error"></p>
+      <div class="field mb-[0.85rem] last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:bg-maroon-soft [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-xl [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-xl [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-name">
+        <label class="mb-[0.3rem] block text-[0.8rem] font-bold" for="buyer-name">Buyer Name <span class="req text-maroon" aria-hidden="true">*</span></label>
+        <input class="w-full rounded-[10px] border-[1.5px] border-line bg-cream-light px-3 py-[0.7rem] text-base text-ink appearance-none placeholder:text-muted/60 focus:outline-none focus:border-maroon focus:shadow-[0_0_0_3px_rgba(122,10,16,0.45)]" type="text" id="buyer-name" name="name" autocomplete="name" required placeholder="Full name">
+        <p class="error mt-[0.3rem] hidden text-[0.78rem] font-semibold text-maroon" id="buyer-name-error"></p>
       </div>
 
-      <div class="field" id="field-phone">
-        <label for="buyer-phone">Phone Number <span class="req" aria-hidden="true">*</span></label>
-        <input type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" required placeholder="10-digit mobile">
-        <p class="error" id="buyer-phone-error"></p>
+      <div class="field mb-[0.85rem] last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:bg-maroon-soft [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-xl [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-xl [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-phone">
+        <label class="mb-[0.3rem] block text-[0.8rem] font-bold" for="buyer-phone">Phone Number <span class="req text-maroon" aria-hidden="true">*</span></label>
+        <input class="w-full rounded-[10px] border-[1.5px] border-line bg-cream-light px-3 py-[0.7rem] text-base text-ink appearance-none placeholder:text-muted/60 focus:outline-none focus:border-maroon focus:shadow-[0_0_0_3px_rgba(122,10,16,0.45)]" type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" required placeholder="10-digit mobile">
+        <p class="error mt-[0.3rem] hidden text-[0.78rem] font-semibold text-maroon" id="buyer-phone-error"></p>
       </div>
 
-      <div class="field" id="field-pickup-date">
-        <label id="pickup-date-label">Pickup Date <span class="req" aria-hidden="true">*</span></label>
-        <div class="date-chips" id="date-chips" role="group" aria-labelledby="pickup-date-label"></div>
+      <div class="field mb-[0.85rem] last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:bg-maroon-soft [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-xl [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-xl [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-pickup-date">
+        <label class="mb-[0.3rem] block text-[0.8rem] font-bold" id="pickup-date-label">Pickup Date <span class="req text-maroon" aria-hidden="true">*</span></label>
+        <div class="date-chips flex flex-wrap gap-[0.45rem]" id="date-chips" role="group" aria-labelledby="pickup-date-label"></div>
         <input type="hidden" id="pickup-date" name="pickupDate" value="">
-        <p class="error" id="pickup-date-error"></p>
+        <p class="error mt-[0.3rem] hidden text-[0.78rem] font-semibold text-maroon" id="pickup-date-error"></p>
       </div>
 
-      <div class="field" id="field-mass">
-        <label id="mass-label">Pickup after Mass <span class="req" aria-hidden="true">*</span></label>
-        <div class="mass-options" id="mass-options" role="group" aria-labelledby="mass-label"></div>
+      <div class="field mb-[0.85rem] last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:bg-maroon-soft [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-xl [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-xl [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-mass">
+        <label class="mb-[0.3rem] block text-[0.8rem] font-bold" id="mass-label">Pickup after Mass <span class="req text-maroon" aria-hidden="true">*</span></label>
+        <div class="mass-options grid grid-cols-2 gap-2" id="mass-options" role="group" aria-labelledby="mass-label"></div>
         <input type="hidden" id="pickup-mass" name="mass" value="">
-        <p class="error" id="mass-error"></p>
+        <p class="error mt-[0.3rem] hidden text-[0.78rem] font-semibold text-maroon" id="mass-error"></p>
       </div>
 
-      <p class="pickup-place" id="pickup-place">Pickup at Vailankanni Matha Church, Muthanallur after 6:30 AM &amp; 8:30 AM Mass</p>
-      <p class="closed-banner" id="preorders-closed" role="status">Pre-orders closed. Pickups for this cake sale have ended.</p>
-      <p class="hint" id="stock-status"></p>
+      <p class="pickup-place mb-2 mt-[0.15rem] text-[0.8rem] leading-[1.4] text-muted" id="pickup-place">Pickup at Vailankanni Matha Church, Muthanallur after 6:30 AM &amp; 8:30 AM Mass</p>
+      <p class="closed-banner hidden rounded-[10px] bg-maroon-soft px-[0.8rem] py-[0.7rem] text-[0.88rem] font-bold text-maroon-dark [&.visible]:block" id="preorders-closed" role="status">Pre-orders closed. Pickups for this cake sale have ended.</p>
+      <p class="hint mt-[0.3rem] text-[0.75rem] text-muted [&.is-error]:text-gold-dark" id="stock-status"></p>
     </form>
     </div>
 
-    <aside class="sticky-bar" aria-label="Order summary">
-      <h2 class="summary-heading">Your order</h2>
-      <ul class="cart-lines" id="cart-lines"></ul>
-      <div class="summary">
-        <span class="count" id="summary-count">0 items</span>
-        <span class="total" id="summary-total">₹0</span>
+    <aside class="sticky-bar fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-line bg-cream-light px-[0.9rem] pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-[0.7rem] shadow-[0_-8px_24px_rgba(42,35,6,0.1)] md:max-w-[640px] lg:sticky lg:bottom-auto lg:left-auto lg:top-4 lg:col-start-2 lg:row-start-1 lg:w-auto lg:max-w-none lg:translate-x-0 lg:rounded-card lg:border lg:px-[1.05rem] lg:pb-[1.05rem] lg:pt-4 lg:shadow-card xl:col-start-3" aria-label="Order summary">
+      <h2 class="summary-heading mb-[0.65rem] hidden text-[1.02rem] font-extrabold lg:block">Your order</h2>
+      <ul class="cart-lines mb-3 hidden max-h-[min(42vh,22rem)] overflow-auto lg:block" id="cart-lines"></ul>
+      <div class="summary mb-[0.3rem] flex items-baseline justify-between font-bold">
+        <span class="count text-[0.92rem] text-muted" id="summary-count">0 items</span>
+        <span class="total text-[1.2rem] tabular-nums" id="summary-total">₹0</span>
       </div>
-      <p class="order-confirm" id="order-confirm" role="status" aria-live="polite" hidden></p>
-      <p class="payment-note" id="payment-note">Payment: Pay at pickup, or UPI (number shown when you order)</p>
-      <div class="checkout-alert" id="checkout-alert" role="alert" aria-live="assertive" hidden></div>
-      <div class="cta-wrap" id="place-order-wrap">
-        <button type="button" class="cta" id="place-order-btn">Place Order via WhatsApp</button>
+      <p class="order-confirm mb-[0.3rem] rounded-lg bg-[#e8f3dc] px-[0.55rem] py-[0.3rem] text-[0.8rem] font-bold leading-[1.3] text-pine" id="order-confirm" role="status" aria-live="polite" hidden></p>
+      <p class="payment-note mb-2 text-[0.75rem] font-semibold leading-[1.35] text-muted" id="payment-note">Payment: Pay at pickup, or UPI (number shown when you order)</p>
+      <div class="checkout-alert mb-2 hidden rounded-[10px] border-[1.5px] border-maroon bg-maroon-soft px-[0.7rem] pb-2 pt-[0.55rem] text-[0.8rem] font-semibold leading-[1.4] text-maroon-dark [&.visible]:block" id="checkout-alert" role="alert" aria-live="assertive" hidden></div>
+      <div class="cta-wrap w-full" id="place-order-wrap">
+        <button type="button" class="cta inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-0 bg-maroon px-4 py-[0.85rem] text-[1.02rem] font-extrabold tracking-[0.01em] text-cream-light [-webkit-tap-highlight-color:transparent] hover:enabled:bg-maroon-dark enabled:active:bg-maroon-dark disabled:cursor-wait disabled:opacity-75 [&.closed:disabled]:cursor-not-allowed [&.closed:disabled]:bg-pine [&.closed:disabled]:opacity-100 focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2" id="place-order-btn">Place Order via WhatsApp</button>
       </div>
     </aside>
   </div>
 
-  <div class="form-alert" id="form-alert" hidden>
-    <div class="form-alert-backdrop" id="form-alert-backdrop" data-alert-dismiss="true"></div>
-    <div class="form-alert-dialog" id="form-alert-dialog" role="alertdialog" aria-modal="true" aria-labelledby="form-alert-title" aria-describedby="form-alert-body">
-      <h2 id="form-alert-title">Almost there!</h2>
+  <div class="form-alert fixed inset-0 z-[80] flex items-center justify-center p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]" id="form-alert" hidden>
+    <div class="form-alert-backdrop absolute inset-0 animate-[formAlertFade_0.2s_ease_forwards] bg-[rgba(82,5,5,0.55)] motion-reduce:animate-none" id="form-alert-backdrop" data-alert-dismiss="true"></div>
+    <div class="form-alert-dialog relative w-full max-w-[21.5rem] animate-[formAlertPop_0.2s_ease_forwards] rounded-card border-2 border-maroon bg-cream-light px-[1.15rem] pb-[1.1rem] pt-[1.2rem] text-ink shadow-[0_16px_40px_rgba(42,35,6,0.28)] motion-reduce:animate-none" id="form-alert-dialog" role="alertdialog" aria-modal="true" aria-labelledby="form-alert-title" aria-describedby="form-alert-body">
+      <h2 class="mb-[0.65rem] font-serif text-[1.35rem] font-bold tracking-[0.01em] text-maroon" id="form-alert-title">Almost there!</h2>
       <div id="form-alert-body">
-        <ul id="form-alert-list"></ul>
+        <ul class="mb-4 list-disc pl-[1.15rem] text-[0.95rem] font-semibold leading-[1.45] text-ink" id="form-alert-list"></ul>
       </div>
-      <button type="button" class="form-alert-ok" id="form-alert-ok">OK, fix it</button>
+      <button type="button" class="form-alert-ok min-h-11 w-full cursor-pointer rounded-xl border-0 bg-maroon px-4 py-[0.8rem] text-[1.02rem] font-extrabold text-cream-light active:bg-maroon-dark focus:outline-none focus-visible:outline-3 focus-visible:outline-gold focus-visible:outline-offset-2" id="form-alert-ok">OK, fix it</button>
     </div>
   </div>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="toast pointer-events-none fixed bottom-[calc(var(--sticky-h)+0.6rem+env(safe-area-inset-bottom,0px))] left-1/2 z-50 w-[calc(100%-2rem)] max-w-[440px] -translate-x-1/2 translate-y-2 rounded-xl bg-ink px-[0.95rem] py-3 text-[0.86rem] font-semibold text-cream-light opacity-0 shadow-[0_10px_24px_rgba(42,35,6,0.25)] transition-[opacity,translate] duration-200 ease-in-out motion-reduce:transition-none md:max-w-[600px] lg:bottom-6 lg:left-auto lg:right-6 lg:w-96 lg:max-w-[calc(100vw-3rem)] lg:translate-x-0 [&.visible]:translate-y-0 [&.visible]:opacity-100" id="toast" role="status" aria-live="polite"></div>
 
   <!-- One settings file: poster, WhatsApp contacts, payment line, Sheets URL. -->
   <script src="site-config.js"></script>
@@ -1403,8 +580,8 @@
       const el = document.getElementById('enquire');
       if (!el) return;
       el.innerHTML = 'Enquiries: ' + CONTACTS.map(function (c) {
-        return '<a href="tel:+' + escapeHtml(c.number) + '">' + escapeHtml(c.name) + ' • ' + escapeHtml(contactDisplay(c)) + '</a>';
-      }).join(' <span class="enquire-sep" aria-hidden="true">|</span> ');
+        return '<a class="font-bold text-maroon no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 focus-visible:rounded-sm" href="tel:+' + escapeHtml(c.number) + '">' + escapeHtml(c.name) + ' • ' + escapeHtml(contactDisplay(c)) + '</a>';
+      }).join(' <span class="enquire-sep mx-1 text-line" aria-hidden="true">|</span> ');
     }
 
     function applyPosterConfig() {
@@ -1437,27 +614,27 @@
       els.menuList.innerHTML = '';
       MENU_ITEMS.forEach((item) => {
         const card = document.createElement('article');
-        card.className = 'menu-card';
+        card.className = 'menu-card flex justify-between gap-3 rounded-card border border-line bg-cream-light px-[0.95rem] pb-[0.9rem] pt-[0.95rem] shadow-card [&.sold-out]:opacity-[0.58]';
         card.setAttribute('role', 'listitem');
 
         const tagHtml = item.tag
-          ? '<span class="tag">' + escapeHtml(item.tag) + '</span>'
+          ? '<span class="tag inline-block rounded-full bg-maroon px-[0.4rem] py-[0.15rem] text-[0.62rem] font-bold uppercase tracking-[0.04em] text-cream-light">' + escapeHtml(item.tag) + '</span>'
           : '';
 
         card.innerHTML =
-          '<div class="info">' +
-            '<div class="name-row">' +
-              '<h2>' + escapeHtml(item.name) + '</h2>' +
+          '<div class="info min-w-0 flex-1">' +
+            '<div class="name-row flex flex-wrap items-center gap-[0.4rem]">' +
+              '<h2 class="text-[1.02rem] font-bold leading-[1.3]">' + escapeHtml(item.name) + '</h2>' +
               tagHtml +
             '</div>' +
-            '<p class="desc">' + escapeHtml(item.description) + '</p>' +
-            '<p class="price">' + formatINR(item.price) +
-              ' <span class="weight">· ' + escapeHtml(item.weight) + '</span></p>' +
+            '<p class="desc mt-[0.28rem] text-[0.8rem] text-muted">' + escapeHtml(item.description) + '</p>' +
+            '<p class="price mt-2 text-[1.05rem] font-extrabold text-ink">' + formatINR(item.price) +
+              ' <span class="weight ml-[0.15rem] text-[0.78rem] font-semibold text-muted">· ' + escapeHtml(item.weight) + '</span></p>' +
           '</div>' +
-          '<div class="stepper" data-id="' + escapeHtml(item.id) + '">' +
-            '<button type="button" class="minus" aria-label="Decrease quantity of ' + escapeHtml(displayName(item)) + '" disabled>−</button>' +
-            '<span class="qty" aria-live="polite">0</span>' +
-            '<button type="button" class="plus" aria-label="Increase quantity of ' + escapeHtml(displayName(item)) + '">+</button>' +
+          '<div class="stepper flex shrink-0 items-center gap-[0.35rem] self-end" data-id="' + escapeHtml(item.id) + '">' +
+            '<button type="button" class="minus size-11 shrink-0 cursor-pointer rounded-full border-[1.5px] border-maroon p-0 text-[1.45rem] font-semibold leading-none inline-flex items-center justify-center [-webkit-tap-highlight-color:transparent] disabled:cursor-default disabled:opacity-35 enabled:active:scale-[0.94] motion-reduce:enabled:active:scale-100 focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 bg-cream-light text-maroon hover:enabled:bg-maroon-soft" aria-label="Decrease quantity of ' + escapeHtml(displayName(item)) + '" disabled>−</button>' +
+            '<span class="qty min-w-[1.4rem] text-center text-[1.05rem] font-extrabold tabular-nums" aria-live="polite">0</span>' +
+            '<button type="button" class="plus size-11 shrink-0 cursor-pointer rounded-full border-[1.5px] border-maroon p-0 text-[1.45rem] font-semibold leading-none inline-flex items-center justify-center [-webkit-tap-highlight-color:transparent] disabled:cursor-default disabled:opacity-35 enabled:active:scale-[0.94] motion-reduce:enabled:active:scale-100 focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 bg-maroon text-cream-light hover:enabled:bg-maroon-dark" aria-label="Increase quantity of ' + escapeHtml(displayName(item)) + '">+</button>' +
           '</div>';
 
         const minus = card.querySelector('.minus');
@@ -1497,14 +674,14 @@
     function renderCartLines(cart) {
       if (!els.cartLines) return;
       if (!cart || !cart.length) {
-        els.cartLines.innerHTML = '<li class="cart-empty">Your cart is empty</li>';
+        els.cartLines.innerHTML = '<li class="cart-empty pb-2 pt-[0.2rem] text-[0.88rem] text-muted">Your cart is empty</li>';
         return;
       }
       els.cartLines.innerHTML = cart.map(function (line) {
-        return '<li class="cart-line">' +
-          '<span class="cart-line-qty">' + line.qty + ' ×</span>' +
-          '<span class="cart-line-name">' + escapeHtml(line.name) + '</span>' +
-          '<span class="cart-line-total">' + formatINR(line.lineTotal) + '</span>' +
+        return '<li class="cart-line grid grid-cols-[auto_1fr_auto] items-baseline gap-x-2 gap-y-[0.35rem] border-b border-line py-[0.35rem] text-[0.86rem]">' +
+          '<span class="cart-line-qty font-extrabold text-muted">' + line.qty + ' ×</span>' +
+          '<span class="cart-line-name min-w-0">' + escapeHtml(line.name) + '</span>' +
+          '<span class="cart-line-total font-extrabold tabular-nums">' + formatINR(line.lineTotal) + '</span>' +
           '</li>';
       }).join('');
     }
@@ -1538,7 +715,7 @@
       open.forEach(function (date) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'date-chip';
+        btn.className = 'date-chip inline-flex min-h-11 cursor-pointer flex-col items-center justify-center rounded-full border-[1.5px] border-line bg-cream-light px-[0.85rem] py-[0.55rem] text-[0.86rem] font-bold text-ink appearance-none [-webkit-tap-highlight-color:transparent] disabled:cursor-not-allowed aria-pressed:border-maroon aria-pressed:bg-maroon-soft aria-pressed:text-maroon-dark [&:hover:not(:disabled):not([aria-pressed=true])]:border-maroon [&:hover:not(:disabled):not([aria-pressed=true])]:bg-maroon-soft focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(122,10,16,0.45)]';
         btn.dataset.id = date.id;
         btn.textContent = pickupDisplayLabel(date);
         btn.addEventListener('click', function () { selectPickupDate(date.id); });
@@ -1552,7 +729,7 @@
       MASS_TIMES.forEach(function (mass) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'mass-option';
+        btn.className = 'mass-option min-h-14 cursor-pointer rounded-[14px] border-[1.5px] border-line bg-cream-light px-[0.6rem] py-[0.9rem] text-[0.95rem] font-extrabold text-ink appearance-none [-webkit-tap-highlight-color:transparent] aria-pressed:border-maroon aria-pressed:bg-maroon-soft aria-pressed:text-maroon-dark [&:hover:not(:disabled):not([aria-pressed=true])]:border-maroon [&:hover:not(:disabled):not([aria-pressed=true])]:bg-maroon-soft focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(122,10,16,0.45)]';
         btn.dataset.id = mass.id;
         btn.textContent = mass.label;
         btn.setAttribute('aria-pressed', mass.id === els.mass.value ? 'true' : 'false');
@@ -2042,9 +1219,9 @@
       }
       const closed = issues.length === 1 && issues[0].key === 'closed';
       const heading = closed ? 'Pre-orders closed' : 'Please complete your order:';
-      box.innerHTML = '<p>' + escapeHtml(heading) + '</p><ul>' +
+      box.innerHTML = '<p class="mb-1">' + escapeHtml(heading) + '</p><ul class="list-disc pl-[1.1rem]">' +
         issues.map(function (issue) {
-          return '<li>' + escapeHtml(issue.message) + '</li>';
+          return '<li class="my-[0.05rem]">' + escapeHtml(issue.message) + '</li>';
         }).join('') + '</ul>';
       box.hidden = false;
       box.classList.add('visible');
@@ -2097,11 +1274,11 @@
       els.formAlertTitle.textContent = closed ? 'Pre-orders closed' : 'Almost there!';
       els.formAlertOk.textContent = closed ? 'OK' : 'OK, fix it';
       if (closed) {
-        els.formAlertBody.innerHTML = '<p id="form-alert-list">' + escapeHtml(issues[0].message) + '</p>';
+        els.formAlertBody.innerHTML = '<p class="mb-4 text-[0.95rem] font-semibold text-ink" id="form-alert-list">' + escapeHtml(issues[0].message) + '</p>';
       } else {
-        els.formAlertBody.innerHTML = '<ul id="form-alert-list">' +
+        els.formAlertBody.innerHTML = '<ul class="mb-4 list-disc pl-[1.15rem] text-[0.95rem] font-semibold leading-[1.45] text-ink" id="form-alert-list">' +
           issues.map(function (issue) {
-            return '<li>' + escapeHtml(issue.message) + '</li>';
+            return '<li class="my-[0.2rem]">' + escapeHtml(issue.message) + '</li>';
           }).join('') + '</ul>';
       }
       els.formAlertList = document.getElementById('form-alert-list');

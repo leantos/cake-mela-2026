@@ -9,685 +9,151 @@
   <title>Staff desk — Vailankanni Parish Youth</title>
   <link rel="icon" href="logo.png" type="image/png">
   <link rel="apple-touch-icon" href="logo.png">
-  <style>
-    :root {
-      --maroon: #7a0a10;
-      --maroon-dark: #520505;
-      --maroon-soft: #ead6d0;
-      --gold: #c27b13;
-      --gold-dark: #904108;
-      --cream: #f7ede5;
-      --cream-light: #fbf9f7;
-      --cream-deep: #eadace;
-      --page-bg: #dff3fa;
-      --ink: #2a2306;
-      --muted: #5d563e;
-      --pine: #435718;
-      --blue: #0544b3;
-      --blue-dark: #0c3c98;
-      --line: #eadace;
-      --card: var(--cream-light);
-      --bg: var(--cream);
-      --shadow: 0 8px 24px rgba(42, 35, 6, 0.1);
-      --radius: 16px;
-      --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
-      --serif: Georgia, "Palatino Linotype", Palatino, "Times New Roman", serif;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      font-family: var(--font);
-      background: var(--page-bg);
-      color: var(--ink);
-      line-height: 1.45;
-      -webkit-font-smoothing: antialiased;
-    }
-    button, input, select { font: inherit; }
-    button { cursor: pointer; }
-    button:disabled { cursor: not-allowed; opacity: 0.55; }
-
-    .app {
-      max-width: 480px;
-      margin: 0 auto;
-      min-height: 100vh;
-      min-height: 100dvh;
-      background: var(--bg);
-      box-shadow: 0 0 40px rgba(42, 35, 6, 0.12);
-      display: flex;
-      flex-direction: column;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    header.hero-head {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      background: var(--card);
-      color: var(--blue);
-      padding: 0.7rem 0.9rem;
-      padding-top: calc(0.7rem + env(safe-area-inset-top));
-      border-bottom: 3px solid var(--maroon);
-    }
-    header.hero-head .logo {
-      display: block;
-      width: 52px;
-      height: 52px;
-      flex-shrink: 0;
-    }
-    header.hero-head .brand { min-width: 0; flex: 1; text-align: left; }
-    header.hero-head h1 {
-      margin: 0;
-      font-family: var(--serif);
-      font-size: 1.08rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      line-height: 1.2;
-      color: var(--blue);
-    }
-    header.hero-head .tagline {
-      margin: 0.15rem 0 0;
-      font-size: 0.78rem;
-      color: var(--muted);
-      font-weight: 600;
-    }
-    .lock-btn {
-      flex-shrink: 0;
-      min-height: 44px;
-      padding: 0.4rem 0.75rem;
-      border-radius: 999px;
-      border: 1.5px solid var(--maroon);
-      background: transparent;
-      color: var(--maroon);
-      font-size: 0.8rem;
-      font-weight: 700;
-    }
-
-    .example-banner {
-      display: none;
-      margin: 0;
-      padding: 0.45rem 0.9rem;
-      background: #fff4d6;
-      color: var(--gold-dark);
-      font-size: 0.82rem;
-      font-weight: 700;
-      text-align: center;
-      border-bottom: 1px solid #efd59a;
-    }
-    body.is-preview .example-banner { display: block; }
-
-    .tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.4rem;
-      padding: 0.7rem 0.9rem 0;
-      background: var(--bg);
-      position: sticky;
-      top: 0;
-      z-index: 5;
-    }
-    .tab-btn {
-      min-height: 48px;
-      border: none;
-      border-radius: 999px;
-      background: var(--cream-light);
-      color: var(--muted);
-      font-weight: 700;
-      font-size: 0.95rem;
-      box-shadow: inset 0 0 0 1.5px var(--cream-deep);
-    }
-    .tab-btn[aria-selected="true"] {
-      background: var(--maroon);
-      color: #fff;
-      box-shadow: none;
-    }
-
-    .page { padding: 0.8rem 0.9rem 1.6rem; flex: 1; }
-    .panel[hidden] { display: none !important; }
-
-    .chips {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 0.4rem;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 0.15rem 0 0.2rem;
-      margin: 0 0 0.6rem;
-      scrollbar-width: none;
-    }
-    .chips::-webkit-scrollbar { display: none; }
-    .chip {
-      flex: 0 0 auto;
-      min-height: 42px;
-      padding: 0.4rem 0.85rem;
-      border-radius: 999px;
-      border: 1.5px solid var(--cream-deep);
-      background: var(--cream-light);
-      color: var(--ink);
-      font-weight: 700;
-      font-size: 0.85rem;
-    }
-    .chip[aria-pressed="true"] {
-      background: var(--maroon);
-      border-color: var(--maroon);
-      color: #fff;
-    }
-
-    .search {
-      width: 100%;
-      min-height: 48px;
-      border: 1.5px solid var(--cream-deep);
-      border-radius: 12px;
-      padding: 0.55rem 0.85rem;
-      background: var(--cream-light);
-      color: var(--ink);
-      margin-bottom: 0.7rem;
-    }
-    .search:focus {
-      outline: 2px solid var(--gold);
-      outline-offset: 1px;
-      border-color: var(--gold);
-    }
-
-    .counts {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr 1fr;
-      gap: 0.45rem;
-      margin: 0 0 0.8rem;
-    }
-    .count-card {
-      background: var(--cream-light);
-      border-radius: 14px;
-      padding: 0.55rem 0.55rem 0.6rem;
-      box-shadow: var(--shadow);
-      text-align: center;
-    }
-    .count-card .label {
-      margin: 0;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .count-card .value {
-      margin: 0.15rem 0 0;
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: var(--maroon);
-      line-height: 1.1;
-    }
-    .count-card .sub {
-      margin: 0.15rem 0 0;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--gold-dark);
-    }
-
-    .updated {
-      margin: 0 0 0.7rem;
-      font-size: 0.78rem;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .order-list, .walkin-list { display: flex; flex-direction: column; gap: 0.7rem; }
-    .empty {
-      margin: 0.6rem 0;
-      padding: 1.1rem 0.8rem;
-      text-align: center;
-      color: var(--muted);
-      background: var(--cream-light);
-      border-radius: var(--radius);
-    }
-
-    .order-card, .walkin-card {
-      background: var(--cream-light);
-      border-radius: var(--radius);
-      padding: 0.85rem 0.9rem 0.9rem;
-      box-shadow: var(--shadow);
-    }
-    .order-top, .walkin-top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 0.6rem;
-    }
-    .order-name, .walkin-item {
-      margin: 0;
-      font-size: 1.08rem;
-      font-weight: 800;
-      color: var(--ink);
-    }
-    .order-meta, .walkin-meta {
-      margin: 0.2rem 0 0;
-      font-size: 0.88rem;
-      color: var(--muted);
-    }
-    .phone-link {
-      color: var(--blue);
-      font-weight: 700;
-      text-decoration: none;
-    }
-    .order-items {
-      margin: 0.45rem 0 0;
-      font-size: 0.9rem;
-      white-space: pre-line;
-      color: var(--ink);
-    }
-    .order-total {
-      margin: 0.35rem 0 0;
-      font-weight: 800;
-      font-size: 1.05rem;
-      color: var(--maroon);
-    }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      min-height: 28px;
-      padding: 0.15rem 0.6rem;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-    .pill-pending { background: #f8e3bf; color: var(--gold-dark); }
-    .pill-paid { background: #dce8c8; color: var(--pine); }
-    .pill-picked { background: #d9e4fb; color: var(--blue-dark); }
-    .pill-cancelled { background: #ece8e1; color: var(--muted); }
-    .pill-queued { background: #fff4d6; color: var(--gold-dark); }
-
-    .order-actions {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 0.45rem;
-      margin-top: 0.75rem;
-      align-items: stretch;
-    }
-    .btn {
-      min-height: 48px;
-      padding: 0.55rem 0.9rem;
-      border-radius: 12px;
-      border: none;
-      font-weight: 800;
-      font-size: 0.95rem;
-    }
-    .btn-paid { background: var(--pine); color: #fff; flex: 1 1 0; min-width: 0; }
-    .btn-picked { background: var(--blue); color: #fff; flex: 1 1 0; min-width: 0; }
-    .btn-more {
-      background: var(--cream-deep);
-      color: var(--ink);
-      min-width: 48px;
-    }
-    .more-wrap { position: relative; }
-    .btn-primary {
-      background: var(--maroon);
-      color: #fff;
-      width: 100%;
-      font-size: 1.05rem;
-    }
-    .btn-ghost {
-      background: transparent;
-      color: var(--maroon);
-      border: 1.5px solid var(--maroon);
-    }
-    .menu {
-      position: absolute;
-      right: 0;
-      bottom: calc(100% + 6px);
-      min-width: 160px;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 10px 28px rgba(42, 35, 6, 0.18);
-      padding: 0.3rem;
-      display: none;
-      z-index: 6;
-    }
-    .menu.is-open { display: block; }
-    .menu button {
-      display: block;
-      width: 100%;
-      text-align: left;
-      min-height: 44px;
-      padding: 0.4rem 0.7rem;
-      border: none;
-      background: transparent;
-      border-radius: 8px;
-      font-weight: 700;
-    }
-    .menu button:hover, .menu button:focus-visible { background: var(--cream); }
-    .menu .danger { color: var(--maroon); }
-
-    .item-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
-      margin-bottom: 0.85rem;
-    }
-    .item-btn {
-      min-height: 72px;
-      text-align: left;
-      border-radius: 14px;
-      border: 2px solid var(--cream-deep);
-      background: var(--cream-light);
-      padding: 0.65rem 0.7rem;
-      box-shadow: var(--shadow);
-    }
-    .item-btn .iname { display: block; font-weight: 800; font-size: 0.88rem; line-height: 1.25; }
-    .item-btn .iprice { display: block; margin-top: 0.2rem; color: var(--maroon); font-weight: 800; }
-    .item-btn[aria-pressed="true"] {
-      border-color: var(--maroon);
-      background: #f6e7e4;
-    }
-
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.6rem;
-      margin: 0 0 0.7rem;
-    }
-    .row label, .field-label {
-      font-size: 0.82rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--muted);
-    }
-    .stepper { display: flex; align-items: center; gap: 0.35rem; }
-    .stepper button {
-      width: 48px;
-      height: 48px;
-      border: none;
-      border-radius: 12px;
-      background: var(--maroon);
-      color: #fff;
-      font-size: 1.4rem;
-      font-weight: 700;
-      line-height: 1;
-    }
-    .stepper input {
-      width: 56px;
-      height: 48px;
-      text-align: center;
-      border-radius: 12px;
-      border: 1.5px solid var(--cream-deep);
-      background: var(--cream-light);
-      font-weight: 800;
-      font-size: 1.1rem;
-    }
-    .mass-select {
-      min-height: 48px;
-      border-radius: 12px;
-      border: 1.5px solid var(--cream-deep);
-      background: var(--cream-light);
-      padding: 0 0.7rem;
-      font-weight: 700;
-      min-width: 0;
-      flex: 1;
-    }
-    .pay-toggle { display: flex; gap: 0.4rem; }
-    .pay-toggle button {
-      min-height: 48px;
-      min-width: 72px;
-      padding: 0.4rem 0.9rem;
-      border-radius: 12px;
-      border: 2px solid var(--cream-deep);
-      background: var(--cream-light);
-      font-weight: 800;
-    }
-    .pay-toggle button[aria-pressed="true"] {
-      background: var(--pine);
-      border-color: var(--pine);
-      color: #fff;
-    }
-    .live-amount {
-      margin: 0.2rem 0 0.85rem;
-      text-align: center;
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: var(--maroon);
-    }
-
-    .walkin-amount { font-weight: 800; color: var(--maroon); }
-    .undo-btn {
-      min-height: 44px;
-      min-width: 72px;
-      border: none;
-      border-radius: 10px;
-      background: var(--cream-deep);
-      color: var(--maroon);
-      font-weight: 800;
-    }
-
-    /* PIN gate */
-    .pin-gate {
-      position: fixed;
-      inset: 0;
-      background: var(--cream);
-      z-index: 20;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 1.4rem 1.2rem;
-    }
-    .pin-gate[hidden] { display: none !important; }
-    .pin-card {
-      width: 100%;
-      max-width: 360px;
-      background: var(--cream-light);
-      border-radius: 20px;
-      box-shadow: var(--shadow);
-      padding: 1.3rem 1.15rem 1.2rem;
-      text-align: center;
-    }
-    .pin-card img { width: 72px; height: 72px; }
-    .pin-card h2 {
-      margin: 0.6rem 0 0.2rem;
-      font-family: var(--serif);
-      color: var(--blue);
-      font-size: 1.35rem;
-    }
-    .pin-card p { margin: 0 0 0.9rem; color: var(--muted); font-size: 0.92rem; }
-    .pin-card input {
-      width: 100%;
-      min-height: 56px;
-      text-align: center;
-      font-size: 1.5rem;
-      letter-spacing: 0.35em;
-      border-radius: 12px;
-      border: 1.5px solid var(--cream-deep);
-      background: #fff;
-      margin-bottom: 0.7rem;
-    }
-    .pin-error { min-height: 1.3em; margin: 0.5rem 0 0; color: var(--maroon); font-weight: 700; font-size: 0.88rem; }
-
-    .toast-wrap {
-      position: fixed;
-      left: 50%;
-      bottom: calc(1rem + env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      width: min(420px, calc(100% - 1.4rem));
-      z-index: 30;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      pointer-events: none;
-    }
-    .toast {
-      pointer-events: none;
-      background: var(--ink);
-      color: #fff;
-      padding: 0.75rem 0.95rem;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 0.92rem;
-      box-shadow: var(--shadow);
-    }
-    .toast.error { background: var(--maroon); }
-    .toast.ok { background: var(--pine); }
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(42, 35, 6, 0.45);
-      z-index: 25;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.2rem;
-    }
-    .modal-backdrop[hidden] { display: none !important; }
-    .modal {
-      width: min(360px, 100%);
-      background: var(--cream-light);
-      border-radius: 18px;
-      padding: 1.15rem 1.05rem 1rem;
-      box-shadow: 0 16px 40px rgba(42, 35, 6, 0.22);
-    }
-    .modal h2 { margin: 0 0 0.4rem; font-size: 1.15rem; color: var(--maroon); }
-    .modal p { margin: 0 0 1rem; color: var(--ink); }
-    .modal-actions { display: flex; gap: 0.5rem; }
-    .modal-actions .btn { flex: 1; }
-
-
-    /* Desktop / tablet: use the width instead of a phone column. */
-    @media (min-width: 720px) {
-      .app { max-width: 1100px; }
-      header.hero-head { padding-left: 1.4rem; padding-right: 1.4rem; }
-      header.hero-head h1 { font-size: 1.3rem; }
-      .tabs { padding: 0.9rem 1.4rem 0; max-width: 420px; }
-      .page { padding: 1rem 1.4rem 2rem; }
-      .counts { grid-template-columns: repeat(3, minmax(0, 220px)); gap: 0.8rem; }
-      .search { max-width: 420px; }
-      .chips { flex-wrap: wrap; overflow-x: visible; }
-      .order-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; align-items: start; }
-      .walkin-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.6rem; align-items: start; }
-      .walkin-side .updated { margin-top: 0 !important; }
-      .item-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .btn-primary { max-width: 360px; }
-    }
-    @media (min-width: 1000px) {
-      .order-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
-    @media (hover: hover) {
-      .chip:hover, .item-btn:hover { border-color: var(--gold); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      * { transition: none !important; animation: none !important; }
-    }
-  </style>
+  <link rel="stylesheet" href="/tailwind.css">
+  <style>button:not(:disabled) { cursor: pointer; }</style>
 </head>
-<body>
-  <div class="app">
-    <header class="hero-head">
-      <img class="logo" src="logo.png" width="52" height="52" alt="Vailankanni Parish Youth logo">
-      <div class="brand">
-        <h1>Vailankanni Parish Youth</h1>
-        <p class="tagline">Staff desk • Christmas Cake Sale</p>
+<body class="m-0 bg-page font-sans leading-[1.45] text-ink antialiased">
+  <div class="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-cream pb-[env(safe-area-inset-bottom)] shadow-[0_0_40px_rgba(42,35,6,0.12)] min-[720px]:max-w-[1100px]">
+    <header class="flex items-center gap-[0.7rem] border-b-[3px] border-maroon bg-cream-light px-[0.9rem] pt-[calc(0.7rem+env(safe-area-inset-top))] pb-[0.7rem] text-brand-blue min-[720px]:px-[1.4rem]">
+      <img class="block size-[52px] shrink-0" src="logo.png" width="52" height="52" alt="Vailankanni Parish Youth logo">
+      <div class="min-w-0 flex-1 text-left">
+        <h1 class="font-serif text-[1.08rem] font-bold leading-[1.2] tracking-[0.01em] text-brand-blue min-[720px]:text-[1.3rem]">Vailankanni Parish Youth</h1>
+        <p class="mt-[0.15rem] text-[0.78rem] font-semibold text-muted">Staff desk • Christmas Cake Sale</p>
       </div>
-      <button type="button" class="lock-btn" id="lock-btn">Lock</button>
+      <button type="button" class="min-h-11 shrink-0 rounded-full border-[1.5px] border-maroon bg-transparent px-3 py-[0.4rem] text-[0.8rem] font-bold text-maroon" id="lock-btn">Lock</button>
     </header>
-    <p class="example-banner" id="example-banner">Example data — not live orders</p>
-    <div class="tabs" role="tablist" aria-label="Staff tasks">
-      <button type="button" class="tab-btn" id="tab-orders" role="tab" aria-selected="true" aria-controls="panel-orders">Orders</button>
-      <button type="button" class="tab-btn" id="tab-walkin" role="tab" aria-selected="false" aria-controls="panel-walkin">Walk-in sale</button>
+    <p class="hidden border-b border-[#efd59a] bg-[#fff4d6] px-[0.9rem] py-[0.45rem] text-center text-[0.82rem] font-bold text-gold-dark in-[.is-preview]:block" id="example-banner">Example data — not live orders</p>
+    <div class="sticky top-0 z-5 grid grid-cols-2 gap-[0.4rem] bg-cream px-[0.9rem] pt-[0.7rem] min-[720px]:max-w-[420px] min-[720px]:px-[1.4rem] min-[720px]:pt-[0.9rem]" role="tablist" aria-label="Staff tasks">
+      <button type="button" class="min-h-12 rounded-full bg-cream-light text-[0.95rem] font-bold text-muted shadow-[inset_0_0_0_1.5px_var(--color-cream-deep)] aria-selected:bg-maroon aria-selected:text-white aria-selected:shadow-none" id="tab-orders" role="tab" aria-selected="true" aria-controls="panel-orders">Orders</button>
+      <button type="button" class="min-h-12 rounded-full bg-cream-light text-[0.95rem] font-bold text-muted shadow-[inset_0_0_0_1.5px_var(--color-cream-deep)] aria-selected:bg-maroon aria-selected:text-white aria-selected:shadow-none" id="tab-walkin" role="tab" aria-selected="false" aria-controls="panel-walkin">Walk-in sale</button>
     </div>
-    <main class="page">
-      <section class="panel" id="panel-orders" role="tabpanel" aria-labelledby="tab-orders">
-        <div class="chips" id="date-chips" aria-label="Pickup date"></div>
-        <div class="chips" id="mass-chips" aria-label="Mass"></div>
-        <label class="visually-hidden" for="search" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Search orders</label>
-        <input class="search" id="search" type="search" placeholder="Search name, phone, or order ID" autocomplete="off" enterkeyhint="search">
-        <div class="counts" aria-label="Totals">
-          <article class="count-card">
-            <p class="label">To collect</p>
-            <p class="value" id="count-collect">0</p>
-            <p class="sub" id="count-collect-amt">₹0</p>
+    <main class="flex-1 px-[0.9rem] pt-[0.8rem] pb-[1.6rem] min-[720px]:px-[1.4rem] min-[720px]:pt-4 min-[720px]:pb-8">
+      <section id="panel-orders" role="tabpanel" aria-labelledby="tab-orders">
+        <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="date-chips" aria-label="Pickup date"></div>
+        <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="mass-chips" aria-label="Mass"></div>
+        <label class="sr-only" for="search">Search orders</label>
+        <input class="mb-[0.7rem] block min-h-12 w-full rounded-xl border-[1.5px] border-cream-deep bg-cream-light px-[0.85rem] py-[0.55rem] text-ink focus:border-gold focus:outline-2 focus:outline-offset-1 focus:outline-gold min-[720px]:max-w-[420px]" id="search" type="search" placeholder="Search name, phone, or order ID" autocomplete="off" enterkeyhint="search">
+        <div class="mb-[0.8rem] grid grid-cols-[1.2fr_1fr_1fr] gap-[0.45rem] min-[720px]:grid-cols-[repeat(3,minmax(0,220px))] min-[720px]:gap-[0.8rem]" aria-label="Totals">
+          <article class="rounded-[14px] bg-cream-light px-[0.55rem] pt-[0.55rem] pb-[0.6rem] text-center shadow-card">
+            <p class="text-[0.68rem] font-bold tracking-[0.04em] text-muted uppercase">To collect</p>
+            <p class="mt-[0.15rem] text-[1.35rem] leading-[1.1] font-extrabold text-maroon" id="count-collect">0</p>
+            <p class="mt-[0.15rem] text-xs font-bold text-gold-dark" id="count-collect-amt">₹0</p>
           </article>
-          <article class="count-card">
-            <p class="label">Picked up</p>
-            <p class="value" id="count-picked">0</p>
+          <article class="rounded-[14px] bg-cream-light px-[0.55rem] pt-[0.55rem] pb-[0.6rem] text-center shadow-card">
+            <p class="text-[0.68rem] font-bold tracking-[0.04em] text-muted uppercase">Picked up</p>
+            <p class="mt-[0.15rem] text-[1.35rem] leading-[1.1] font-extrabold text-maroon" id="count-picked">0</p>
           </article>
-          <article class="count-card">
-            <p class="label">Pending</p>
-            <p class="value" id="count-pending">0</p>
+          <article class="rounded-[14px] bg-cream-light px-[0.55rem] pt-[0.55rem] pb-[0.6rem] text-center shadow-card">
+            <p class="text-[0.68rem] font-bold tracking-[0.04em] text-muted uppercase">Pending</p>
+            <p class="mt-[0.15rem] text-[1.35rem] leading-[1.1] font-extrabold text-maroon" id="count-pending">0</p>
           </article>
         </div>
-        <p class="updated" id="orders-updated">Sign in to load orders.</p>
-        <div class="order-list" id="order-list"></div>
+        <p class="mb-[0.7rem] text-[0.78rem] font-semibold text-muted" id="orders-updated">Sign in to load orders.</p>
+        <div class="flex flex-col gap-[0.7rem] min-[720px]:grid min-[720px]:grid-cols-2 min-[720px]:items-start min-[720px]:gap-[0.9rem] min-[1000px]:grid-cols-3" id="order-list"></div>
       </section>
-      <section class="panel" id="panel-walkin" role="tabpanel" aria-labelledby="tab-walkin" hidden>
-        <div class="walkin-layout">
+      <section id="panel-walkin" role="tabpanel" aria-labelledby="tab-walkin" hidden>
+        <div class="min-[720px]:grid min-[720px]:grid-cols-2 min-[720px]:items-start min-[720px]:gap-[1.6rem]">
         <div class="walkin-form">
-        <div class="chips" id="walkin-date-chips" aria-label="Sale date"></div>
-        <div class="item-grid" id="item-grid"></div>
-        <div class="row">
-          <span class="field-label">Quantity</span>
-          <div class="stepper">
-            <button type="button" id="qty-minus" aria-label="Decrease quantity">−</button>
-            <input id="qty" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Quantity">
-            <button type="button" id="qty-plus" aria-label="Increase quantity">+</button>
+        <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="walkin-date-chips" aria-label="Sale date"></div>
+        <div class="mb-[0.85rem] grid grid-cols-2 gap-2 min-[720px]:grid-cols-3" id="item-grid"></div>
+        <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
+          <span class="text-[0.82rem] font-extrabold tracking-[0.04em] text-muted uppercase">Quantity</span>
+          <div class="flex items-center gap-[0.35rem]">
+            <button type="button" class="size-12 rounded-xl bg-maroon text-[1.4rem] leading-none font-bold text-white" id="qty-minus" aria-label="Decrease quantity">−</button>
+            <input class="h-12 w-14 rounded-xl border-[1.5px] border-cream-deep bg-cream-light text-center text-[1.1rem] font-extrabold" id="qty" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Quantity">
+            <button type="button" class="size-12 rounded-xl bg-maroon text-[1.4rem] leading-none font-bold text-white" id="qty-plus" aria-label="Increase quantity">+</button>
           </div>
         </div>
-        <div class="row">
-          <label class="field-label" for="walkin-mass">Mass</label>
-          <select class="mass-select" id="walkin-mass">
+        <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
+          <label class="text-[0.82rem] font-extrabold tracking-[0.04em] text-muted uppercase" for="walkin-mass">Mass</label>
+          <select class="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-cream-deep bg-cream-light px-[0.7rem] font-bold" id="walkin-mass">
             <option value="6:30 AM Mass">6:30 AM Mass</option>
             <option value="8:30 AM Mass">8:30 AM Mass</option>
             <option value="Other">Other</option>
           </select>
         </div>
-        <div class="row">
-          <span class="field-label">Payment</span>
-          <div class="pay-toggle" role="group" aria-label="Payment">
-            <button type="button" id="pay-cash" aria-pressed="true">Cash</button>
-            <button type="button" id="pay-upi" aria-pressed="false">UPI</button>
+        <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
+          <span class="text-[0.82rem] font-extrabold tracking-[0.04em] text-muted uppercase">Payment</span>
+          <div class="flex gap-[0.4rem]" role="group" aria-label="Payment">
+            <button type="button" class="min-h-12 min-w-[72px] rounded-xl border-2 border-cream-deep bg-cream-light px-[0.9rem] py-[0.4rem] font-extrabold aria-pressed:border-pine aria-pressed:bg-pine aria-pressed:text-white" id="pay-cash" aria-pressed="true">Cash</button>
+            <button type="button" class="min-h-12 min-w-[72px] rounded-xl border-2 border-cream-deep bg-cream-light px-[0.9rem] py-[0.4rem] font-extrabold aria-pressed:border-pine aria-pressed:bg-pine aria-pressed:text-white" id="pay-upi" aria-pressed="false">UPI</button>
           </div>
         </div>
-        <p class="live-amount" id="live-amount">₹0</p>
-        <button type="button" class="btn btn-primary" id="record-sale">Record sale</button>
+        <p class="mt-[0.2rem] mb-[0.85rem] text-center text-[1.8rem] font-extrabold text-maroon" id="live-amount">₹0</p>
+        <button type="button" class="min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55 w-full bg-maroon text-[1.05rem] text-white min-[720px]:max-w-[360px]" id="record-sale">Record sale</button>
         </div>
         <div class="walkin-side">
-        <p class="updated" id="walkin-updated" style="margin-top:1rem;">Recent walk-ins</p>
-        <div class="walkin-list" id="walkin-list"></div>
+        <p class="mt-4 mb-[0.7rem] text-[0.78rem] font-semibold text-muted min-[720px]:mt-0" id="walkin-updated">Recent walk-ins</p>
+        <div class="flex flex-col gap-[0.7rem]" id="walkin-list"></div>
         </div>
         </div>
       </section>
     </main>
   </div>
 
-  <div class="pin-gate" id="pin-gate">
-    <form class="pin-card" id="pin-form">
-      <img src="logo.png" width="72" height="72" alt="">
-      <h2>Staff PIN</h2>
-      <p>Enter the organiser PIN to mark payments and log walk-in sales.</p>
-      <input id="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="12" aria-label="Staff PIN" required>
-      <button type="submit" class="btn btn-primary" id="pin-submit">Unlock</button>
-      <p class="pin-error" id="pin-error" role="alert"></p>
+  <div class="fixed inset-0 z-20 flex flex-col items-center justify-center bg-cream px-[1.2rem] py-[1.4rem]" id="pin-gate">
+    <form class="w-full max-w-[360px] rounded-[20px] bg-cream-light px-[1.15rem] pt-[1.3rem] pb-[1.2rem] text-center shadow-card" id="pin-form">
+      <img class="mx-auto size-[72px]" src="logo.png" width="72" height="72" alt="">
+      <h2 class="mt-[0.6rem] mb-[0.2rem] font-serif text-[1.35rem] font-bold text-brand-blue">Staff PIN</h2>
+      <p class="mb-[0.9rem] text-[0.92rem] text-muted">Enter the organiser PIN to mark payments and log walk-in sales.</p>
+      <input class="mb-[0.7rem] min-h-14 w-full rounded-xl border-[1.5px] border-cream-deep bg-white text-center text-2xl tracking-[0.35em]" id="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="12" aria-label="Staff PIN" required>
+      <button type="submit" class="min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55 w-full bg-maroon text-[1.05rem] text-white" id="pin-submit">Unlock</button>
+      <p class="mt-2 min-h-[1.3em] text-[0.88rem] font-bold text-maroon" id="pin-error" role="alert"></p>
     </form>
   </div>
 
-  <div class="modal-backdrop" id="confirm-modal" hidden>
-    <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-body">
-      <h2 id="confirm-title">Cancel this order?</h2>
-      <p id="confirm-body"></p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" id="confirm-no">Keep</button>
-        <button type="button" class="btn btn-primary" id="confirm-yes">Cancel order</button>
+  <div class="fixed inset-0 z-25 flex items-center justify-center bg-[rgba(42,35,6,0.45)] p-[1.2rem]" id="confirm-modal" hidden>
+    <div class="w-[min(360px,100%)] rounded-[18px] bg-cream-light px-[1.05rem] pt-[1.15rem] pb-4 shadow-[0_16px_40px_rgba(42,35,6,0.22)]" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+      <h2 class="mb-[0.4rem] text-[1.15rem] font-bold text-maroon" id="confirm-title">Cancel this order?</h2>
+      <p class="mb-4 text-ink" id="confirm-body"></p>
+      <div class="flex gap-2">
+        <button type="button" class="min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55 flex-1 border-[1.5px] border-maroon bg-transparent text-maroon" id="confirm-no">Keep</button>
+        <button type="button" class="min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55 flex-1 bg-maroon text-white" id="confirm-yes">Cancel order</button>
       </div>
     </div>
   </div>
 
-  <div class="toast-wrap" id="toasts" aria-live="polite"></div>
+  <div class="pointer-events-none fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-30 flex w-[min(420px,calc(100%-1.4rem))] -translate-x-1/2 flex-col gap-[0.4rem]" id="toasts" aria-live="polite"></div>
 
   <script src="site-config.js"></script>
   <script>
 (function () {
   const SHEETS_WEBAPP_URL = (window.SITE_CONFIG && window.SITE_CONFIG.appsScriptUrl) || 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec';
+  // Tailwind utility strings for the markup this script renders.
+  const CLS = {
+    chip: 'flex-none min-h-[42px] rounded-full border-[1.5px] border-cream-deep bg-cream-light px-[0.85rem] py-[0.4rem] text-[0.85rem] font-bold text-ink hover:border-gold aria-pressed:border-maroon aria-pressed:bg-maroon aria-pressed:text-white',
+    pill: 'inline-flex min-h-7 items-center rounded-full px-[0.6rem] py-[0.15rem] text-[0.72rem] font-extrabold tracking-[0.03em] whitespace-nowrap uppercase',
+    pillPending: 'bg-[#f8e3bf] text-gold-dark',
+    pillPaid: 'bg-[#dce8c8] text-pine',
+    pillPicked: 'bg-[#d9e4fb] text-brand-blue-dark',
+    pillCancelled: 'bg-[#ece8e1] text-muted',
+    pillQueued: 'bg-[#fff4d6] text-gold-dark',
+    empty: 'my-[0.6rem] rounded-card bg-cream-light px-[0.8rem] py-[1.1rem] text-center text-muted',
+    card: 'rounded-card bg-cream-light px-[0.9rem] pt-[0.85rem] pb-[0.9rem] shadow-card',
+    top: 'flex items-start justify-between gap-[0.6rem]',
+    name: 'text-[1.08rem] font-extrabold text-ink',
+    meta: 'mt-[0.2rem] text-[0.88rem] text-muted',
+    phone: 'font-bold text-brand-blue no-underline',
+    items: 'mt-[0.45rem] text-[0.9rem] whitespace-pre-line text-ink',
+    total: 'mt-[0.35rem] text-[1.05rem] font-extrabold text-maroon',
+    actions: 'mt-3 flex flex-nowrap items-stretch gap-[0.45rem]',
+    btn: 'min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55',
+    btnPaid: 'min-w-0 flex-1 bg-pine text-white',
+    btnPicked: 'min-w-0 flex-1 bg-brand-blue text-white',
+    btnMore: 'min-w-12 bg-cream-deep text-ink',
+    menu: 'absolute right-0 bottom-[calc(100%+6px)] z-6 hidden min-w-40 rounded-xl bg-white p-[0.3rem] shadow-[0_10px_28px_rgba(42,35,6,0.18)] [&.is-open]:block',
+    menuBtn: 'block min-h-11 w-full rounded-lg bg-transparent px-[0.7rem] py-[0.4rem] text-left font-bold hover:bg-cream focus-visible:bg-cream',
+    itemBtn: 'min-h-[72px] rounded-[14px] border-2 border-cream-deep bg-cream-light px-[0.7rem] py-[0.65rem] text-left shadow-card hover:border-gold aria-pressed:border-maroon aria-pressed:bg-[#f6e7e4]',
+    iname: 'block text-[0.88rem] leading-[1.25] font-extrabold',
+    iprice: 'mt-[0.2rem] block font-extrabold text-maroon',
+    amount: 'font-extrabold text-maroon',
+    undo: 'min-h-11 min-w-[72px] rounded-[10px] bg-cream-deep font-extrabold text-maroon',
+    toast: 'pointer-events-none rounded-xl px-[0.95rem] py-3 text-[0.92rem] font-bold text-white shadow-card',
+    toastOk: 'bg-pine',
+    toastError: 'bg-maroon',
+    toastInfo: 'bg-ink'
+  };
+
   const PIN_KEY = 'poppinsStaffPin';
   const TOKEN_KEY = 'poppinsStaffClientToken';
   const OUTBOX_KEY = 'poppinsStaffOutbox';
@@ -792,16 +258,16 @@
   }
 
   function pillClass(status) {
-    if (status === 'Paid') return 'pill pill-paid';
-    if (status === 'Picked up') return 'pill pill-picked';
-    if (status === 'Cancelled') return 'pill pill-cancelled';
-    return 'pill pill-pending';
+    if (status === 'Paid') return CLS.pill + ' ' + CLS.pillPaid;
+    if (status === 'Picked up') return CLS.pill + ' ' + CLS.pillPicked;
+    if (status === 'Cancelled') return CLS.pill + ' ' + CLS.pillCancelled;
+    return CLS.pill + ' ' + CLS.pillPending;
   }
 
   function toast(msg, kind) {
     const wrap = $('toasts');
     const el = document.createElement('div');
-    el.className = 'toast' + (kind === 'error' ? ' error' : kind === 'ok' ? ' ok' : '');
+    el.className = CLS.toast + ' ' + (kind === 'error' ? CLS.toastError : kind === 'ok' ? CLS.toastOk : CLS.toastInfo);
     el.textContent = msg;
     wrap.appendChild(el);
     setTimeout(function () { el.remove(); }, 3200);
@@ -1012,7 +478,7 @@
     const el = $(targetId);
     el.innerHTML = state.dates.map(function (d) {
       const pressed = d.id === state.pickupDate ? 'true' : 'false';
-      return '<button type="button" class="chip" data-date="' + d.id + '" aria-pressed="' + pressed + '">' +
+      return '<button type="button" class="' + CLS.chip + '" data-date="' + d.id + '" aria-pressed="' + pressed + '">' +
         (d.label || d.display || d.id) + '</button>';
     }).join('');
   }
@@ -1020,7 +486,7 @@
   function renderMassChips() {
     $('mass-chips').innerHTML = MASS_FILTERS.map(function (m) {
       const pressed = m.id === state.mass ? 'true' : 'false';
-      return '<button type="button" class="chip" data-mass="' + m.id + '" aria-pressed="' + pressed + '">' + m.label + '</button>';
+      return '<button type="button" class="' + CLS.chip + '" data-mass="' + m.id + '" aria-pressed="' + pressed + '">' + m.label + '</button>';
     }).join('');
   }
 
@@ -1036,35 +502,35 @@
     const list = $('order-list');
     const orders = applyOutboxToOrders(state.orders);
     if (!orders.length) {
-      list.innerHTML = '<p class="empty">No orders for this date' + (state.q ? ' and search' : '') + '.</p>';
+      list.innerHTML = '<p class="' + CLS.empty + '">No orders for this date' + (state.q ? ' and search' : '') + '.</p>';
       renderCounts();
       return;
     }
     list.innerHTML = orders.map(function (o) {
       const href = telHref(o.phone);
       const phoneHtml = href
-        ? '<a class="phone-link" href="' + href + '">' + formatPhone(o.phone) + '</a>'
+        ? '<a class="phone-link ' + CLS.phone + '" href="' + href + '">' + formatPhone(o.phone) + '</a>'
         : '';
-      const queued = o._queued ? ' <span class="pill pill-queued">Queued</span>' : '';
+      const queued = o._queued ? ' <span class="' + CLS.pill + ' ' + CLS.pillQueued + '">Queued</span>' : '';
       const more = statusMenuButtons(o);
       let actions = '';
       if (o.status === 'Pending') {
-        actions += '<button type="button" class="btn btn-paid" data-act="Paid" data-id="' + o.orderId + '">Mark Paid</button>';
-        actions += '<button type="button" class="btn btn-picked" data-act="Picked up" data-id="' + o.orderId + '">Picked up</button>';
+        actions += '<button type="button" class="' + CLS.btn + ' ' + CLS.btnPaid + '" data-act="Paid" data-id="' + o.orderId + '">Mark Paid</button>';
+        actions += '<button type="button" class="' + CLS.btn + ' ' + CLS.btnPicked + '" data-act="Picked up" data-id="' + o.orderId + '">Picked up</button>';
       } else if (o.status === 'Paid') {
-        actions += '<button type="button" class="btn btn-picked" data-act="Picked up" data-id="' + o.orderId + '">Picked up</button>';
+        actions += '<button type="button" class="' + CLS.btn + ' ' + CLS.btnPicked + '" data-act="Picked up" data-id="' + o.orderId + '">Picked up</button>';
       }
-      actions += '<span class="more-wrap"><button type="button" class="btn btn-more" data-menu="' + o.orderId + '" aria-haspopup="true" aria-label="More status options">⋯</button>' + more + '</span>';
-      return '<article class="order-card" data-order="' + o.orderId + '" data-status="' + o.status + '">' +
-        '<div class="order-top"><div>' +
-        '<p class="order-name">' + escapeHtml(o.name || '') + '</p>' +
-        '<p class="order-meta">' + (o.mass === '06:30' ? '6:30 AM Mass' : o.mass === '08:30' ? '8:30 AM Mass' : escapeHtml(o.mass || '')) +
+      actions += '<span class="relative"><button type="button" class="' + CLS.btn + ' ' + CLS.btnMore + '" data-menu="' + o.orderId + '" aria-haspopup="true" aria-label="More status options">⋯</button>' + more + '</span>';
+      return '<article class="' + CLS.card + '" data-order="' + o.orderId + '" data-status="' + o.status + '">' +
+        '<div class="' + CLS.top + '"><div>' +
+        '<p class="order-name ' + CLS.name + '">' + escapeHtml(o.name || '') + '</p>' +
+        '<p class="' + CLS.meta + '">' + (o.mass === '06:30' ? '6:30 AM Mass' : o.mass === '08:30' ? '8:30 AM Mass' : escapeHtml(o.mass || '')) +
         (phoneHtml ? ' · ' + phoneHtml : '') +
         (o.assignedTo ? ' · To: ' + escapeHtml(o.assignedTo) : '') + '</p>' +
         '</div><span class="' + pillClass(o.status) + '">' + escapeHtml(o.status) + '</span>' + queued + '</div>' +
-        '<p class="order-items">' + escapeHtml(o.items || '') + '</p>' +
-        '<p class="order-total">' + rupee(o.total) + '</p>' +
-        '<div class="order-actions">' + actions + '</div>' +
+        '<p class="' + CLS.items + '">' + escapeHtml(o.items || '') + '</p>' +
+        '<p class="' + CLS.total + '">' + rupee(o.total) + '</p>' +
+        '<div class="' + CLS.actions + '">' + actions + '</div>' +
         '</article>';
     }).join('');
     renderCounts();
@@ -1072,17 +538,17 @@
 
   function statusMenuButtons(o) {
     const opts = [];
-    if (o.status !== 'Pending') opts.push('<button type="button" data-act="Pending" data-id="' + o.orderId + '">Pending</button>');
-    if (o.status !== 'Cancelled') opts.push('<button type="button" class="danger" data-act="Cancelled" data-id="' + o.orderId + '">Cancelled</button>');
-    return '<div class="menu" id="menu-' + o.orderId + '">' + opts.join('') + '</div>';
+    if (o.status !== 'Pending') opts.push('<button type="button" class="' + CLS.menuBtn + '" data-act="Pending" data-id="' + o.orderId + '">Pending</button>');
+    if (o.status !== 'Cancelled') opts.push('<button type="button" class="' + CLS.menuBtn + ' text-maroon" data-act="Cancelled" data-id="' + o.orderId + '">Cancelled</button>');
+    return '<div class="menu ' + CLS.menu + '" id="menu-' + o.orderId + '">' + opts.join('') + '</div>';
   }
 
   function renderWalkinForm() {
     $('item-grid').innerHTML = MENU.map(function (m) {
       const pressed = state.item === m.name ? 'true' : 'false';
-      return '<button type="button" class="item-btn" data-item="' + escapeAttr(m.name) + '" aria-pressed="' + pressed + '">' +
-        '<span class="iname">' + escapeHtml(m.short) + '</span>' +
-        '<span class="iprice">' + rupee(m.price) + '</span></button>';
+      return '<button type="button" class="item-btn ' + CLS.itemBtn + '" data-item="' + escapeAttr(m.name) + '" aria-pressed="' + pressed + '">' +
+        '<span class="' + CLS.iname + '">' + escapeHtml(m.short) + '</span>' +
+        '<span class="' + CLS.iprice + '">' + rupee(m.price) + '</span></button>';
     }).join('');
     $('qty').value = String(state.qty);
     $('walkin-mass').value = state.walkinMass;
@@ -1097,17 +563,17 @@
     const list = $('walkin-list');
     const rows = applyOutboxToWalkins(state.walkins).filter(function (w) { return !w.voided; });
     if (!rows.length) {
-      list.innerHTML = '<p class="empty">No walk-in sales for ' + escapeHtml(dateLabel(state.pickupDate)) + ' yet.</p>';
+      list.innerHTML = '<p class="' + CLS.empty + '">No walk-in sales for ' + escapeHtml(dateLabel(state.pickupDate)) + ' yet.</p>';
       return;
     }
     list.innerHTML = rows.map(function (w) {
-      const queued = w._queued ? ' <span class="pill pill-queued">Queued</span>' : '';
-      return '<article class="walkin-card" data-walkin="' + escapeAttr(w.walkinId) + '">' +
-        '<div class="walkin-top"><div>' +
-        '<p class="walkin-item">' + w.qty + ' × ' + escapeHtml(shortItem(w.item)) + '</p>' +
-        '<p class="walkin-meta">' + escapeHtml(w.mass || '') + ' · ' + escapeHtml(w.payment || '') + queued + '</p>' +
-        '</div><div><p class="walkin-amount">' + rupee(w.amount) + '</p>' +
-        '<button type="button" class="undo-btn" data-undo="' + escapeAttr(w.walkinId) + '">Undo</button></div></div>' +
+      const queued = w._queued ? ' <span class="' + CLS.pill + ' ' + CLS.pillQueued + '">Queued</span>' : '';
+      return '<article class="' + CLS.card + '" data-walkin="' + escapeAttr(w.walkinId) + '">' +
+        '<div class="' + CLS.top + '"><div>' +
+        '<p class="' + CLS.name + '">' + w.qty + ' × ' + escapeHtml(shortItem(w.item)) + '</p>' +
+        '<p class="' + CLS.meta + '">' + escapeHtml(w.mass || '') + ' · ' + escapeHtml(w.payment || '') + queued + '</p>' +
+        '</div><div><p class="' + CLS.amount + '">' + rupee(w.amount) + '</p>' +
+        '<button type="button" class="' + CLS.undo + '" data-undo="' + escapeAttr(w.walkinId) + '">Undo</button></div></div>' +
         '</article>';
     }).join('');
   }

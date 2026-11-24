@@ -3,7 +3,11 @@ import { JSDOM } from 'jsdom';
 import fs from 'fs';
 
 const html = readPage('index.html');
-const dom = new JSDOM(html, {
+// jsdom would try to download tailwind.css from the fake origin and block the
+// scripts behind it, so the stylesheet link is removed before parsing (the raw
+// markup is still asserted on below).
+const TAILWIND_LINK = '<link rel="stylesheet" href="tailwind.css">';
+const dom = new JSDOM(html.replace(TAILWIND_LINK, ''), {
   url: 'https://example.com/index.html',
   runScripts: 'dangerously',
   resources: 'usable',
@@ -296,9 +300,10 @@ assert('alert lists name, phone, date and Mass',
   /Pick a Mass time/.test(formAlert.textContent),
   formAlert.textContent);
 assert('sticky alert is a live region', checkoutAlert.getAttribute('role') === 'alert' && checkoutAlert.getAttribute('aria-live') === 'assertive');
-assert('reduced-motion rule is present for the alert',
-  /prefers-reduced-motion:\s*reduce[\s\S]{0,500}form-alert/.test(html) && /animation:\s*none/.test(html),
-  'missing reduced-motion CSS');
+assert('reduced-motion is respected for the alert (Tailwind motion-reduce)',
+  document.getElementById('form-alert-dialog').className.includes('motion-reduce:animate-none') &&
+  document.getElementById('form-alert-backdrop').className.includes('motion-reduce:animate-none'),
+  'missing motion-reduce:animate-none');
 
 w.closeFormAlert();
 firstPlus.click();
@@ -842,21 +847,29 @@ assert('compact summary stays in sync with cart-lines',
 
 // ---- Poster palette + full-width desktop grid ----
 assert('theme-color is poster maroon', document.querySelector('meta[name="theme-color"]')?.getAttribute('content') === '#7a0a10');
-const rootCss = document.querySelector('style')?.textContent || '';
-assert('CSS defines extracted palette tokens',
-  /--maroon:\s*#7a0a10/.test(rootCss) &&
-  /--gold:\s*#c27b13/.test(rootCss) &&
-  /--cream:\s*#f7ede5/.test(rootCss) &&
-  /--blue:\s*#0544b3/.test(rootCss) &&
-  /--ink:\s*#2a2306/.test(rootCss) &&
-  /--pine:\s*#435718/.test(rootCss),
-  'missing token in :root');
+// Styling is Tailwind: palette lives in the @theme block of src/tailwind.css,
+// layout lives in utility classes on the markup.
+const themeCss = fs.readFileSync(ROOT + '/src/tailwind.css', 'utf8');
+const rootCss = themeCss + (document.querySelector('style')?.textContent || '');
+const appCls = document.querySelector('.app').className;
+const menuCls = document.getElementById('menu-list').className;
+assert('page links the compiled Tailwind stylesheet', html.includes(TAILWIND_LINK));
+assert('Tailwind theme defines extracted palette tokens',
+  /--color-maroon:\s*#7a0a10/.test(themeCss) &&
+  /--color-gold:\s*#c27b13/.test(themeCss) &&
+  /--color-cream:\s*#f7ede5/.test(themeCss) &&
+  /--color-brand-blue:\s*#0544b3/.test(themeCss) &&
+  /--color-ink:\s*#2a2306/.test(themeCss) &&
+  /--color-pine:\s*#435718/.test(themeCss),
+  'missing token in @theme');
 assert('old festive red #b91c1c is gone', !/#b91c1c/i.test(rootCss + document.documentElement.outerHTML));
-assert('desktop padding is fluid clamp', /padding:\s*clamp\(16px,\s*3vw,\s*48px\)/.test(rootCss));
-assert('desktop left column is minmax(340px, 32%)', /minmax\(340px,\s*32%\)/.test(rootCss));
-assert('wide desktop summary is minmax(300px, 22%)', /minmax\(300px,\s*22%\)/.test(rootCss));
-assert('menu grid fills with auto-fill 260px', /repeat\(auto-fill,\s*minmax\(260px,\s*1fr\)\)/.test(rootCss));
-assert('1280px breakpoint opens a third column', /@media \(min-width:\s*1280px\)/.test(rootCss));
+assert('page background is light cyan', /--color-page:\s*#dff3fa/.test(themeCss) && document.body.className.includes('bg-page'));
+assert('desktop padding is fluid clamp', appCls.includes('lg:p-[clamp(16px,3vw,48px)]'), appCls);
+assert('desktop left column is minmax(340px, 32%)', appCls.includes('lg:grid-cols-[minmax(340px,32%)_minmax(0,1fr)]'), appCls);
+assert('wide desktop summary is minmax(300px, 22%)', appCls.includes('xl:grid-cols-[minmax(340px,32%)_minmax(0,1fr)_minmax(300px,22%)]'), appCls);
+assert('menu grid fills with auto-fill 260px', menuCls.includes('lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]'), menuCls);
+assert('xl (1280px) breakpoint puts the summary in a third column',
+  document.querySelector('.sticky-bar').className.includes('xl:col-start-3'));
 assert('CTA text is unchanged for WhatsApp', document.getElementById('place-order-btn').textContent === 'Place Order via WhatsApp');
 
 const failed = results.filter((r) => !r.ok);

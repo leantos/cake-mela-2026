@@ -1,0 +1,26 @@
+@import "tailwindcss";
+@source "../public/**/*.html";
+
+/* Poster/logo palette. Use as bg-maroon, text-gold, bg-page, etc. */
+@theme {
+  --color-maroon: #7a0a10;
+  --color-maroon-dark: #520505;
+  --color-maroon-soft: #ead6d0;
+  --color-gold: #c27b13;
+  --color-gold-dark: #904108;
+  --color-cream: #f7ede5;
+  --color-cream-light: #fbf9f7;
+  --color-cream-deep: #eadace;
+  --color-ink: #2a2306;
+  --color-muted: #5d563e;
+  --color-pine: #435718;
+  --color-brand-blue: #0544b3;
+  --color-brand-blue-dark: #0c3c98;
+  --color-line: #eadace;
+  --color-wa: #25D366;
+  --color-page: #dff3fa;
+  --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: Georgia, "Palatino Linotype", Palatino, "Times New Roman", serif;
+  --radius-card: 16px;
+  --shadow-card: 0 8px 24px rgba(42, 35, 6, 0.1);
+}

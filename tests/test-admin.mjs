@@ -10,12 +10,11 @@ function assert(name, cond, detail) {
   else console.log('PASS', name);
 }
 
-assert('desktop app is fluid up to ~1600px', /max-width:\s*1600px/.test(html));
+assert('stylesheet is Tailwind (compiled tailwind.css)', /<link[^>]+href=["']tailwind\.css["']/.test(html));
+assert('desktop app is fluid up to ~1600px', /lg:max-w-\[1600px\]/.test(html));
 assert('wide screens use a 2-column dashboard grid',
-  /@media \(min-width:\s*1100px\)/.test(html) &&
-  /grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(520px,\s*1\.15fr\)/.test(html));
-assert('desktop table type is bumped to at least 1rem',
-  /@media \(min-width:\s*1024px\)[\s\S]*table \{ font-size: 1(?:\.\d+)?rem;/.test(html));
+  /min-\[1100px\]:grid-cols-\[minmax\(0,1fr\)_minmax\(520px,1\.15fr\)\]/.test(html));
+assert('desktop table type is bumped to at least 1rem', /lg:text-\[1\.05rem\]/.test(html));
 assert('has robots noindex', /<meta\s+name=["']robots["']\s+content=["']noindex["']/.test(html));
 assert('has no WhatsApp links or buttons', !/whatsapp|wa\.me/i.test(fs.readFileSync(PUBLIC + '/admin.html', 'utf8')));
 assert('uses the live Sheets URL', html.includes('AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs'));
@@ -247,14 +246,8 @@ assert('mocked fetch fills the default 29 Nov cake card',
 assert('mocked fetch is not marked as example/preview data',
   !fetchDom.window.document.getElementById('example-banner') ||
   fetchDom.window.document.getElementById('example-banner').hidden ||
-  getComputedStyleSafe(fetchDom.window, 'example-banner') === 'none',
+  !fetchDom.window.document.getElementById('example-banner').classList.contains('visible'),
   fetchDom.window.document.getElementById('example-banner') && fetchDom.window.document.getElementById('example-banner').outerHTML.slice(0, 200));
-
-function getComputedStyleSafe(win, id) {
-  const el = win.document.getElementById(id);
-  if (!el) return 'none';
-  try { return win.getComputedStyle(el).display; } catch (e) { return el.hidden ? 'none' : ''; }
-}
 
 if (fetchDom.window.__admin && typeof fetchDom.window.__admin.stop === 'function') fetchDom.window.__admin.stop();
 fetchDom.window.close();
