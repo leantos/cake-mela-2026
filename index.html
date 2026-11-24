@@ -1,0 +1,2458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7a0a10">
+  <meta name="description" content="Order festive plum cakes and puddings from the Vailankanni Parish Youth Christmas cake sale, with Poppins Bakers, at Vailankanni Matha Church, Bengaluru.">
+  <title>Vailankanni Parish Youth — Christmas Cake Sale</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="preconnect" href="https://script.google.com">
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+  <link rel="dns-prefetch" href="https://script.google.com">
+  <link rel="dns-prefetch" href="https://script.googleusercontent.com">
+  <style>
+    /* --------------------------------------------------------------------------
+       Vailankanni Parish Youth — Menu-to-WhatsApp Christmas cake sale
+       (cakes by Poppins Bakers). Mobile-first, no frameworks, no build step.
+       Palette is taken from poster.png and logo.png (white backgrounds
+       and transparent logo pixels ignored). WhatsApp green is used only
+       on the small icon in the order button.
+       -------------------------------------------------------------------------- */
+    :root {
+      --maroon: #7a0a10;
+      --maroon-dark: #520505;
+      --maroon-soft: #ead6d0;
+      --gold: #c27b13;
+      --gold-dark: #904108;
+      --cream: #f7ede5;
+      --cream-light: #fbf9f7;
+      --cream-deep: #eadace;
+      --ink: #2a2306;
+      --muted: #5d563e;
+      --pine: #435718;
+      --blue: #0544b3;
+      --blue-dark: #0c3c98;
+      --line: #eadace;
+      --card: var(--cream-light);
+      --bg: var(--cream);
+      --wa: #25D366;
+      --shadow: 0 8px 24px rgba(42, 35, 6, 0.1);
+      --radius: 16px;
+      --sticky-h: 11.25rem;
+      --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+      --serif: Georgia, "Palatino Linotype", Palatino, "Times New Roman", serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--cream-deep);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Centered phone-width shell */
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg);
+      box-shadow: 0 0 40px rgba(42, 35, 6, 0.12);
+      padding-bottom: calc(var(--sticky-h) + env(safe-area-inset-bottom, 0px) + 1rem);
+    }
+
+    /* ---------- Header: Vailankanni Parish Youth (white + logo, red accent) ---------- */
+    header.hero-head {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      background: var(--card);
+      color: var(--blue);
+      padding: 0.7rem 0.9rem 0.7rem;
+      border-bottom: 3px solid var(--maroon);
+    }
+    header.hero-head .logo {
+      display: block;
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+    header.hero-head .brand {
+      min-width: 0;
+      text-align: left;
+    }
+    header.hero-head h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 1.12rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+      color: var(--blue);
+    }
+    header.hero-head .tagline {
+      margin: 0.2rem 0 0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.3;
+      color: var(--muted);
+    }
+
+    /* ---------- Poster hero (relative poster.jpg, no lazy-load) ---------- */
+    .poster-wrap {
+      padding: 0.9rem 0.9rem 0;
+    }
+    .poster-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ---------- Parish / pickup info from the poster ---------- */
+    .fundraiser-info {
+      margin: 0.9rem;
+      padding: 1rem 1.05rem 1.05rem;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+    }
+    .fundraiser-info .assoc {
+      margin: 0 0 0.65rem;
+      font-family: var(--serif);
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--maroon-dark);
+      text-align: center;
+      line-height: 1.35;
+    }
+    .fundraiser-info .pickup {
+      margin: 0;
+      font-size: 0.84rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .fundraiser-info .enquire {
+      margin: 0.75rem 0 0;
+      padding-top: 0.7rem;
+      border-top: 1px dashed var(--line);
+      text-align: center;
+      font-size: 0.88rem;
+    }
+    .fundraiser-info .enquire a {
+      color: var(--maroon);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .fundraiser-info .enquire a:hover { text-decoration: underline; }
+    .fundraiser-info .enquire a:focus { outline: none; }
+    .fundraiser-info .enquire a:focus-visible {
+      outline: 3px solid rgba(122, 10, 16, 0.45);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* ---------- Menu ---------- */
+    .section-title {
+      margin: 0.4rem 1.05rem 0.55rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      padding: 0 0.9rem;
+    }
+
+    .menu-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      padding: 0.95rem 0.95rem 0.9rem;
+    }
+    .menu-card .info { flex: 1; min-width: 0; }
+    .menu-card .name-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .menu-card h2 {
+      margin: 0;
+      font-size: 1.02rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .tag {
+      display: inline-block;
+      background: var(--maroon);
+      color: var(--cream-light);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.4rem;
+      border-radius: 999px;
+    }
+    .menu-card .desc {
+      margin: 0.28rem 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .menu-card .price {
+      margin: 0.5rem 0 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .menu-card .price .weight {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-left: 0.15rem;
+    }
+
+    /* Large circular + / − steppers */
+    .stepper {
+      display: flex;
+      align-items: center;
+      align-self: flex-end;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+    .stepper button {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid var(--maroon);
+      background: var(--card);
+      color: var(--maroon);
+      font-size: 1.45rem;
+      font-weight: 600;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .stepper button.plus {
+      background: var(--maroon);
+      color: var(--cream-light);
+    }
+    .stepper button:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+    .stepper button:not(:disabled):active { transform: scale(0.94); }
+    .stepper button:focus { outline: none; }
+    .stepper button:focus-visible {
+      outline: 3px solid rgba(122, 10, 16, 0.45);
+      outline-offset: 2px;
+    }
+    .stepper .qty {
+      min-width: 1.4rem;
+      text-align: center;
+      font-weight: 800;
+      font-size: 1.05rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cart-error {
+      margin: 0.7rem 0.9rem 0;
+      padding: 0.55rem 0.75rem;
+      background: var(--maroon-soft);
+      color: var(--maroon-dark);
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: none;
+    }
+    .cart-error.visible { display: block; }
+
+    /* ---------- Order form ---------- */
+    .order-form {
+      margin: 1.15rem 0.9rem 0;
+      padding: 1rem 1rem 1.1rem;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+    }
+    .order-form h2 {
+      margin: 0 0 0.85rem;
+      font-size: 1.05rem;
+    }
+    .field { margin-bottom: 0.85rem; }
+    .field:last-of-type { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .field label .req { color: var(--maroon); }
+    .field input,
+    .field select {
+      width: 100%;
+      font: inherit;
+      font-size: 1rem;
+      padding: 0.7rem 0.75rem;
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--ink);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .field select {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%2357534e' d='M1 1l5 5 5-5'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 0.85rem center;
+      padding-right: 2.2rem;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field input:focus-visible,
+    .field select:focus-visible {
+      outline: none;
+      border-color: var(--maroon);
+      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.45);
+    }
+    .field.invalid input,
+    .field.invalid select {
+      border-color: var(--maroon);
+      background: var(--maroon-soft);
+    }
+    .field .error {
+      display: none;
+      margin: 0.3rem 0 0;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--maroon);
+    }
+    .field.invalid .error { display: block; }
+    .field.hidden { display: none; }
+    #menu-heading,
+    #menu-list,
+    .field {
+      scroll-margin-top: 0.85rem;
+      scroll-margin-bottom: calc(var(--sticky-h) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+    }
+    .hint {
+      margin: 0.3rem 0 0;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .date-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .date-chip {
+      appearance: none;
+      -webkit-appearance: none;
+      border: 1.5px solid var(--line);
+      background: var(--card);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 0.55rem 0.85rem;
+      min-height: 44px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .date-chip[aria-pressed="true"] {
+      background: var(--maroon-soft);
+      border-color: var(--maroon);
+      color: var(--maroon-dark);
+    }
+    .date-chip.awaiting {
+      border-radius: 14px;
+      opacity: 0.62;
+      cursor: not-allowed;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .date-chip.awaiting .chip-sub {
+      display: block;
+      margin-top: 0.18rem;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      text-transform: none;
+      color: var(--muted);
+    }
+    .date-chip:disabled {
+      cursor: not-allowed;
+    }
+    .date-chip:focus { outline: none; }
+    .date-chip:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.45);
+    }
+    .field.invalid .date-chips,
+    .field.invalid .mass-options {
+      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.15);
+      border-radius: 12px;
+    }
+    .mass-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+    .mass-option {
+      appearance: none;
+      -webkit-appearance: none;
+      border: 1.5px solid var(--line);
+      background: var(--card);
+      color: var(--ink);
+      border-radius: 14px;
+      padding: 0.9rem 0.6rem;
+      min-height: 56px;
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mass-option[aria-pressed="true"] {
+      background: var(--maroon-soft);
+      border-color: var(--maroon);
+      color: var(--maroon-dark);
+    }
+    .mass-option:focus { outline: none; }
+    .mass-option:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.45);
+    }
+    .pickup-place {
+      margin: 0.15rem 0 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .closed-banner {
+      display: none;
+      margin: 0;
+      padding: 0.7rem 0.8rem;
+      background: var(--maroon-soft);
+      color: var(--maroon-dark);
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .closed-banner.visible { display: block; }
+    #stock-status {
+      min-height: 0;
+    }
+    #stock-status.is-error { color: var(--gold-dark); }
+
+    .menu-card.sold-out { opacity: 0.58; }
+    .menu-card .stock-note {
+      margin: 0.28rem 0 0;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--maroon);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(var(--sticky-h) + 0.6rem + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%) translateY(8px);
+      width: calc(100% - 2rem);
+      max-width: 440px;
+      background: var(--ink);
+      color: var(--cream-light);
+      border-radius: 12px;
+      padding: 0.75rem 0.95rem;
+      font-size: 0.86rem;
+      font-weight: 600;
+      box-shadow: 0 10px 24px rgba(42, 35, 6, 0.25);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .toast { transition: none; }
+    }
+
+    /* ---------- Sticky bottom summary + CTA ---------- */
+    .sticky-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: var(--card);
+      border-top: 1px solid var(--line);
+      box-shadow: 0 -8px 24px rgba(42, 35, 6, 0.1);
+      padding: 0.7rem 0.9rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+      z-index: 40;
+    }
+    .sticky-bar .summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.3rem;
+      font-weight: 700;
+    }
+    .sticky-bar .payment-note {
+      margin: 0 0 0.5rem;
+      font-size: 0.75rem;
+      line-height: 1.35;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .sticky-bar .summary .count { font-size: 0.92rem; color: var(--muted); }
+    .sticky-bar .summary .total {
+      font-size: 1.2rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .sticky-bar .cta {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      background: var(--maroon);
+      color: var(--cream-light);
+      font: inherit;
+      font-size: 1.02rem;
+      font-weight: 800;
+      padding: 0.85rem 1rem;
+      min-height: 44px;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      -webkit-tap-highlight-color: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .sticky-bar .cta::before {
+      content: "";
+      width: 1.2em;
+      height: 1.2em;
+      flex-shrink: 0;
+      background-color: var(--wa);
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.34 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.85 14.13c-.25.7-1.45 1.29-2.01 1.37-.51.07-1.17.1-1.89-.12-.43-.13-.99-.33-1.71-.65-3.01-1.3-4.97-4.34-5.12-4.54-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.61-.37.81-.37.2 0 .4.01.57.01.18 0 .43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.33-.3.5-.15.18-.31.39-.45.53-.15.15-.3.31-.13.61.18.3.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.45 1.51.3.15.48.13.66-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.28.1 1.75.82 2.05.97.3.15.5.22.57.35.08.12.08.7-.17 1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.34 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.85 14.13c-.25.7-1.45 1.29-2.01 1.37-.51.07-1.17.1-1.89-.12-.43-.13-.99-.33-1.71-.65-3.01-1.3-4.97-4.34-5.12-4.54-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.61-.37.81-.37.2 0 .4.01.57.01.18 0 .43-.07.67.51.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.1.2-.15.33-.3.5-.15.18-.31.39-.45.53-.15.15-.3.31-.13.61.18.3.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.45 1.51.3.15.48.13.66-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.28.1 1.75.82 2.05.97.3.15.5.22.57.35.08.12.08.7-.17 1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+    .sticky-bar .cta:active:not(:disabled) { background: var(--maroon-dark); }
+    .sticky-bar .cta:focus { outline: none; }
+    .sticky-bar .cta:focus-visible {
+      outline: 3px solid rgba(122, 10, 16, 0.45);
+      outline-offset: 2px;
+    }
+    .sticky-bar .summary-heading,
+    .sticky-bar .cart-lines { display: none; }
+    .sticky-bar .cta:disabled {
+      opacity: 0.75;
+      cursor: wait;
+    }
+    .sticky-bar .cta:disabled.closed {
+      cursor: not-allowed;
+      background: var(--pine);
+      opacity: 1;
+    }
+    .sticky-bar .cta-wrap { width: 100%; }
+    .sticky-bar .checkout-alert {
+      display: none;
+      margin: 0 0 0.5rem;
+      padding: 0.55rem 0.7rem 0.5rem;
+      background: var(--maroon-soft);
+      color: var(--maroon-dark);
+      border: 1.5px solid var(--maroon);
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .sticky-bar .checkout-alert.visible { display: block; }
+    .sticky-bar .checkout-alert p {
+      margin: 0 0 0.25rem;
+    }
+    .sticky-bar .checkout-alert ul {
+      margin: 0;
+      padding: 0 0 0 1.1rem;
+    }
+    .sticky-bar .checkout-alert li { margin: 0.05rem 0; }
+
+    /* Custom alert dialog (not window.alert) */
+    .form-alert {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    }
+    .form-alert[hidden] { display: none; }
+    .form-alert-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(82, 5, 5, 0.55);
+    }
+    .form-alert:not([hidden]) .form-alert-backdrop {
+      animation: formAlertFade 0.2s ease forwards;
+    }
+    .form-alert-dialog {
+      position: relative;
+      width: 100%;
+      max-width: 21.5rem;
+      background: var(--cream-light);
+      color: var(--ink);
+      border: 2px solid var(--maroon);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 40px rgba(42, 35, 6, 0.28);
+      padding: 1.2rem 1.15rem 1.1rem;
+    }
+    .form-alert:not([hidden]) .form-alert-dialog {
+      animation: formAlertPop 0.2s ease forwards;
+    }
+    @keyframes formAlertFade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes formAlertPop {
+      from { opacity: 0; transform: scale(0.94); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .form-alert-dialog h2 {
+      margin: 0 0 0.65rem;
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--maroon);
+      letter-spacing: 0.01em;
+    }
+    .form-alert-dialog ul {
+      margin: 0 0 1rem;
+      padding: 0 0 0 1.15rem;
+      color: var(--ink);
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+    .form-alert-dialog li { margin: 0.2rem 0; }
+    .form-alert-dialog p {
+      margin: 0 0 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .form-alert-ok {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      background: var(--maroon);
+      color: var(--cream-light);
+      font: inherit;
+      font-size: 1.02rem;
+      font-weight: 800;
+      padding: 0.8rem 1rem;
+      min-height: 44px;
+      cursor: pointer;
+    }
+    .form-alert-ok:active { background: var(--maroon-dark); }
+    .form-alert-ok:focus { outline: none; }
+    .form-alert-ok:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .form-alert:not([hidden]) .form-alert-backdrop,
+      .form-alert:not([hidden]) .form-alert-dialog {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stepper button:not(:disabled):active { transform: none; }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .date-chip:hover:not(:disabled):not([aria-pressed="true"]) {
+        border-color: var(--maroon);
+        background: var(--maroon-soft);
+      }
+      .mass-option:hover:not([aria-pressed="true"]) {
+        border-color: var(--maroon);
+        background: var(--maroon-soft);
+      }
+      .stepper button.plus:hover:not(:disabled) { background: var(--maroon-dark); }
+      .stepper button.minus:hover:not(:disabled) { background: var(--maroon-soft); }
+      .sticky-bar .cta:hover:not(:disabled) { background: var(--maroon-dark); }
+    }
+
+    /* Tablet: wider single column, 2-column menu grid */
+    @media (min-width: 768px) {
+      .app { max-width: 640px; }
+      .sticky-bar { max-width: 640px; }
+      .toast { max-width: 600px; }
+      .menu-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: stretch;
+      }
+    }
+
+    /* Desktop: full width. 1024–1279: summary sits in the right column.
+       >=1280: sticky summary becomes a third column. */
+    @media (min-width: 1024px) {
+      .app {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        display: grid;
+        grid-template-columns: minmax(340px, 32%) minmax(0, 1fr);
+        grid-template-areas:
+          "left summary"
+          "left main";
+        column-gap: 1.35rem;
+        row-gap: 1rem;
+        padding: clamp(16px, 3vw, 48px);
+        padding-bottom: clamp(16px, 3vw, 48px);
+        align-items: start;
+      }
+      .menu-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        align-items: stretch;
+      }
+      .left-col {
+        grid-area: left;
+        position: sticky;
+        top: 1rem;
+        max-height: calc(100vh - 2rem);
+        overflow: auto;
+        padding-bottom: 0.5rem;
+      }
+      header.hero-head { border-radius: 14px 14px 0 0; }
+      .fundraiser-info { margin-bottom: 0; }
+      .right-col {
+        grid-area: main;
+        min-width: 0;
+      }
+      .right-col .section-title { margin-top: 0; }
+      .sticky-bar {
+        grid-area: summary;
+        position: sticky;
+        top: 1rem;
+        left: auto;
+        bottom: auto;
+        transform: none;
+        width: auto;
+        max-width: none;
+        border: 1px solid var(--line);
+        border-top: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 1rem 1.05rem 1.05rem;
+      }
+      .sticky-bar .summary-heading {
+        display: block;
+        margin: 0 0 0.65rem;
+        font-size: 1.02rem;
+        font-weight: 800;
+      }
+      .sticky-bar .cart-lines {
+        display: block;
+        list-style: none;
+        margin: 0 0 0.75rem;
+        padding: 0;
+        max-height: min(42vh, 22rem);
+        overflow: auto;
+      }
+      .sticky-bar .cart-line {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.35rem 0.5rem;
+        align-items: baseline;
+        padding: 0.35rem 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.86rem;
+      }
+      .sticky-bar .cart-line-qty { font-weight: 800; color: var(--muted); }
+      .sticky-bar .cart-line-name { min-width: 0; }
+      .sticky-bar .cart-line-total { font-weight: 800; font-variant-numeric: tabular-nums; }
+      .sticky-bar .cart-empty {
+        color: var(--muted);
+        font-size: 0.88rem;
+        padding: 0.2rem 0 0.5rem;
+      }
+      .toast {
+        left: auto;
+        right: 1.5rem;
+        bottom: 1.5rem;
+        transform: translateY(8px);
+        width: 24rem;
+        max-width: calc(100vw - 3rem);
+      }
+      .toast.visible { transform: translateY(0); }
+      #menu-heading,
+      #menu-list,
+      .field {
+        scroll-margin-bottom: 1.25rem;
+      }
+    }
+
+    @media (min-width: 1280px) {
+      .app {
+        grid-template-columns: minmax(340px, 32%) minmax(0, 1fr) minmax(300px, 22%);
+        grid-template-areas:
+          "left main summary";
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="left-col">
+    <header class="hero-head">
+      <img class="logo" src="logo.png" alt="Vailankanni Matha Youth logo" width="192" height="192">
+      <div class="brand">
+        <h1>Vailankanni Parish Youth</h1>
+        <p class="tagline">Christmas Cake Sale • with Poppins Bakers</p>
+      </div>
+    </header>
+
+    <!-- Hero: WebP with JPEG fallback. Deploy poster.webp and poster.jpg alongside this file. -->
+    <div class="poster-wrap">
+      <picture>
+        <source type="image/webp" srcset="poster.webp">
+        <img
+          src="poster.jpg"
+          alt="Festive Plum Cakes Cake Sale poster for Vailankanni Parish Youth in association with Poppins Bakers, listing Dates &amp; Carrot Pudding, Butterscotch Pudding, and Rich Plum Cake prices."
+          width="1080"
+          height="1622"
+          fetchpriority="high">
+      </picture>
+    </div>
+
+    <section class="fundraiser-info" aria-label="Sale details">
+      <p class="assoc">Vailankanni Parish Youth in association with Poppins Bakers</p>
+      <p class="pickup">Pickup every Sunday from Nov 29 after 6:30 AM &amp; 8:30 AM Mass at Vailankanni Matha Church, Muthanallur, Harohalli, Sarjapura Road, Bengaluru 560099</p>
+      <p class="enquire">Enquiries: <a href="tel:+917204017793">Cyril Martin • +91 72040 17793</a></p>
+    </section>
+    </aside>
+
+    <div class="right-col">
+    <h2 class="section-title" id="menu-heading">Cake varieties</h2>
+    <div class="menu-list" id="menu-list" role="list" aria-labelledby="menu-heading"></div>
+    <p class="cart-error" id="cart-error" role="alert" aria-live="assertive"></p>
+
+    <form class="order-form" id="order-form" novalidate>
+      <h2>Your details</h2>
+
+      <div class="field" id="field-name">
+        <label for="buyer-name">Buyer Name <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="buyer-name" name="name" autocomplete="name" required placeholder="Full name">
+        <p class="error" id="buyer-name-error"></p>
+      </div>
+
+      <div class="field" id="field-phone">
+        <label for="buyer-phone">Phone Number <span class="req" aria-hidden="true">*</span></label>
+        <input type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" required placeholder="10-digit mobile">
+        <p class="error" id="buyer-phone-error"></p>
+      </div>
+
+      <div class="field" id="field-pickup-date">
+        <label id="pickup-date-label">Pickup Date <span class="req" aria-hidden="true">*</span></label>
+        <div class="date-chips" id="date-chips" role="group" aria-labelledby="pickup-date-label"></div>
+        <input type="hidden" id="pickup-date" name="pickupDate" value="">
+        <p class="error" id="pickup-date-error"></p>
+      </div>
+
+      <div class="field" id="field-mass">
+        <label id="mass-label">Pickup after Mass <span class="req" aria-hidden="true">*</span></label>
+        <div class="mass-options" id="mass-options" role="group" aria-labelledby="mass-label"></div>
+        <input type="hidden" id="pickup-mass" name="mass" value="">
+        <p class="error" id="mass-error"></p>
+      </div>
+
+      <p class="pickup-place" id="pickup-place">Pickup at Vailankanni Matha Church, Muthanallur after 6:30 AM &amp; 8:30 AM Mass</p>
+      <p class="closed-banner" id="preorders-closed" role="status">Pre-orders closed. Pickups for this cake sale have ended.</p>
+      <p class="hint" id="stock-status"></p>
+    </form>
+    </div>
+
+    <aside class="sticky-bar" aria-label="Order summary">
+      <h2 class="summary-heading">Your order</h2>
+      <ul class="cart-lines" id="cart-lines"></ul>
+      <div class="summary">
+        <span class="count" id="summary-count">0 items</span>
+        <span class="total" id="summary-total">₹0</span>
+      </div>
+      <p class="payment-note">Payment: Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin)</p>
+      <div class="checkout-alert" id="checkout-alert" role="alert" aria-live="assertive" hidden></div>
+      <div class="cta-wrap" id="place-order-wrap">
+        <button type="button" class="cta" id="place-order-btn">Place Order via WhatsApp</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="form-alert" id="form-alert" hidden>
+    <div class="form-alert-backdrop" id="form-alert-backdrop" data-alert-dismiss="true"></div>
+    <div class="form-alert-dialog" id="form-alert-dialog" role="alertdialog" aria-modal="true" aria-labelledby="form-alert-title" aria-describedby="form-alert-body">
+      <h2 id="form-alert-title">Almost there!</h2>
+      <div id="form-alert-body">
+        <ul id="form-alert-list"></ul>
+      </div>
+      <button type="button" class="form-alert-ok" id="form-alert-ok">OK, fix it</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    /* =========================================================================
+       EDITABLE CONFIG — swap menu copy, prices, or the Sheets URL here.
+       ========================================================================= */
+
+    /**
+     * Paste the Google Apps Script Web App URL from Code.gs here after you
+     * deploy (Deploy → New deployment → Web app, Execute as: Me, Access: Anyone).
+     * If this is still the placeholder, the page skips Sheets and opens WhatsApp.
+     * Put the live URL only here — never in SHEETS_PLACEHOLDER below.
+     */
+    const SHEETS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec';
+
+    const WHATSAPP_NUMBER = '917204017793';
+
+    /**
+     * Fallback pickup dates used until a background dates fetch returns
+     * Stock tab headers (or when there is no Sheets URL). Every listed
+     * date that has not yet closed is orderable — this is a pre-order
+     * form, not a POS with live stock. id is ISO yyyy-mm-dd in IST.
+     * A date stays available until closesAt (default 8:30 AM IST that
+     * morning). label is the chip text and the WhatsApp short date.
+     */
+    const PICKUP_DATES = [
+      { id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30' },
+      { id: '2026-12-06', label: 'Sun, 6 Dec', closesAt: '2026-12-06T08:30:00+05:30' },
+      { id: '2026-12-13', label: 'Sun, 13 Dec', closesAt: '2026-12-13T08:30:00+05:30' },
+      { id: '2026-12-20', label: 'Sun, 20 Dec', closesAt: '2026-12-20T08:30:00+05:30' }
+    ];
+
+    /**
+     * Sunday Mass times for pickup — edit this list if the schedule changes.
+     * label is what appears on the button, in the payload, and in WhatsApp.
+     */
+    const MASS_TIMES = [
+      { id: '06:30', label: '6:30 AM Mass' },
+      { id: '08:30', label: '8:30 AM Mass' }
+    ];
+
+    /**
+     * Opening planned quantities (optional). Not used to limit or hide
+     * items — this is a pre-order form. Kept so older tests can still
+     * read the documented 29 Nov plan.
+     */
+    const STOCK_FALLBACK = {
+      '2026-11-29': {
+        'Dates & Carrot Pudding (700g)': 15,
+        'Dates & Carrot Pudding (350g)': 35,
+        'Butterscotch Pudding (700g)': 10,
+        'Butterscotch Pudding (350g)': 25,
+        'Rich Plum Cake (800g)': 20,
+        'Rich Plum Cake (400g)': 50
+      }
+    };
+
+    /**
+     * Menu — poster rates, Nov 2026 Christmas cake sale.
+     * Fields: id, name, weight, price (INR), tag (optional), description.
+     */
+    const MENU_ITEMS = [
+      {
+        id: 'dates-carrot-pudding-700',
+        name: 'Dates & Carrot Pudding',
+        weight: '700g',
+        price: 650,
+        tag: '',
+        description: 'Moist festive pudding cake with dates and carrot in every slice.'
+      },
+      {
+        id: 'dates-carrot-pudding-350',
+        name: 'Dates & Carrot Pudding',
+        weight: '350g',
+        price: 330,
+        tag: '',
+        description: 'The same dates-and-carrot pudding, in a smaller loaf.'
+      },
+      {
+        id: 'butterscotch-pudding-700',
+        name: 'Butterscotch Pudding',
+        weight: '700g',
+        price: 700,
+        tag: '',
+        description: 'Buttery butterscotch pudding cake with a rich caramel finish.'
+      },
+      {
+        id: 'butterscotch-pudding-350',
+        name: 'Butterscotch Pudding',
+        weight: '350g',
+        price: 350,
+        tag: '',
+        description: 'A smaller butterscotch pudding, ideal as a gift loaf.'
+      },
+      {
+        id: 'rich-plum-cake-800',
+        name: 'Rich Plum Cake',
+        weight: '800g',
+        price: 650,
+        tag: '',
+        description: 'Family-size soaked-fruit plum cake — rich, fruity, and festive.'
+      },
+      {
+        id: 'rich-plum-cake-400',
+        name: 'Rich Plum Cake',
+        weight: '400g',
+        price: 350,
+        tag: 'Bestseller',
+        description: 'Classic rich plum cake packed with soaked fruits and warm spice.'
+      }
+    ];
+
+    const SHEETS_PLACEHOLDER = 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE';
+    const SAVE_TIMEOUT_MS = 2500;
+    const ORDER_TIMEOUT_MS = 20000;
+    const CHECKOUT_ORDER_ID_KEY = 'poppinsCheckoutOrderId';
+    const OUTBOX_KEY = 'poppinsOrderOutbox';
+    const OUTBOX_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+    const OUTBOX_POST_MS = 15000;
+    const MAX_QTY = 99;
+    var sheetsUrlOverride = '';
+
+    /* ---------- State ---------- */
+    const qtyById = Object.fromEntries(MENU_ITEMS.map((item) => [item.id, 0]));
+
+    var stockState = {
+      remaining: null,
+      dates: null,
+      status: 'idle',
+      note: ''
+    };
+
+    const els = {
+      menuList: document.getElementById('menu-list'),
+      cartError: document.getElementById('cart-error'),
+      form: document.getElementById('order-form'),
+      name: document.getElementById('buyer-name'),
+      phone: document.getElementById('buyer-phone'),
+      dateChips: document.getElementById('date-chips'),
+      pickupDate: document.getElementById('pickup-date'),
+      fieldPickupDate: document.getElementById('field-pickup-date'),
+      massOptions: document.getElementById('mass-options'),
+      mass: document.getElementById('pickup-mass'),
+      fieldMass: document.getElementById('field-mass'),
+      pickupPlace: document.getElementById('pickup-place'),
+      preordersClosed: document.getElementById('preorders-closed'),
+      stockStatus: document.getElementById('stock-status'),
+      toast: document.getElementById('toast'),
+      summaryCount: document.getElementById('summary-count'),
+      summaryTotal: document.getElementById('summary-total'),
+      placeBtn: document.getElementById('place-order-btn'),
+      placeWrap: document.getElementById('place-order-wrap'),
+      cartLines: document.getElementById('cart-lines'),
+      checkoutAlert: document.getElementById('checkout-alert'),
+      formAlert: document.getElementById('form-alert'),
+      formAlertDialog: document.getElementById('form-alert-dialog'),
+      formAlertTitle: document.getElementById('form-alert-title'),
+      formAlertBody: document.getElementById('form-alert-body'),
+      formAlertList: document.getElementById('form-alert-list'),
+      formAlertOk: document.getElementById('form-alert-ok'),
+      formAlertBackdrop: document.getElementById('form-alert-backdrop')
+    };
+
+    const fieldMap = {
+      name: document.getElementById('field-name'),
+      phone: document.getElementById('field-phone'),
+      pickupDate: document.getElementById('field-pickup-date'),
+      mass: document.getElementById('field-mass')
+    };
+
+    /* ---------- Helpers ---------- */
+
+    /** Indian grouping: 1350 → "₹1,350" */
+    function formatINR(amount) {
+      return '₹' + Number(amount).toLocaleString('en-IN');
+    }
+
+    function displayName(item) {
+      return item.name + ' (' + item.weight + ')';
+    }
+
+    function getCart() {
+      return MENU_ITEMS
+        .filter((item) => qtyById[item.id] > 0)
+        .map((item) => {
+          const qty = qtyById[item.id];
+          return {
+            id: item.id,
+            name: displayName(item),
+            weight: item.weight,
+            qty: qty,
+            price: item.price,
+            lineTotal: qty * item.price
+          };
+        });
+    }
+
+    function cartTotals(cart) {
+      return cart.reduce(
+        (acc, line) => {
+          acc.totalItems += line.qty;
+          acc.totalAmount += line.lineTotal;
+          return acc;
+        },
+        { totalItems: 0, totalAmount: 0 }
+      );
+    }
+
+    /**
+     * Strip spaces, dashes, parentheses, a leading +91 / 91 / 0, then
+     * require a 10-digit Indian mobile starting with 6–9.
+     */
+    function normalizePhone(raw) {
+      let s = String(raw || '').trim().replace(/[\s\-().]/g, '');
+      if (s.startsWith('+91')) s = s.slice(3);
+      else if (s.startsWith('91') && s.length === 12) s = s.slice(2);
+      if (s.startsWith('0') && s.length === 11) s = s.slice(1);
+      return s;
+    }
+
+    function isValidIndianMobile(digits) {
+      return /^[6-9]\d{9}$/.test(digits);
+    }
+
+    function nowInIST() {
+      return new Date();
+    }
+
+    /** Order ID like PB-251123-K7MQ, using the Asia/Kolkata calendar date. */
+    function generateOrderId(now) {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(now);
+      const val = (type) => parts.find((p) => p.type === type).value;
+      const yymmdd = val('year') + val('month') + val('day');
+      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const bytes = new Uint8Array(4);
+      crypto.getRandomValues(bytes);
+      let suffix = '';
+      for (let i = 0; i < bytes.length; i++) suffix += alphabet[bytes[i] % alphabet.length];
+      return 'PB-' + yymmdd + '-' + suffix;
+    }
+
+    function formatTimestampIST(now) {
+      return new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }).format(now) + ' IST';
+    }
+
+    /** Overridable "now" so tests can freeze the clock. */
+    function nowRef() {
+      var n = window.__TEST_NOW;
+      if (n && typeof n.getTime === 'function' && !isNaN(n.getTime())) return n;
+      return new Date();
+    }
+
+    /**
+     * Live catalog from the last successful stock response, or the
+     * fallback PICKUP_DATES list when Sheets is unavailable.
+     */
+    function getPickupCatalog() {
+      if (stockState.dates && stockState.dates.length) return stockState.dates;
+      return PICKUP_DATES;
+    }
+
+    function applyStockDates(dates) {
+      if (dates && dates.length) {
+        stockState.dates = dates.map(function (d) {
+          return {
+            id: d.id,
+            label: d.label,
+            shortLabel: d.shortLabel || d.label,
+            closesAt: d.closesAt || (d.id + 'T08:30:00+05:30')
+          };
+        });
+      } else {
+        stockState.dates = null;
+      }
+    }
+
+    /**
+     * A date stays available until closesAt, or 8:30 AM IST on that day
+     * when no cutoff is set (hidden from the cutoff instant onwards).
+     */
+    function isPickupDateOpen(dateOrId, now) {
+      now = now || nowRef();
+      var date = (dateOrId && typeof dateOrId === 'object') ? dateOrId : findPickupDate(dateOrId);
+      var id = date ? date.id : dateOrId;
+      var closesAt = date && date.closesAt;
+      var cutoff = closesAt ? new Date(closesAt) : new Date(id + 'T08:30:00+05:30');
+      return now.getTime() < cutoff.getTime();
+    }
+
+    function getOpenPickupDates(now) {
+      now = now || nowRef();
+      return getPickupCatalog().filter(function (d) { return isPickupDateOpen(d, now); });
+    }
+
+    function findPickupDate(id) {
+      var cat = getPickupCatalog();
+      for (var i = 0; i < cat.length; i++) {
+        if (cat[i].id === id) return cat[i];
+      }
+      return null;
+    }
+
+    function pickupDisplayLabel(date) {
+      return (date && (date.shortLabel || date.label)) || '';
+    }
+
+    function getSelectedPickupDate() {
+      return findPickupDate(els.pickupDate.value);
+    }
+
+    function findMassTime(id) {
+      for (var i = 0; i < MASS_TIMES.length; i++) {
+        if (MASS_TIMES[i].id === id) return MASS_TIMES[i];
+      }
+      return null;
+    }
+
+    function getSelectedMass() {
+      return findMassTime(els.mass.value);
+    }
+
+    /* ---------- WhatsApp message (edit this one function to change wording) ---------- */
+    /**
+     * Default format (the original brief was cut off at "WhatsApp Message Format:"):
+     *
+     * 🎄 *New Order – Vailankanni Parish Youth Cake Sale*
+     *
+     * *Order ID:* PB-YYMMDD-XXXX
+     * <timestamp IST>
+     *
+     * 2 x Rich Plum Cake (400g) – ₹700
+     * 1 x Dates & Carrot Pudding (700g) – ₹650
+     *
+     * Total items: 3
+     * *Total: ₹1,350*
+     *
+     * *Name:* Asha
+     * *Phone:* 9876543210
+     * *Pickup:* Sun, 29 Nov after 6:30 AM Mass
+     *
+     * Thank you!
+     */
+    /*
+     * WhatsApp message. Written in the buyer's voice so it reads naturally
+     * when it lands in the organiser's chat.
+     * NOTE: only use symbols from the basic Unicode plane (no 🎄-style emoji).
+     * Multi-byte emoji can get garbled into "�" by some WhatsApp
+     * link handlers, while ✨ • ━ ₹ × are safe everywhere.
+     */
+    function buildWhatsAppMessage(order) {
+      const RULE = '━━━━━━━━━━━━━━';
+      const cakeWord = order.totalItems === 1 ? 'cake' : 'cakes';
+      const lines = [];
+      lines.push('✨ *Christmas Cake Order* ✨');
+      lines.push('_Vailankanni Parish Youth × Poppins Bakers_');
+      lines.push(RULE);
+      lines.push('*Order ID:* ' + order.orderId);
+      lines.push(RULE);
+      lines.push('');
+      lines.push('*Items*');
+      order.items.forEach((line) => {
+        const each = line.qty > 1 ? ' (' + formatINR(line.price) + ' each)' : '';
+        lines.push('• ' + line.qty + ' × ' + line.name + ' – ' + formatINR(line.lineTotal) + each);
+      });
+      lines.push('');
+      lines.push('*Total: ' + formatINR(order.totalAmount) + '* (' + order.totalItems + ' ' + cakeWord + ')');
+      lines.push('');
+      if (order.pickupDateShort && order.massLabel) {
+        lines.push('*Pickup*');
+        lines.push(order.pickupDateShort + ', after the ' + order.massLabel);
+        lines.push('Vailankanni Matha Church, Muthanallur');
+        lines.push('');
+      }
+      lines.push('*Name:* ' + order.name);
+      lines.push('*Phone:* ' + order.phone);
+      lines.push('*Payment:* Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin)');
+      lines.push('');
+      lines.push('Please confirm my order. Thank you!');
+      lines.push('_Placed ' + order.timestamp + '_');
+      return lines.join('\n');
+    }
+
+    /* ---------- UI: menu, cart, form visibility ---------- */
+
+    function renderMenu() {
+      els.menuList.innerHTML = '';
+      MENU_ITEMS.forEach((item) => {
+        const card = document.createElement('article');
+        card.className = 'menu-card';
+        card.setAttribute('role', 'listitem');
+
+        const tagHtml = item.tag
+          ? '<span class="tag">' + escapeHtml(item.tag) + '</span>'
+          : '';
+
+        card.innerHTML =
+          '<div class="info">' +
+            '<div class="name-row">' +
+              '<h2>' + escapeHtml(item.name) + '</h2>' +
+              tagHtml +
+            '</div>' +
+            '<p class="desc">' + escapeHtml(item.description) + '</p>' +
+            '<p class="price">' + formatINR(item.price) +
+              ' <span class="weight">· ' + escapeHtml(item.weight) + '</span></p>' +
+          '</div>' +
+          '<div class="stepper" data-id="' + escapeHtml(item.id) + '">' +
+            '<button type="button" class="minus" aria-label="Decrease quantity of ' + escapeHtml(displayName(item)) + '" disabled>−</button>' +
+            '<span class="qty" aria-live="polite">0</span>' +
+            '<button type="button" class="plus" aria-label="Increase quantity of ' + escapeHtml(displayName(item)) + '">+</button>' +
+          '</div>';
+
+        const minus = card.querySelector('.minus');
+        const plus = card.querySelector('.plus');
+        minus.addEventListener('click', () => changeQty(item.id, -1));
+        plus.addEventListener('click', () => changeQty(item.id, 1));
+        els.menuList.appendChild(card);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function changeQty(id, delta) {
+      const next = (qtyById[id] || 0) + delta;
+      qtyById[id] = Math.max(0, Math.min(MAX_QTY, next));
+      syncStepper(id);
+      updateSummary();
+      if (cartTotals(getCart()).totalItems > 0) hideCartError();
+      refreshCheckoutErrorSummary();
+    }
+
+    function syncStepper(id) {
+      const root = els.menuList.querySelector('.stepper[data-id="' + id + '"]');
+      if (!root) return;
+      const qty = qtyById[id];
+      root.querySelector('.qty').textContent = String(qty);
+      root.querySelector('.minus').disabled = qty <= 0;
+      root.querySelector('.plus').disabled = qty >= MAX_QTY;
+    }
+
+    function renderCartLines(cart) {
+      if (!els.cartLines) return;
+      if (!cart || !cart.length) {
+        els.cartLines.innerHTML = '<li class="cart-empty">Your cart is empty</li>';
+        return;
+      }
+      els.cartLines.innerHTML = cart.map(function (line) {
+        return '<li class="cart-line">' +
+          '<span class="cart-line-qty">' + line.qty + ' ×</span>' +
+          '<span class="cart-line-name">' + escapeHtml(line.name) + '</span>' +
+          '<span class="cart-line-total">' + formatINR(line.lineTotal) + '</span>' +
+          '</li>';
+      }).join('');
+    }
+
+    function updateSummary() {
+      const cart = getCart();
+      const { totalItems, totalAmount } = cartTotals(cart);
+      els.summaryCount.textContent = totalItems + (totalItems === 1 ? ' item' : ' items');
+      els.summaryTotal.textContent = formatINR(totalAmount);
+      renderCartLines(cart);
+    }
+
+    /* ---------- Pickup dates, Mass, and stock ---------- */
+
+    function renderPickupDates(now) {
+      const open = getOpenPickupDates(now);
+      const closed = open.length === 0;
+      els.dateChips.innerHTML = '';
+      els.preordersClosed.classList.toggle('visible', closed);
+      els.dateChips.hidden = closed;
+      els.fieldPickupDate.classList.toggle('hidden', closed);
+      els.fieldMass.classList.toggle('hidden', closed);
+      if (els.pickupPlace) els.pickupPlace.hidden = closed;
+      if (closed) {
+        els.pickupDate.value = '';
+        disableClosedButton();
+        return;
+      }
+      const stillValid = open.some(function (d) { return d.id === els.pickupDate.value; });
+      if (!stillValid) els.pickupDate.value = '';
+      open.forEach(function (date) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'date-chip';
+        btn.dataset.id = date.id;
+        btn.textContent = pickupDisplayLabel(date);
+        btn.addEventListener('click', function () { selectPickupDate(date.id); });
+        btn.setAttribute('aria-pressed', date.id === els.pickupDate.value ? 'true' : 'false');
+        els.dateChips.appendChild(btn);
+      });
+    }
+
+    function renderMassTimes() {
+      els.massOptions.innerHTML = '';
+      MASS_TIMES.forEach(function (mass) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mass-option';
+        btn.dataset.id = mass.id;
+        btn.textContent = mass.label;
+        btn.setAttribute('aria-pressed', mass.id === els.mass.value ? 'true' : 'false');
+        btn.addEventListener('click', function () { selectMass(mass.id); });
+        els.massOptions.appendChild(btn);
+      });
+    }
+
+    function selectMass(id) {
+      els.mass.value = id;
+      els.massOptions.querySelectorAll('.mass-option').forEach(function (btn) {
+        btn.setAttribute('aria-pressed', btn.dataset.id === id ? 'true' : 'false');
+      });
+      clearFieldError('mass');
+      refreshCheckoutErrorSummary();
+    }
+
+    function selectPickupDate(id, opts) {
+      opts = opts || {};
+      if (!opts.force && id && !isPickupDateOpen(id) && getOpenPickupDates().length) return;
+      els.pickupDate.value = id;
+      els.dateChips.querySelectorAll('.date-chip').forEach(function (btn) {
+        btn.setAttribute('aria-pressed', btn.dataset.id === id ? 'true' : 'false');
+      });
+      clearFieldError('pickupDate');
+      refreshCheckoutErrorSummary();
+    }
+
+    // Pre-order: dates are never sold out. Helpers kept so older tests still resolve.
+    function dateHasAvailableStock(dateId) {
+      return !!dateId;
+    }
+
+    function isDateSoldOut(dateId) {
+      return false;
+    }
+
+    function isDateAwaitingConfirmation(dateId) {
+      return false;
+    }
+
+    function selectFirstDateWithStock(opts) {
+      const open = getOpenPickupDates();
+      if (!open.length) {
+        els.pickupDate.value = '';
+        return;
+      }
+      const current = els.pickupDate.value;
+      const currentOk = open.some(function (d) { return d.id === current; });
+      if (!currentOk) {
+        selectPickupDate(open[0].id, Object.assign({ skipReload: true, silent: true }, opts || {}));
+      }
+    }
+
+    function disableClosedButton() {
+      els.placeBtn.disabled = true;
+      els.placeBtn.classList.add('closed');
+      els.placeBtn.textContent = 'Pre-orders closed';
+    }
+
+    function resetSubmitButton() {
+      if (getOpenPickupDates().length === 0) {
+        disableClosedButton();
+        return;
+      }
+      els.placeBtn.disabled = false;
+      els.placeBtn.classList.remove('closed');
+      els.placeBtn.textContent = 'Place Order via WhatsApp';
+    }
+
+    function remainingForItemId(itemId) {
+      const item = MENU_ITEMS.find(function (it) { return it.id === itemId; });
+      return item ? remainingForItem(item) : 0;
+    }
+
+    /**
+     * Pre-order: every listed item is always available. Kept so older
+     * tests that call remainingForItem still resolve (unlimited).
+     */
+    function remainingForItem(item, dateId) {
+      return Infinity;
+    }
+
+    function normalizeStockRemaining(raw) {
+      const src = raw && raw.remaining ? raw.remaining : (raw || {});
+      const catalog = getPickupCatalog();
+      const out = {};
+      catalog.forEach(function (d) { out[d.id] = {}; });
+      Object.keys(src).forEach(function (key) {
+        let id = key;
+        const match = catalog.find(function (d) {
+          return d.id === key || d.label === key || d.shortLabel === key;
+        });
+        if (match) id = match.id;
+        out[id] = Object.assign({}, out[id] || {}, src[key] || {});
+      });
+      Object.keys(out).forEach(function (id) {
+        MENU_ITEMS.forEach(function (item) {
+          const name = displayName(item);
+          if (!Object.prototype.hasOwnProperty.call(out[id], name)) {
+            out[id][name] = null; // not listed = no limit
+            return;
+          }
+          const v = out[id][name];
+          if (v === null) out[id][name] = null;
+          else if (v === '' || typeof v === 'undefined' || isNaN(Number(v))) out[id][name] = 0;
+          else out[id][name] = Math.max(0, Number(v));
+        });
+      });
+      return out;
+    }
+
+    /**
+     * Carry-forward leftover stock, matching Code.gs
+     * carryForwardRemainingFromCaps_. capsByDate[dateId][name] is a
+     * number when a cap was typed (0 counts); missing/null is blank.
+     * remaining for date D is min of the cumulative pool on D and later
+     * limited dates. Unlimited (null) only if no numeric cap on any date <= D.
+     */
+    function computeCarryForwardRemaining_(dateIds, capsByDate, orderedByDate, itemNames) {
+      dateIds = (dateIds || []).slice().sort();
+      capsByDate = capsByDate || {};
+      orderedByDate = orderedByDate || {};
+      itemNames = itemNames || [];
+      const remaining = {};
+      dateIds.forEach(function (id) { remaining[id] = {}; });
+      itemNames.forEach(function (name) {
+        let seenNumeric = false;
+        let cumCap = 0;
+        let cumUsed = 0;
+        const raw = [];
+        dateIds.forEach(function (id) {
+          const cell = capsByDate[id] && Object.prototype.hasOwnProperty.call(capsByDate[id], name)
+            ? capsByDate[id][name]
+            : null;
+          let hasNumeric = !(cell === '' || cell === null || typeof cell === 'undefined');
+          let cap = 0;
+          if (hasNumeric) {
+            const num = Number(cell);
+            if (isNaN(num)) hasNumeric = false;
+            else cap = Math.max(0, num);
+          }
+          let used = (orderedByDate[id] && orderedByDate[id][name]) ? Number(orderedByDate[id][name]) : 0;
+          if (!used || isNaN(used)) used = 0;
+          if (hasNumeric) seenNumeric = true;
+          cumUsed += used;
+          if (!seenNumeric) {
+            remaining[id][name] = null;
+            raw.push(null);
+            return;
+          }
+          cumCap += cap;
+          raw.push(Math.max(0, cumCap - cumUsed));
+        });
+        for (let i = 0; i < dateIds.length; i++) {
+          if (raw[i] === null) continue;
+          let m = raw[i];
+          for (let j = i + 1; j < dateIds.length; j++) {
+            if (raw[j] !== null && raw[j] < m) m = raw[j];
+          }
+          remaining[dateIds[i]][name] = m;
+        }
+      });
+      return remaining;
+    }
+
+    /** Opening caps (STOCK_FALLBACK) → displayed remaining, 0 orders. */
+    function remainingFromOpeningCaps_(caps) {
+      const dateIds = getPickupCatalog().map(function (d) { return d.id; });
+      const names = MENU_ITEMS.map(displayName);
+      return computeCarryForwardRemaining_(dateIds, caps || {}, {}, names);
+    }
+
+    function setStockStatus(kind, message) {
+      els.stockStatus.classList.toggle('is-error', kind === 'error');
+      els.stockStatus.textContent = message || '';
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add('visible');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(function () {
+        els.toast.classList.remove('visible');
+      }, 4200);
+    }
+
+    /** Pre-order: no remaining counts or sold-out notes on the cards. */
+    function applyStockToMenu(opts) {
+      MENU_ITEMS.forEach(function (item) {
+        const card = els.menuList.querySelector('.stepper[data-id="' + item.id + '"]');
+        const wrap = card && card.closest('.menu-card');
+        if (wrap) {
+          wrap.classList.remove('sold-out');
+          const note = wrap.querySelector('.stock-note');
+          if (note) {
+            note.textContent = '';
+            note.hidden = true;
+          }
+        }
+        syncStepper(item.id);
+      });
+      updateSummary();
+      return false;
+    }
+
+    function fetchJsonWithTimeout(url, ms) {
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, ms);
+      return fetch(url, { method: 'GET', redirect: 'follow', signal: controller.signal })
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .finally(function () { clearTimeout(timer); });
+    }
+
+    function fetchStockJSONP(url, ms) {
+      return new Promise(function (resolve, reject) {
+        const cb = 'stockCb_' + String(Date.now()) + '_' + Math.floor(Math.random() * 1e6);
+        const script = document.createElement('script');
+        let settled = false;
+        function cleanup() {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+        const timer = setTimeout(function () {
+          cleanup();
+          reject(new Error('timeout'));
+        }, ms);
+        window[cb] = function (data) {
+          cleanup();
+          resolve(data);
+        };
+        script.onerror = function () {
+          cleanup();
+          reject(new Error('jsonp error'));
+        };
+        const sep = url.indexOf('?') >= 0 ? '&' : '?';
+        script.src = url + sep + 'callback=' + encodeURIComponent(cb);
+        document.head.appendChild(script);
+      });
+    }
+
+    async function fetchStockPayload(ms) {
+      const base = getSheetsWebAppUrl();
+      const stockUrl = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'action=stock';
+      const started = Date.now();
+      try {
+        return await fetchJsonWithTimeout(stockUrl, ms);
+      } catch (err) {
+        // Unit tests stub fetch and set this flag so we never inject a
+        // live JSONP <script> against the deployed Web App.
+        if (typeof window !== 'undefined' && window.__TEST_DISABLE_NETWORK) throw err;
+        const left = ms - (Date.now() - started);
+        if (left < 250) throw err;
+        return await fetchStockJSONP(stockUrl, left);
+      }
+    }
+
+    async function loadPickupDates() {
+      if (!isSheetsUrlConfigured(getSheetsWebAppUrl())) return;
+      if (typeof window !== 'undefined' && window.__TEST_DISABLE_NETWORK) return;
+      try {
+        const data = await fetchStockPayload(4000);
+        if (data && data.dates && data.dates.length) {
+          applyStockDates(data.dates);
+          stockState.status = 'ok';
+          setStockStatus('ok', '');
+          renderPickupDates();
+          selectFirstDateWithStock({ silent: true, skipReload: true });
+        }
+      } catch (err) {
+        // Keep the current catalog (PICKUP_DATES or last successful list).
+      }
+    }
+
+    // Alias so older tests that stub loadStock still intercept the date fetch.
+    function loadStock() {
+      return loadPickupDates();
+    }
+
+    function applyFallbackStock(message) {
+      applyStockDates(null);
+      stockState.status = 'fallback';
+      setStockStatus('ok', '');
+      renderPickupDates();
+      selectFirstDateWithStock({ silent: true, skipReload: true });
+    }
+
+    /** Test helper: inject an optional dates list (remaining is ignored). */
+    function __setStockForTest(remaining, status, dates) {
+      if (typeof dates !== 'undefined') applyStockDates(dates);
+      stockState.status = status || 'ok';
+      if (stockState.status === 'error' || stockState.status === 'fallback') {
+        applyStockDates(null);
+        stockState.status = 'fallback';
+      }
+      setStockStatus('ok', '');
+      renderPickupDates();
+      selectFirstDateWithStock({ silent: true, skipReload: true });
+      return applyStockToMenu();
+    }
+
+    function __setSheetsUrlForTest(url) {
+      sheetsUrlOverride = url || '';
+    }
+
+    function orderTimeoutMs() {
+      return typeof window.__ORDER_TIMEOUT_MS === 'number' ? window.__ORDER_TIMEOUT_MS : ORDER_TIMEOUT_MS;
+    }
+
+    function fieldErrorId(wrap) {
+      const err = wrap && wrap.querySelector('.error');
+      return err && err.id ? err.id : '';
+    }
+
+    function setAriaInvalid(wrap, on) {
+      if (!wrap) return;
+      const errId = fieldErrorId(wrap);
+      const input = wrap.querySelector('input:not([type="hidden"]), select, textarea');
+      if (input) {
+        if (on) {
+          input.setAttribute('aria-invalid', 'true');
+          if (errId) input.setAttribute('aria-describedby', errId);
+        } else {
+          input.removeAttribute('aria-invalid');
+          input.removeAttribute('aria-describedby');
+        }
+      }
+      const group = wrap.querySelector('[role="group"]');
+      if (group) {
+        if (on) {
+          group.setAttribute('aria-invalid', 'true');
+          if (errId) group.setAttribute('aria-describedby', errId);
+        } else {
+          group.removeAttribute('aria-invalid');
+          group.removeAttribute('aria-describedby');
+        }
+      }
+    }
+
+    function setFieldError(key, message) {
+      const wrap = fieldMap[key];
+      if (!wrap) return;
+      wrap.classList.add('invalid');
+      const err = wrap.querySelector('.error');
+      if (err) err.textContent = message;
+      setAriaInvalid(wrap, true);
+    }
+
+    function clearFieldError(key) {
+      const wrap = fieldMap[key];
+      if (!wrap) return;
+      wrap.classList.remove('invalid');
+      const err = wrap.querySelector('.error');
+      if (err) err.textContent = '';
+      setAriaInvalid(wrap, false);
+    }
+
+    function hideCartError() {
+      els.cartError.classList.remove('visible');
+      els.cartError.textContent = '';
+    }
+
+    function showCartError(message) {
+      els.cartError.textContent = message;
+      els.cartError.classList.add('visible');
+    }
+
+    var checkoutTried = false;
+    var formAlertOpen = false;
+    var formAlertPrevFocus = null;
+    var formAlertFirstIssue = null;
+
+    function prefersReducedMotion() {
+      try {
+        return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function collectCheckoutIssues() {
+      const issues = [];
+      if (getOpenPickupDates().length === 0) {
+        issues.push({
+          key: 'closed',
+          message: 'Pre-orders closed. Pickups for this cake sale have ended.',
+          target: els.preordersClosed || els.placeBtn,
+          focus: els.placeBtn
+        });
+        return issues;
+      }
+
+      if (getCart().length === 0) {
+        issues.push({
+          key: 'cart',
+          message: 'Please add at least one cake',
+          target: document.getElementById('menu-heading') || els.menuList,
+          focus: els.menuList && els.menuList.querySelector('.plus')
+        });
+      }
+
+      if (!els.name.value.trim()) {
+        issues.push({
+          key: 'name',
+          message: 'Enter your name',
+          target: fieldMap.name,
+          focus: els.name
+        });
+      }
+
+      const phone = normalizePhone(els.phone.value);
+      if (!isValidIndianMobile(phone)) {
+        issues.push({
+          key: 'phone',
+          message: 'Enter a 10-digit phone number',
+          target: fieldMap.phone,
+          focus: els.phone
+        });
+      }
+
+      const pickupId = els.pickupDate.value;
+      const pickup = getSelectedPickupDate();
+      if (!pickupId) {
+        issues.push({
+          key: 'pickupDate',
+          message: 'Pick a pickup date',
+          target: fieldMap.pickupDate,
+          focus: els.dateChips && els.dateChips.querySelector('.date-chip')
+        });
+      } else if (!pickup) {
+        issues.push({
+          key: 'pickupDate',
+          message: 'Pick a pickup date',
+          target: fieldMap.pickupDate,
+          focus: els.dateChips && els.dateChips.querySelector('.date-chip')
+        });
+      } else if (!isPickupDateOpen(pickup.id)) {
+        issues.push({
+          key: 'pickupDate',
+          message: 'Pick a pickup date',
+          target: fieldMap.pickupDate,
+          focus: els.dateChips && els.dateChips.querySelector('.date-chip')
+        });
+      }
+
+      const mass = getSelectedMass();
+      if (!mass) {
+        issues.push({
+          key: 'mass',
+          message: 'Pick a Mass time',
+          target: fieldMap.mass,
+          focus: els.massOptions && els.massOptions.querySelector('.mass-option')
+        });
+      }
+      return issues;
+    }
+
+    function applyCheckoutIssues(issues) {
+      clearFieldError('name');
+      clearFieldError('phone');
+      clearFieldError('pickupDate');
+      clearFieldError('mass');
+      hideCartError();
+      issues = issues || [];
+      issues.forEach(function (issue) {
+        if (issue.key === 'cart' || issue.key === 'closed') showCartError(issue.message);
+        else setFieldError(issue.key, issue.message);
+      });
+      renderCheckoutErrorSummary(issues);
+    }
+
+    function renderCheckoutErrorSummary(issues) {
+      const box = els.checkoutAlert;
+      if (!box) return;
+      issues = issues || [];
+      if (!issues.length) {
+        box.classList.remove('visible');
+        box.hidden = true;
+        box.innerHTML = '';
+        return;
+      }
+      const closed = issues.length === 1 && issues[0].key === 'closed';
+      const heading = closed ? 'Pre-orders closed' : 'Please complete your order:';
+      box.innerHTML = '<p>' + escapeHtml(heading) + '</p><ul>' +
+        issues.map(function (issue) {
+          return '<li>' + escapeHtml(issue.message) + '</li>';
+        }).join('') + '</ul>';
+      box.hidden = false;
+      box.classList.add('visible');
+    }
+
+    function refreshCheckoutErrorSummary() {
+      if (!checkoutTried) return;
+      const issues = collectCheckoutIssues();
+      if (getCart().length > 0) hideCartError();
+      ['name', 'phone', 'pickupDate', 'mass'].forEach(function (key) {
+        if (!issues.some(function (issue) { return issue.key === key; })) clearFieldError(key);
+      });
+      renderCheckoutErrorSummary(issues);
+    }
+
+    function validateForm() {
+      checkoutTried = true;
+      const issues = collectCheckoutIssues();
+      applyCheckoutIssues(issues);
+      return issues.length === 0;
+    }
+
+    function getAlertFocusables() {
+      if (!els.formAlertDialog) return [];
+      return [els.formAlertOk].filter(function (el) {
+        return el && !el.disabled && el.offsetParent !== null || (el && els.formAlert && !els.formAlert.hidden);
+      });
+    }
+
+    function onFormAlertKeydown(event) {
+      if (!formAlertOpen) return;
+      if (event.key === 'Escape' || event.key === 'Esc') {
+        event.preventDefault();
+        closeFormAlert();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusables = [els.formAlertOk];
+      if (!focusables[0]) return;
+      event.preventDefault();
+      focusables[0].focus();
+    }
+
+    function showFormAlert(issues) {
+      issues = issues || collectCheckoutIssues();
+      if (!els.formAlert || !issues.length) return;
+      formAlertFirstIssue = issues[0];
+      formAlertPrevFocus = document.activeElement;
+      const closed = issues.length === 1 && issues[0].key === 'closed';
+      els.formAlertTitle.textContent = closed ? 'Pre-orders closed' : 'Almost there!';
+      els.formAlertOk.textContent = closed ? 'OK' : 'OK, fix it';
+      if (closed) {
+        els.formAlertBody.innerHTML = '<p id="form-alert-list">' + escapeHtml(issues[0].message) + '</p>';
+      } else {
+        els.formAlertBody.innerHTML = '<ul id="form-alert-list">' +
+          issues.map(function (issue) {
+            return '<li>' + escapeHtml(issue.message) + '</li>';
+          }).join('') + '</ul>';
+      }
+      els.formAlertList = document.getElementById('form-alert-list');
+      els.formAlertDialog.setAttribute('aria-describedby', 'form-alert-list');
+      const app = document.querySelector('.app');
+      if (app) app.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = 'hidden';
+      els.formAlert.hidden = false;
+      els.formAlert.classList.add('is-open');
+      formAlertOpen = true;
+      if (els.formAlertOk) els.formAlertOk.focus();
+      document.addEventListener('keydown', onFormAlertKeydown, true);
+    }
+
+    function closeFormAlert() {
+      if (!formAlertOpen && (!els.formAlert || els.formAlert.hidden)) {
+        if (formAlertFirstIssue) revealFirstIssue(formAlertFirstIssue);
+        return;
+      }
+      formAlertOpen = false;
+      els.formAlert.classList.remove('is-open');
+      els.formAlert.hidden = true;
+      document.body.style.overflow = '';
+      const app = document.querySelector('.app');
+      if (app) app.removeAttribute('aria-hidden');
+      document.removeEventListener('keydown', onFormAlertKeydown, true);
+      const issue = formAlertFirstIssue;
+      const prev = formAlertPrevFocus;
+      formAlertPrevFocus = null;
+      revealFirstIssue(issue);
+      if (!issue || !issue.focus) {
+        try { if (prev && prev.focus) prev.focus({ preventScroll: true }); } catch (err) {}
+      }
+    }
+
+    function stickyOffset() {
+      const header = document.querySelector('header.hero-head');
+      const bar = document.querySelector('.sticky-bar');
+      const headerRect = header ? header.getBoundingClientRect() : null;
+      const barRect = bar ? bar.getBoundingClientRect() : null;
+      // Mobile: bar sits at the bottom. Desktop: summary is in normal flow / sticky top.
+      const top = (headerRect && headerRect.top >= -1 && headerRect.bottom < (window.innerHeight || 800) * 0.5)
+        ? 0
+        : (headerRect && headerRect.top <= 1 && headerRect.bottom > 0 ? headerRect.height : 0);
+      const bottom = (barRect && barRect.bottom >= (window.innerHeight || 0) - 2 && barRect.top > (window.innerHeight || 0) / 2)
+        ? barRect.height
+        : 0;
+      return { top: top + 12, bottom: bottom + 12 };
+    }
+
+    function revealFirstIssue(issue) {
+      if (!issue) return;
+      const target = issue.target || issue.focus;
+      const focusEl = issue.focus;
+      if (target && target.scrollIntoView) {
+        const offset = stickyOffset();
+        const rect = target.getBoundingClientRect();
+        const view = window.innerHeight || document.documentElement.clientHeight;
+        const usableTop = offset.top;
+        const usableBottom = view - offset.bottom;
+        const y = window.scrollY + rect.top - usableTop - Math.max(0, (usableBottom - usableTop - rect.height) / 3);
+        window.scrollTo({
+          top: Math.max(0, y),
+          behavior: prefersReducedMotion() ? 'auto' : 'smooth'
+        });
+      }
+      if (focusEl && focusEl.focus) {
+        try { focusEl.focus({ preventScroll: true }); } catch (err) {
+          try { focusEl.focus(); } catch (err2) {}
+        }
+      }
+    }
+
+    function buildOrderPayload() {
+      const now = nowInIST();
+      const cart = getCart();
+      const totals = cartTotals(cart);
+      const pickup = getSelectedPickupDate();
+      const mass = getSelectedMass();
+      return {
+        timestamp: formatTimestampIST(now),
+        orderId: getOrCreateCheckoutOrderId(now),
+        name: els.name.value.trim(),
+        phone: normalizePhone(els.phone.value),
+        pickupDate: pickup ? pickup.id : '',
+        pickupDateLabel: pickup ? pickup.label : '',
+        pickupDateShort: pickup ? pickupDisplayLabel(pickup) : '',
+        mass: mass ? mass.id : '',
+        massLabel: mass ? mass.label : '',
+        items: cart,
+        totalItems: totals.totalItems,
+        totalAmount: totals.totalAmount
+      };
+    }
+
+    function getSheetsWebAppUrl() {
+      return (sheetsUrlOverride || SHEETS_WEBAPP_URL || '').trim();
+    }
+
+    function isSheetsUrlConfigured(url) {
+      const trimmed = (url == null ? getSheetsWebAppUrl() : url).trim();
+      if (!trimmed) return false;
+      if (trimmed === SHEETS_PLACEHOLDER) return false;
+      if (/PASTE_YOUR_/i.test(trimmed)) return false;
+      return /^https:\/\//i.test(trimmed);
+    }
+
+    function getOrCreateCheckoutOrderId(now) {
+      try {
+        const existing = sessionStorage.getItem(CHECKOUT_ORDER_ID_KEY);
+        if (existing && /^PB-[A-Z0-9-]+$/.test(existing)) return existing;
+      } catch (err) { /* sessionStorage may be blocked */ }
+      const id = generateOrderId(now || nowInIST());
+      try { sessionStorage.setItem(CHECKOUT_ORDER_ID_KEY, id); } catch (err) {}
+      return id;
+    }
+
+    function clearCheckoutOrderId() {
+      try { sessionStorage.removeItem(CHECKOUT_ORDER_ID_KEY); } catch (err) {}
+    }
+
+    function readJsonResponse(res) {
+      if (!res || !res.ok) throw new Error(res ? ('HTTP ' + res.status) : 'no response');
+      return res.json();
+    }
+
+    /**
+     * Readable reserve: POST text/plain (no no-cors) so the JSON body can
+     * be parsed. If that fails (CORS/redirect), GET ?action=order&payload=.
+     */
+    async function reserveOrderReadable(payload, ms) {
+      const base = getSheetsWebAppUrl();
+      const body = JSON.stringify(payload);
+      const started = Date.now();
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, ms);
+      try {
+        try {
+          const res = await fetch(base, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain' },
+            body: body,
+            signal: controller.signal
+          });
+          return await readJsonResponse(res);
+        } catch (postErr) {
+          if (controller.signal.aborted) throw postErr;
+          const left = ms - (Date.now() - started);
+          if (left < 250) throw postErr;
+          const url = base + (base.indexOf('?') >= 0 ? '&' : '?') +
+            'action=order&payload=' + encodeURIComponent(body);
+          const res = await fetch(url, {
+            method: 'GET',
+            redirect: 'follow',
+            signal: controller.signal
+          });
+          return await readJsonResponse(res);
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    /** Timeout / network fallback: no-cors POST; server dedupes by orderId. */
+    async function saveOrderNoCorsFallback(payload) {
+      const fallbackPayload = Object.assign({}, payload, { fallback: true });
+      // sendBeacon is queued by the browser and survives navigating to
+      // WhatsApp, so the order still reaches the Sheet on slow networks.
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([JSON.stringify(fallbackPayload)], { type: 'text/plain' });
+          if (navigator.sendBeacon(getSheetsWebAppUrl(), blob)) return;
+        }
+      } catch (err) { /* fall through to fetch */ }
+      const controller = new AbortController();
+      const timeout = new Promise(function (resolve) {
+        setTimeout(function () {
+          controller.abort();
+          resolve('timeout');
+        }, SAVE_TIMEOUT_MS);
+      });
+      const request = fetch(getSheetsWebAppUrl(), {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(fallbackPayload),
+        keepalive: true,
+        signal: controller.signal
+      }).then(function () { return 'ok'; }).catch(function () { return 'error'; });
+      await Promise.race([request, timeout]);
+    }
+
+    function openWhatsApp(message) {
+      // api.whatsapp.com/send keeps the text intact more reliably than wa.me's extra redirect.
+      const url = 'https://api.whatsapp.com/send?phone=' + WHATSAPP_NUMBER + '&text=' + encodeURIComponent(message);
+      window.location.href = url;
+    }
+
+    /* ---------- Order outbox (localStorage queue) ---------- */
+
+    function readOrderOutbox() {
+      try {
+        const raw = localStorage.getItem(OUTBOX_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function writeOrderOutbox(list) {
+      try {
+        localStorage.setItem(OUTBOX_KEY, JSON.stringify(list || []));
+      } catch (err) { /* private mode / quota */ }
+    }
+
+    function enqueueOrder(order) {
+      if (!order || !order.orderId) return;
+      const list = readOrderOutbox();
+      const existing = list.find(function (entry) {
+        return entry && entry.order && entry.order.orderId === order.orderId;
+      });
+      if (existing) {
+        existing.order = order;
+        writeOrderOutbox(list);
+        return;
+      }
+      list.push({
+        order: order,
+        queuedAt: Date.now(),
+        attempts: 0,
+        nextAttemptAt: 0
+      });
+      writeOrderOutbox(list);
+    }
+
+    function removeFromOutbox(orderId) {
+      writeOrderOutbox(readOrderOutbox().filter(function (entry) {
+        return !(entry && entry.order && entry.order.orderId === orderId);
+      }));
+    }
+
+    function outboxBackoffMs(attempts) {
+      return Math.min(60000, 1000 * Math.pow(2, Math.max(0, (attempts || 1) - 1)));
+    }
+
+    function markOutboxAttempt(orderId, delayMs) {
+      const list = readOrderOutbox();
+      list.forEach(function (entry) {
+        if (!entry || !entry.order || entry.order.orderId !== orderId) return;
+        entry.attempts = (entry.attempts || 0) + 1;
+        entry.lastAttemptAt = Date.now();
+        entry.nextAttemptAt = Date.now() + (delayMs || outboxBackoffMs(entry.attempts));
+      });
+      writeOrderOutbox(list);
+    }
+
+    function pruneOrderOutbox() {
+      const now = Date.now();
+      writeOrderOutbox(readOrderOutbox().filter(function (entry) {
+        return entry && entry.order && entry.order.orderId &&
+          !(entry.queuedAt && now - entry.queuedAt > OUTBOX_MAX_AGE_MS);
+      }));
+    }
+
+    var outboxFlushTimer = null;
+    var outboxFlushPromise = null;
+
+    function scheduleOutboxFlush(delayMs) {
+      if (outboxFlushTimer) clearTimeout(outboxFlushTimer);
+      outboxFlushTimer = setTimeout(function () {
+        flushOrderOutbox();
+      }, Math.max(0, delayMs || 0));
+    }
+
+    /**
+     * Keepalive POST so the save can finish after we navigate to WhatsApp.
+     * sendBeacon is also fired on enqueue, but Apps Script's 302 to
+     * googleusercontent.com is often not followed by sendBeacon, so the
+     * readable keepalive fetch is the confirmation path.
+     */
+    async function postOrderKeepalive(order) {
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, OUTBOX_POST_MS);
+      try {
+        const res = await fetch(getSheetsWebAppUrl(), {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(order),
+          keepalive: true,
+          signal: controller.signal
+        });
+        return await readJsonResponse(res);
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function fireSendBeacon(order) {
+      try {
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+          const blob = new Blob([JSON.stringify(order)], { type: 'text/plain' });
+          navigator.sendBeacon(getSheetsWebAppUrl(), blob);
+        }
+      } catch (err) { /* keepalive fetch is the real path */ }
+    }
+
+    async function flushOrderOutbox(opts) {
+      opts = opts || {};
+      const force = (opts === true) || !!opts.force;
+      if (outboxFlushPromise) {
+        try { await outboxFlushPromise; } catch (err) {}
+        if (!force) return;
+      }
+      if (!isSheetsUrlConfigured()) return;
+
+      const run = (async function () {
+        pruneOrderOutbox();
+        const now = Date.now();
+        const due = readOrderOutbox().filter(function (entry) {
+          return entry && entry.order && (force || !entry.nextAttemptAt || entry.nextAttemptAt <= now);
+        });
+        if (!due.length) {
+          const leftover = readOrderOutbox();
+          if (leftover.length) {
+            const nextAt = leftover.reduce(function (min, entry) {
+              const t = entry.nextAttemptAt || now;
+              return t < min ? t : min;
+            }, now + 60000);
+            scheduleOutboxFlush(Math.max(250, nextAt - now));
+          }
+          return;
+        }
+        for (let i = 0; i < due.length; i++) {
+          const entry = due[i];
+          const order = entry.order;
+          try {
+            const result = await postOrderKeepalive(order);
+            if (result && result.ok && (result.status === 'saved' || result.status === 'duplicate')) {
+              removeFromOutbox(order.orderId);
+              try {
+                const current = sessionStorage.getItem(CHECKOUT_ORDER_ID_KEY);
+                if (current === order.orderId) clearCheckoutOrderId();
+              } catch (err) {}
+              continue;
+            }
+            markOutboxAttempt(order.orderId);
+          } catch (err) {
+            markOutboxAttempt(order.orderId);
+          }
+        }
+        const leftover = readOrderOutbox();
+        if (leftover.length) {
+          const nextAt = leftover.reduce(function (min, entry) {
+            const t = entry.nextAttemptAt || Date.now();
+            return t < min ? t : min;
+          }, Date.now() + 60000);
+          scheduleOutboxFlush(Math.max(250, nextAt - Date.now()));
+        }
+      })();
+
+      outboxFlushPromise = run;
+      try {
+        await run;
+      } finally {
+        if (outboxFlushPromise === run) outboxFlushPromise = null;
+      }
+    }
+
+    async function placeOrder() {
+      if (els.placeBtn.disabled && !els.placeBtn.classList.contains('closed')) return;
+      if (getOpenPickupDates().length === 0) {
+        disableClosedButton();
+        checkoutTried = true;
+        const issues = collectCheckoutIssues();
+        applyCheckoutIssues(issues);
+        showFormAlert(issues);
+        return;
+      }
+      if (!validateForm()) {
+        showFormAlert(collectCheckoutIssues());
+        return;
+      }
+
+      const order = buildOrderPayload();
+      const message = buildWhatsAppMessage(order);
+
+      els.placeBtn.disabled = true;
+      els.placeBtn.classList.remove('closed');
+      els.placeBtn.textContent = 'Order placed';
+
+      if (isSheetsUrlConfigured()) {
+        enqueueOrder(order);
+        fireSendBeacon(order);
+        scheduleOutboxFlush(0);
+      }
+
+      openWhatsApp(message);
+    }
+
+    /* ---------- Init ---------- */
+    renderMenu();
+    renderPickupDates();
+    selectFirstDateWithStock({ silent: true, skipReload: true });
+    renderMassTimes();
+    updateSummary();
+    loadPickupDates();
+    flushOrderOutbox();
+
+    els.name.addEventListener('input', function () {
+      if (els.name.value.trim()) clearFieldError('name');
+      refreshCheckoutErrorSummary();
+    });
+    els.phone.addEventListener('input', function () {
+      if (isValidIndianMobile(normalizePhone(els.phone.value))) clearFieldError('phone');
+      refreshCheckoutErrorSummary();
+    });
+
+    els.placeBtn.addEventListener('click', placeOrder);
+    if (/(?:\?|&)previewErrors=1(?:&|$)/.test(location.search || '')) {
+      placeOrder();
+    }
+    if (els.placeWrap) {
+      els.placeWrap.addEventListener('click', function (event) {
+        if (els.placeBtn.disabled && els.placeBtn.classList.contains('closed')) {
+          event.preventDefault();
+          placeOrder();
+        }
+      });
+    }
+    els.form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      placeOrder();
+    });
+    if (els.formAlertBackdrop) {
+      els.formAlertBackdrop.addEventListener('click', function () { closeFormAlert(); });
+    }
+    if (els.formAlertOk) {
+      els.formAlertOk.addEventListener('click', function () { closeFormAlert(); });
+    }
+
+    /* Re-enable the CTA if the user returns from WhatsApp (including bfcache),
+       and retry any orders still sitting in the outbox. */
+    window.addEventListener('pageshow', () => {
+      resetSubmitButton();
+      flushOrderOutbox({ force: true });
+    });
+  </script>
+</body>
+</html>
