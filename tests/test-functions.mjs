@@ -64,6 +64,7 @@ process.env.APPS_SCRIPT_URL = mockUrl;
 
 const lib = await import('../netlify/lib/orders.mjs');
 const { default: orderFn, config: orderCfg } = await import('../netlify/functions/order.mjs');
+const { default: stockFn, config: stockCfg } = await import('../netlify/functions/stock.mjs');
 const { default: sweepFn, config: sweepCfg } = await import('../netlify/functions/sweep-orders.mjs');
 const store = getStore({ name: lib.STORE_NAME, consistency: 'strong' });
 
@@ -331,6 +332,43 @@ assert('pending marker removed after success', (await lib.countPending(store)) =
       { dates: [{ id: '2026-11-29', remaining: { [PLUM]: 3 } }] }).join() === PLUM);
   stockDates = [];
   lib.resetStockCache();
+}
+
+// ---- /api/stock (CDN-cached stock for the order page) ----
+{
+  const getStockApi = (qs = '', method = 'GET') => stockFn(new Request('http://localhost/api/stock' + qs, { method }));
+  assert('config: stock function path is /api/stock', stockCfg.path === '/api/stock');
+
+  stockDates = [{ id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30', remaining: { 'Rich Plum Cake (400g)': 0, 'Rich Plum Cake (800g)': null } }];
+  stockMode = 'ok'; lib.resetStockCache();
+  const s1 = await getStockApi();
+  const b1 = await s1.json();
+  assert('stock api: 200 with the Apps Script payload', s1.status === 200 && b1.ok && b1.dates[0].remaining['Rich Plum Cake (400g)'] === 0 && b1.dates[0].remaining['Rich Plum Cake (800g)'] === null, JSON.stringify(b1));
+  assert('stock api: CDN caches 10s and serves stale while revalidating',
+    /s-maxage=10/.test(s1.headers.get('netlify-cdn-cache-control') || '') && /stale-while-revalidate=120/.test(s1.headers.get('netlify-cdn-cache-control') || ''), s1.headers.get('netlify-cdn-cache-control'));
+  assert('stock api: browser always revalidates', /max-age=0/.test(s1.headers.get('cache-control') || '') && /must-revalidate/.test(s1.headers.get('cache-control') || ''), s1.headers.get('cache-control'));
+
+  const g0 = stockGets;
+  await getStockApi();
+  assert('stock api: repeat calls are served from the in-memory cache', stockGets === g0, String(stockGets - g0));
+
+  stockDates[0].remaining['Rich Plum Cake (400g)'] = 7;
+  await new Promise((r) => setTimeout(r, 2100));
+  const s2 = await getStockApi('?fresh=1&t=1');
+  const b2 = await s2.json();
+  assert('stock api: ?fresh=1 re-reads Apps Script and is never cached',
+    b2.dates[0].remaining['Rich Plum Cake (400g)'] === 7 && /no-store/.test(s2.headers.get('cache-control') || '') && !s2.headers.get('netlify-cdn-cache-control'),
+    JSON.stringify(b2) + ' ' + s2.headers.get('cache-control'));
+
+  stockMode = 'fail'; lib.resetStockCache();
+  const s3 = await getStockApi();
+  const b3 = await s3.json();
+  assert('stock api: 502 {ok:false} and no-store when Apps Script fails', s3.status === 502 && b3.ok === false && /no-store/.test(s3.headers.get('cache-control') || '') && !s3.headers.get('netlify-cdn-cache-control'), s3.status + ' ' + JSON.stringify(b3));
+
+  const s4 = await getStockApi('', 'POST');
+  assert('stock api: POST is 405', s4.status === 405);
+
+  stockMode = 'ok'; stockDates = []; lib.resetStockCache();
 }
 
 // ---- backoff ----

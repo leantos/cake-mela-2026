@@ -275,7 +275,8 @@
       remaining: null,
       dates: null,
       status: 'idle',
-      note: ''
+      note: '',
+      fetchedAt: 0
     };
 
     const els = {
@@ -1031,38 +1032,126 @@
       });
     }
 
-    async function fetchStockPayload(ms) {
-      const base = getSheetsWebAppUrl();
-      const stockUrl = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'action=stock';
+    const STOCK_API_URL = SITE_CONFIG.stockApiPath || '/api/stock';
+    const STOCK_CACHE_KEY = 'poppinsStockCache';
+    const STOCK_CACHE_MAX_AGE_MS = 30 * 60 * 1000;
+    const STOCK_POLL_MS = 45000;
+    const STOCK_SKIP_REFRESH_MS = 20000;
+    const STOCK_SAME_ORIGIN_MS = 2500;
+
+    function validStockPayload(data) {
+      return !!(data && data.dates && data.dates.length);
+    }
+
+    /**
+     * Same-origin /api/stock first (served from Netlify's CDN, near-instant),
+     * then Apps Script directly (fetch, then JSONP) as the fallback.
+     * opts.fresh bypasses every cache (used right before placing an order).
+     */
+    async function fetchStockPayload(ms, opts) {
+      opts = opts || {};
       const started = Date.now();
       try {
-        return await fetchJsonWithTimeout(stockUrl, ms);
+        const q = opts.fresh ? (STOCK_API_URL.indexOf('?') >= 0 ? '&' : '?') + 'fresh=1&t=' + Date.now() : '';
+        const data = await fetchJsonWithTimeout(STOCK_API_URL + q, Math.min(ms, STOCK_SAME_ORIGIN_MS));
+        if (validStockPayload(data)) return data;
+      } catch (err) { /* fall through to Apps Script */ }
+      if (typeof window !== 'undefined' && window.__TEST_DISABLE_NETWORK) throw new Error('network disabled');
+      const base = getSheetsWebAppUrl();
+      const stockUrl = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'action=stock';
+      const left0 = ms - (Date.now() - started);
+      if (left0 < 250) throw new Error('timeout');
+      try {
+        return await fetchJsonWithTimeout(stockUrl, left0);
       } catch (err) {
-        // Unit tests stub fetch and set this flag so we never inject a
-        // live JSONP <script> against the deployed Web App.
-        if (typeof window !== 'undefined' && window.__TEST_DISABLE_NETWORK) throw err;
         const left = ms - (Date.now() - started);
         if (left < 250) throw err;
         return await fetchStockJSONP(stockUrl, left);
       }
     }
 
-    async function loadPickupDates() {
+    function readStockCache() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STOCK_CACHE_KEY) || 'null');
+        if (saved && validStockPayload(saved) && typeof saved.at === 'number' &&
+            Date.now() - saved.at >= 0 && Date.now() - saved.at < STOCK_CACHE_MAX_AGE_MS) {
+          return saved;
+        }
+      } catch (e) { /* storage unavailable or corrupt */ }
+      return null;
+    }
+
+    function writeStockCache(data) {
+      try {
+        localStorage.setItem(STOCK_CACHE_KEY, JSON.stringify({ at: Date.now(), dates: data.dates }));
+      } catch (e) { /* ignore */ }
+    }
+
+    /** Paint the page from the last good stock (if any) before the network answers. */
+    function applyCachedStock() {
+      const saved = readStockCache();
+      if (!saved) return false;
+      applyStockDates(saved.dates);
+      stockState.status = 'ok';
+      renderPickupDates();
+      selectFirstDateWithStock({ silent: true, skipReload: true });
+      applyStockToMenu({ silent: true });
+      return true;
+    }
+
+    let stockLoading = false;
+    async function loadPickupDates(opts) {
+      opts = opts || {};
       if (!isSheetsUrlConfigured(getSheetsWebAppUrl())) return;
       if (typeof window !== 'undefined' && window.__TEST_DISABLE_NETWORK) return;
+      if (stockLoading) return;
+      stockLoading = true;
       try {
-        const data = await fetchStockPayload(4000);
-        if (data && data.dates && data.dates.length) {
+        const data = await fetchStockPayload(4000, { fresh: !!opts.fresh });
+        if (validStockPayload(data)) {
           applyStockDates(data.dates);
           stockState.status = 'ok';
+          stockState.fetchedAt = Date.now();
+          writeStockCache(data);
           setStockStatus('ok', '');
           renderPickupDates();
           selectFirstDateWithStock({ silent: true, skipReload: true });
-          applyStockToMenu();
+          // Not silent: if the refresh shrinks stock below what's in the cart,
+          // the customer is told why the quantity changed.
+          applyStockToMenu({ silent: !!opts.silent });
         }
       } catch (err) {
-        // Keep the current catalog (PICKUP_DATES or last successful list).
+        // Keep the current catalog (cached, PICKUP_DATES or last successful list).
+      } finally {
+        stockLoading = false;
       }
+    }
+
+    /** Keep stock current without a manual refresh: poll while visible, refetch on return. */
+    let stockRefreshHandle = null;
+    function startStockRefresh() {
+      if (stockRefreshHandle) return stockRefreshHandle;
+      let timer = null;
+      function tick() { loadPickupDates({ fresh: true }); }
+      function start() {
+        if (timer || window.__TEST_DISABLE_NETWORK) return;
+        timer = setInterval(tick, STOCK_POLL_MS);
+      }
+      function stop() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      }
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+          tick();
+          start();
+        } else {
+          stop();
+        }
+      });
+      if (document.visibilityState !== 'hidden') start();
+      stockRefreshHandle = { stop: stop, tick: tick };
+      return stockRefreshHandle;
     }
 
     // Alias so older tests that stub loadStock still intercept the date fetch.
@@ -1087,11 +1176,15 @@
     async function refreshStockBeforeSubmit() {
       if (!isSheetsUrlConfigured(getSheetsWebAppUrl())) return [];
       if (typeof window !== 'undefined' && window.__TEST_DISABLE_NETWORK) return [];
+      // Stock read within the last few seconds is fresh enough; don't make the
+      // customer wait on Google again (the server re-checks on /api/order).
+      if (stockState.fetchedAt && Date.now() - stockState.fetchedAt < STOCK_SKIP_REFRESH_MS) return stockShortfalls();
       try {
-        const data = await fetchStockPayload(2000);
-        if (data && data.dates && data.dates.length) {
+        const data = await fetchStockPayload(2500, { fresh: true });
+        if (validStockPayload(data)) {
           const selected = els.pickupDate.value;
           applyStockDates(data.dates);
+          stockState.fetchedAt = Date.now();
           if (selected && !findPickupDate(selected)) return [];
           return stockShortfalls();
         }
@@ -1112,6 +1205,12 @@
       selectFirstDateWithStock({ silent: true, skipReload: true });
       return applyStockToMenu({ silent: true });
     }
+
+    /** Test helpers for stock caching / background refresh. */
+    function __stockCacheKey() { return STOCK_CACHE_KEY; }
+    function __loadPickupDatesForTest(opts) { return loadPickupDates(opts); }
+    function __applyCachedStockForTest() { return applyCachedStock(); }
+    function __startStockRefreshForTest() { return startStockRefresh(); }
 
     function __setSheetsUrlForTest(url) {
       sheetsUrlOverride = url || '';
@@ -1812,8 +1911,8 @@
       if (refetch) {
         try {
           if (isSheetsUrlConfigured(getSheetsWebAppUrl()) && !window.__TEST_DISABLE_NETWORK) {
-            const data = await fetchStockPayload(2000);
-            if (data && data.dates && data.dates.length) applyStockDates(data.dates);
+            const data = await fetchStockPayload(2500, { fresh: true });
+            if (validStockPayload(data)) { applyStockDates(data.dates); stockState.fetchedAt = Date.now(); }
           }
         } catch (err) { /* keep what we have */ }
       }
@@ -1909,9 +2008,11 @@
     renderPickupDates();
     selectFirstDateWithStock({ silent: true, skipReload: true });
     applyStockToMenu({ silent: true });
+    applyCachedStock();
     renderMassTimes();
     updateSummary();
     loadPickupDates();
+    startStockRefresh();
     flushOrderOutbox();
 
     els.name.addEventListener('input', function () {

@@ -1017,6 +1017,113 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
   zeroCart();
 }
 
+// ---- Fast stock loading: cached first paint, /api/stock first, background refresh ----
+{
+  const DC = 'Dates & Carrot Pudding (700g)';
+  const mk = (dc) => [
+    { id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30', remaining: { [DC]: dc } },
+    { id: '2026-12-06', label: 'Sun, 6 Dec', closesAt: '2026-12-06T08:30:00+05:30' }
+  ];
+  const KEY = w.__stockCacheKey();
+  const realFetchFast = window.fetch;
+  const urls = [];
+  const ok = (dates) => ({ ok: true, status: 200, json: async () => ({ ok: true, dates }) });
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  window.__TEST_NOW = new Date('2026-11-23T12:00:00+05:30');
+  w.__setSheetsUrlForTest('https://script.google.com/macros/s/TEST/exec');
+  w.__setStockForTest({}, 'ok', null);
+  w.selectPickupDate('2026-11-29');
+  zeroCart();
+
+  // 1. last good stock paints instantly, before any network
+  window.localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), dates: mk(0) }));
+  assert('fast stock: cached stock is applied without network', w.__applyCachedStockForTest() === true);
+  assert('fast stock: cached 0 greys the cake out immediately', cards[0].classList.contains('sold-out') && /Out of stock/.test(cards[0].textContent));
+  assert('fast stock: the selected date is kept', document.getElementById('pickup-date').value === '2026-11-29');
+
+  // 2. stale / corrupt cache is ignored
+  window.localStorage.setItem(KEY, JSON.stringify({ at: Date.now() - 31 * 60 * 1000, dates: mk(0) }));
+  assert('fast stock: a cache older than 30 minutes is ignored', w.__applyCachedStockForTest() === false);
+  window.localStorage.setItem(KEY, '{not json');
+  assert('fast stock: a corrupt cache is ignored', w.__applyCachedStockForTest() === false);
+
+  // 3. /api/stock is tried first and the result is cached
+  w.__setStockForTest({}, 'ok', mk(0));
+  window.localStorage.removeItem(KEY);
+  window.__TEST_DISABLE_NETWORK = false;
+  window.fetch = async function (url) {
+    urls.push(String(url));
+    if (String(url).indexOf('/api/stock') >= 0) return ok(mk(5));
+    throw new Error('unexpected ' + url);
+  };
+  await w.__loadPickupDatesForTest({ silent: true });
+  assert('fast stock: asks /api/stock first, not Apps Script', urls.length === 1 && /\/api\/stock$/.test(urls[0]), JSON.stringify(urls));
+  assert('fast stock: fresh numbers replace the cached ones', !cards[0].classList.contains('sold-out'));
+  const saved = JSON.parse(window.localStorage.getItem(KEY) || 'null');
+  assert('fast stock: the good payload is saved for the next visit', saved && saved.dates.length === 2 && typeof saved.at === 'number');
+
+  // 4. falls back to Apps Script when /api/stock is unavailable
+  urls.length = 0;
+  window.fetch = async function (url) {
+    urls.push(String(url));
+    if (String(url).indexOf('/api/stock') >= 0) return { ok: false, status: 502, json: async () => ({ ok: false }) };
+    if (String(url).indexOf('action=stock') >= 0) return ok(mk(0));
+    throw new Error('unexpected ' + url);
+  };
+  await w.__loadPickupDatesForTest({ silent: true });
+  assert('fast stock: falls back to Apps Script when /api/stock fails',
+    urls.length === 2 && /\/api\/stock$/.test(urls[0]) && /script\.google\.com.*action=stock/.test(urls[1]), JSON.stringify(urls));
+  assert('fast stock: fallback data is applied', cards[0].classList.contains('sold-out'));
+
+  // 5. pre-submit refresh bypasses caches, and is skipped when stock is already fresh
+  urls.length = 0;
+  window.fetch = async function (url) {
+    urls.push(String(url));
+    if (String(url).indexOf('/api/stock') >= 0) return ok(mk(5));
+    throw new Error('unexpected ' + url);
+  };
+  w.stockState.fetchedAt = 0;
+  await w.refreshStockBeforeSubmit();
+  assert('fast stock: pre-submit refresh asks for fresh=1', urls.length === 1 && /fresh=1/.test(urls[0]), JSON.stringify(urls));
+  await w.refreshStockBeforeSubmit();
+  assert('fast stock: pre-submit refresh is skipped when stock was just read', urls.length === 1, JSON.stringify(urls));
+
+  // 6. background refresh: when the tab becomes visible again
+  urls.length = 0;
+  const handle = w.__startStockRefreshForTest();
+  Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+  document.dispatchEvent(new window.Event('visibilitychange'));
+  await sleep(30);
+  assert('fast stock: nothing is fetched while the tab is hidden', urls.length === 0, JSON.stringify(urls));
+  Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+  document.dispatchEvent(new window.Event('visibilitychange'));
+  await sleep(30);
+  assert('fast stock: stock is re-fetched (fresh) when the tab is visible again', urls.length === 1 && /fresh=1/.test(urls[0]), JSON.stringify(urls));
+  handle.stop();
+
+  // 7. a refresh that shrinks stock below the cart tells the customer
+  w.__setStockForTest({}, 'ok', mk(null));
+  w.selectPickupDate('2026-11-29');
+  zeroCart();
+  cards[0].querySelector('.plus').click();
+  cards[0].querySelector('.plus').click();
+  window.fetch = async function (url) {
+    if (String(url).indexOf('/api/stock') >= 0) return ok(mk(1));
+    throw new Error('unexpected ' + url);
+  };
+  await w.__loadPickupDatesForTest({ fresh: true });
+  assert('fast stock: background refresh clamps the cart and keeps the date',
+    cards[0].querySelector('.qty').textContent === '1' && document.getElementById('pickup-date').value === '2026-11-29', cards[0].querySelector('.qty').textContent);
+  assert('fast stock: the customer is told the cart changed', /Cart updated/.test(document.getElementById('toast').textContent), document.getElementById('toast').textContent);
+
+  window.__TEST_DISABLE_NETWORK = true;
+  window.fetch = realFetchFast;
+  window.localStorage.removeItem(KEY);
+  w.__setSheetsUrlForTest('');
+  w.__setStockForTest({}, 'ok', null);
+  zeroCart();
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log('\n--- ' + (results.length - failed.length) + '/' + results.length + ' passed ---');
 if (failed.length) {

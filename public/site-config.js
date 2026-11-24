@@ -29,7 +29,8 @@
     ],
     paymentLine: 'Pay at pickup, or UPI to {number} ({name})',
     appsScriptUrl: 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec',
-    orderApiPath: '/api/order'
+    orderApiPath: '/api/order',
+    stockApiPath: '/api/stock'
   };
 
   SITE_CONFIG.formatPaymentLine = function (contact) {

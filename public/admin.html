@@ -26,74 +26,74 @@
   </style>
 </head>
 <body class="bg-page font-sans text-ink antialiased">
-  <div class="app mx-auto min-h-screen max-w-[480px] bg-cream pb-10 shadow-[0_0_40px_rgba(42,35,6,0.12)] md:max-w-[720px] lg:w-full lg:max-w-[1600px] lg:bg-transparent lg:p-[clamp(16px,3vw,48px)] lg:shadow-none">
-    <header class="hero-head flex items-center gap-[0.7rem] border-b-[3px] border-maroon bg-cream-light px-[0.9rem] py-[0.7rem] text-brand-blue lg:rounded-t-[14px] lg:px-[1.35rem] lg:py-[0.85rem]">
+  <div class="app mx-auto min-h-screen max-w-[480px] bg-m3-surface pb-10 shadow-m3-2 md:max-w-[720px] lg:w-full lg:max-w-[1600px] lg:bg-transparent lg:p-[clamp(16px,3vw,48px)] lg:shadow-none">
+    <header class="hero-head sticky top-0 z-30 flex items-center gap-4 border-b border-m3-outline-variant bg-m3-surface-container px-4 py-2 text-brand-blue shadow-m3-1 lg:static lg:rounded-t-m3-xl lg:px-6 lg:py-3">
       <img class="logo block size-14 shrink-0 lg:size-16" src="logo.png" width="56" height="56" alt="Vailankanni Parish Youth logo">
       <div class="brand min-w-0 flex-1 text-left">
-        <h1 class="m-0 font-serif text-[1.12rem] leading-[1.2] font-bold tracking-[0.01em] text-brand-blue lg:text-[1.45rem]">Vailankanni Parish Youth</h1>
-        <p class="tagline mt-[0.2rem] text-[0.75rem] leading-[1.3] font-semibold text-muted lg:text-[0.9rem]">Order dashboard • Christmas Cake Sale</p>
+        <h1 class="m-0 font-serif text-[1.375rem] leading-7 font-bold text-brand-blue lg:text-[1.75rem] lg:leading-9">Vailankanni Parish Youth</h1>
+        <p class="tagline mt-0.5 text-[0.75rem] leading-4 font-medium tracking-[0.5px] text-m3-on-surface-variant lg:text-[0.875rem] lg:leading-5">Order dashboard • Christmas Cake Sale</p>
       </div>
-      <a class="staff-link ml-auto shrink-0 self-center rounded-full border-[1.5px] border-maroon px-3 py-[0.4rem] text-[0.8rem] font-bold whitespace-nowrap text-maroon no-underline hover:bg-maroon hover:text-white focus-visible:bg-maroon focus-visible:text-white focus-visible:outline-none" href="staff.html">Staff mode</a>
+      <a class="staff-link ml-auto inline-flex min-h-10 shrink-0 items-center self-center rounded-full bg-m3-primary-container px-4 text-[0.875rem] font-medium tracking-[0.1px] whitespace-nowrap text-m3-on-primary-container no-underline hover:shadow-m3-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12]" href="staff.html">Staff mode</a>
     </header>
-    <div class="page-body lg:rounded-b-[14px] lg:bg-cream lg:pb-7 lg:shadow-card">
-      <p class="example-banner m-0 hidden bg-gold px-[0.9rem] py-[0.4rem] text-center text-[0.78rem] font-bold text-white [&.visible]:block" id="example-banner">Example data — not live orders</p>
-      <div class="toolbar flex flex-wrap items-center gap-x-[0.6rem] gap-y-[0.45rem] px-[0.9rem] pt-[0.85rem] pb-[0.4rem] lg:px-[1.35rem]">
-        <p class="updated m-0 flex-[1_1_12rem] text-[0.8rem] font-semibold text-muted lg:text-[0.92rem]" id="updated">Loading totals…</p>
-        <div class="toolbar-actions flex flex-wrap gap-[0.4rem]">
-          <button type="button" class="btn min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-cream-light text-maroon hover:bg-maroon-soft" id="expand-all">Expand all</button>
-          <button type="button" class="btn min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-cream-light text-maroon hover:bg-maroon-soft" id="collapse-all">Collapse all</button>
-          <button type="button" class="btn btn-primary min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-maroon text-cream-light hover:bg-maroon-dark" id="copy-selected">Copy for Poppins</button>
-          <button type="button" class="btn btn-primary min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-maroon text-cream-light hover:bg-maroon-dark" id="refresh-btn">Refresh</button>
+    <div class="page-body lg:rounded-b-m3-xl lg:bg-m3-surface lg:pb-7 lg:shadow-m3-2">
+      <p class="example-banner m-0 hidden bg-m3-secondary-container px-4 py-2 text-center text-[0.875rem] font-medium text-m3-on-secondary-container [&.visible]:block" id="example-banner">Example data — not live orders</p>
+      <div class="toolbar flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pt-4 pb-2 lg:px-6">
+        <p class="updated m-0 flex-[1_1_12rem] text-[0.875rem] leading-5 tracking-[0.25px] text-m3-on-surface-variant" id="updated">Loading totals…</p>
+        <div class="toolbar-actions flex flex-wrap gap-2">
+          <button type="button" class="btn min-h-10 cursor-pointer appearance-none rounded-full px-6 text-[0.875rem] leading-5 font-medium tracking-[0.1px] whitespace-nowrap focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary lg:min-h-11 relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12] border border-m3-outline bg-transparent text-m3-primary" id="expand-all">Expand all</button>
+          <button type="button" class="btn min-h-10 cursor-pointer appearance-none rounded-full px-6 text-[0.875rem] leading-5 font-medium tracking-[0.1px] whitespace-nowrap focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary lg:min-h-11 relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12] border border-m3-outline bg-transparent text-m3-primary" id="collapse-all">Collapse all</button>
+          <button type="button" class="btn btn-primary min-h-10 cursor-pointer appearance-none rounded-full px-6 text-[0.875rem] leading-5 font-medium tracking-[0.1px] whitespace-nowrap focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary lg:min-h-11 relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12] bg-m3-primary text-m3-on-primary hover:shadow-m3-1" id="copy-selected">Copy for Poppins</button>
+          <button type="button" class="btn btn-primary min-h-10 cursor-pointer appearance-none rounded-full px-6 text-[0.875rem] leading-5 font-medium tracking-[0.1px] whitespace-nowrap focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary lg:min-h-11 relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12] bg-m3-primary-container text-m3-on-primary-container hover:shadow-m3-1" id="refresh-btn">Refresh</button>
         </div>
       </div>
-      <p class="status mx-[0.9rem] mt-0 mb-2 min-h-[1.2rem] text-[0.85rem] font-semibold text-muted [&.is-error]:text-maroon-dark lg:mx-[1.35rem] lg:text-[0.95rem]" id="status" role="status" aria-live="polite"></p>
-      <section class="cards grid grid-cols-3 gap-2 px-[0.9rem] pb-[0.85rem] lg:gap-[0.85rem] lg:px-[1.35rem] lg:pb-[0.7rem]" aria-label="Orders">
-        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
-          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Ordered cakes</p>
-          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-cakes">—</p>
+      <p class="status mx-4 mt-0 mb-2 min-h-5 text-[0.875rem] leading-5 tracking-[0.25px] text-m3-on-surface-variant [&.is-error]:font-medium [&.is-error]:text-m3-error lg:mx-6" id="status" role="status" aria-live="polite"></p>
+      <section class="cards grid grid-cols-3 gap-2 px-4 pb-3 lg:gap-4 lg:px-6 lg:pb-4" aria-label="Orders">
+        <article class="card rounded-m3-lg bg-m3-primary-container px-2 pt-3 pb-3 text-center text-m3-on-primary-container lg:px-4 lg:py-4">
+          <p class="label m-0 text-[0.75rem] leading-4 font-medium tracking-[0.5px] uppercase opacity-80 lg:text-[0.8125rem]">Ordered cakes</p>
+          <p class="value mt-1 font-sans text-[1.5rem] leading-8 font-medium text-m3-primary tabular-nums md:text-[1.75rem] md:leading-9 lg:text-[2.25rem] lg:leading-[2.75rem]" id="card-cakes">—</p>
         </article>
-        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
-          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Ordered ₹</p>
-          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-amount">—</p>
+        <article class="card rounded-m3-lg bg-m3-primary-container px-2 pt-3 pb-3 text-center text-m3-on-primary-container lg:px-4 lg:py-4">
+          <p class="label m-0 text-[0.75rem] leading-4 font-medium tracking-[0.5px] uppercase opacity-80 lg:text-[0.8125rem]">Ordered ₹</p>
+          <p class="value mt-1 font-sans text-[1.5rem] leading-8 font-medium text-m3-primary tabular-nums md:text-[1.75rem] md:leading-9 lg:text-[2.25rem] lg:leading-[2.75rem]" id="card-amount">—</p>
         </article>
-        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
-          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Orders</p>
-          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-orders">—</p>
-        </article>
-      </section>
-      <section class="cards sales-cards grid grid-cols-2 gap-2 px-[0.9rem] pb-[0.85rem] min-[600px]:grid-cols-3 lg:grid-cols-5 lg:gap-[0.85rem] lg:px-[1.35rem]" aria-label="Sales">
-        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
-          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Ordered</p>
-          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-ordered">—</p>
-        </article>
-        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
-          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Picked up</p>
-          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-pickedup">—</p>
-        </article>
-        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
-          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Walk-in</p>
-          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-walkin">—</p>
-        </article>
-        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
-          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Total sold</p>
-          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-sold">—</p>
-        </article>
-        <article class="card rounded-card border border-line bg-cream-light px-[0.55rem] pt-[0.7rem] pb-[0.65rem] text-center shadow-card lg:px-4 lg:py-[0.95rem]">
-          <p class="label m-0 text-[0.68rem] font-bold uppercase tracking-[0.03em] text-muted lg:text-[0.78rem]">Collected ₹</p>
-          <p class="value mt-[0.2rem] font-serif text-[1.25rem] font-bold leading-[1.15] text-maroon tabular-nums md:text-[1.4rem] lg:text-[2rem]" id="card-collected">—</p>
+        <article class="card rounded-m3-lg bg-m3-primary-container px-2 pt-3 pb-3 text-center text-m3-on-primary-container lg:px-4 lg:py-4">
+          <p class="label m-0 text-[0.75rem] leading-4 font-medium tracking-[0.5px] uppercase opacity-80 lg:text-[0.8125rem]">Orders</p>
+          <p class="value mt-1 font-sans text-[1.5rem] leading-8 font-medium text-m3-primary tabular-nums md:text-[1.75rem] md:leading-9 lg:text-[2.25rem] lg:leading-[2.75rem]" id="card-orders">—</p>
         </article>
       </section>
-      <div class="date-picker px-[0.9rem] pb-[0.85rem] lg:px-[1.35rem] lg:pb-[0.7rem]">
-        <h2 class="mb-[0.45rem] text-[0.8rem] font-bold lg:text-[0.9rem]" id="date-picker-label">Pickup date</h2>
-        <div class="date-chips flex flex-wrap gap-[0.4rem]" id="date-chips" role="group" aria-labelledby="date-picker-label"></div>
+      <section class="cards sales-cards grid grid-cols-2 gap-2 px-4 pb-3 min-[600px]:grid-cols-3 lg:grid-cols-5 lg:gap-4 lg:px-6" aria-label="Sales">
+        <article class="card rounded-m3-lg bg-m3-surface-container-low px-2 pt-3 pb-3 text-center text-m3-on-surface shadow-m3-1 lg:px-4 lg:py-4">
+          <p class="label m-0 text-[0.75rem] leading-4 font-medium tracking-[0.5px] uppercase opacity-80 lg:text-[0.8125rem]">Ordered</p>
+          <p class="value mt-1 font-sans text-[1.5rem] leading-8 font-medium text-m3-primary tabular-nums md:text-[1.75rem] md:leading-9 lg:text-[2.25rem] lg:leading-[2.75rem]" id="card-ordered">—</p>
+        </article>
+        <article class="card rounded-m3-lg bg-m3-surface-container-low px-2 pt-3 pb-3 text-center text-m3-on-surface shadow-m3-1 lg:px-4 lg:py-4">
+          <p class="label m-0 text-[0.75rem] leading-4 font-medium tracking-[0.5px] uppercase opacity-80 lg:text-[0.8125rem]">Picked up</p>
+          <p class="value mt-1 font-sans text-[1.5rem] leading-8 font-medium text-m3-primary tabular-nums md:text-[1.75rem] md:leading-9 lg:text-[2.25rem] lg:leading-[2.75rem]" id="card-pickedup">—</p>
+        </article>
+        <article class="card rounded-m3-lg bg-m3-surface-container-low px-2 pt-3 pb-3 text-center text-m3-on-surface shadow-m3-1 lg:px-4 lg:py-4">
+          <p class="label m-0 text-[0.75rem] leading-4 font-medium tracking-[0.5px] uppercase opacity-80 lg:text-[0.8125rem]">Walk-in</p>
+          <p class="value mt-1 font-sans text-[1.5rem] leading-8 font-medium text-m3-primary tabular-nums md:text-[1.75rem] md:leading-9 lg:text-[2.25rem] lg:leading-[2.75rem]" id="card-walkin">—</p>
+        </article>
+        <article class="card rounded-m3-lg bg-m3-surface-container-low px-2 pt-3 pb-3 text-center text-m3-on-surface shadow-m3-1 lg:px-4 lg:py-4">
+          <p class="label m-0 text-[0.75rem] leading-4 font-medium tracking-[0.5px] uppercase opacity-80 lg:text-[0.8125rem]">Total sold</p>
+          <p class="value mt-1 font-sans text-[1.5rem] leading-8 font-medium text-m3-primary tabular-nums md:text-[1.75rem] md:leading-9 lg:text-[2.25rem] lg:leading-[2.75rem]" id="card-sold">—</p>
+        </article>
+        <article class="card rounded-m3-lg bg-m3-surface-container-low px-2 pt-3 pb-3 text-center text-m3-on-surface shadow-m3-1 lg:px-4 lg:py-4">
+          <p class="label m-0 text-[0.75rem] leading-4 font-medium tracking-[0.5px] uppercase opacity-80 lg:text-[0.8125rem]">Collected ₹</p>
+          <p class="value mt-1 font-sans text-[1.5rem] leading-8 font-medium text-m3-primary tabular-nums md:text-[1.75rem] md:leading-9 lg:text-[2.25rem] lg:leading-[2.75rem]" id="card-collected">—</p>
+        </article>
+      </section>
+      <div class="date-picker px-4 pb-3 lg:px-6 lg:pb-4">
+        <h2 class="mb-2 text-[0.875rem] leading-5 font-medium tracking-[0.1px] text-m3-on-surface-variant" id="date-picker-label">Pickup date</h2>
+        <div class="date-chips flex flex-wrap gap-2" id="date-chips" role="group" aria-labelledby="date-picker-label"></div>
       </div>
-      <div class="dashboard min-[1100px]:grid min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(520px,1.15fr)] min-[1100px]:items-start min-[1100px]:gap-x-5 min-[1100px]:px-[1.35rem] min-[1100px]:pb-2 min-[1100px]:[&:has(#matrix-wrap:empty)]:block">
-        <div class="panels px-[0.9rem] pb-4 lg:px-[1.35rem] min-[1100px]:p-0" id="date-panels"></div>
-        <div class="panels px-[0.9rem] pb-4 lg:px-[1.35rem] min-[1100px]:p-0" id="matrix-wrap"></div>
+      <div class="dashboard min-[1100px]:grid min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(520px,1.15fr)] min-[1100px]:items-start min-[1100px]:gap-x-6 min-[1100px]:px-6 min-[1100px]:pb-2 min-[1100px]:[&:has(#matrix-wrap:empty)]:block">
+        <div class="panels px-4 pb-4 lg:px-6 min-[1100px]:p-0" id="date-panels"></div>
+        <div class="panels px-4 pb-4 lg:px-6 min-[1100px]:p-0" id="matrix-wrap"></div>
       </div>
     </div>
   </div>
-  <div class="toast pointer-events-none fixed bottom-5 left-1/2 z-40 max-w-[calc(100vw-2rem)] -translate-x-1/2 translate-y-2 rounded-[10px] bg-ink px-[0.9rem] py-[0.6rem] text-[0.85rem] font-semibold text-cream-light opacity-0 transition-[opacity,translate] duration-200 motion-reduce:transition-none [&.visible]:translate-y-0 [&.visible]:opacity-100" id="toast" role="status" aria-live="polite"></div>
+  <div class="toast pointer-events-none fixed bottom-4 left-1/2 z-40 flex min-h-12 w-[calc(100vw-2rem)] max-w-[34rem] -translate-x-1/2 translate-y-2 items-center rounded-m3-xs bg-m3-on-surface px-4 py-3 text-[0.875rem] leading-5 tracking-[0.25px] text-m3-surface shadow-m3-3 opacity-0 transition-[opacity,translate] duration-200 motion-reduce:transition-none [&.visible]:translate-y-0 [&.visible]:opacity-100" id="toast" role="status" aria-live="polite"></div>
 
   <script src="site-config.js"></script>
   <script>
@@ -101,17 +101,17 @@
     const REFRESH_MS = 60000;
     // Tailwind class strings for markup generated below (kept here so the
     // Tailwind CLI sees them; the plain class names are test/JS hooks).
-    const C_BTN_PRIMARY = 'min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-maroon px-[0.8rem] py-[0.4rem] text-[0.82rem] font-bold focus:outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-maroon/45 lg:px-[0.95rem] lg:py-[0.45rem] lg:text-[0.92rem] bg-maroon text-cream-light hover:bg-maroon-dark';
-    const C_TABLE = 'w-full border-collapse text-[0.88rem] lg:text-[1.05rem] [&_caption]:mb-2 [&_caption]:text-left [&_caption]:text-[0.95rem] [&_caption]:font-extrabold [&_caption]:text-ink lg:[&_caption]:text-[1.12rem] [&_th]:border-b [&_th]:border-line [&_th]:px-[0.35rem] [&_th]:py-[0.4rem] [&_th]:text-right [&_th]:tabular-nums [&_td]:border-b [&_td]:border-line [&_td]:px-[0.35rem] [&_td]:py-[0.4rem] [&_td]:text-right [&_td]:tabular-nums lg:[&_th]:px-[0.6rem] lg:[&_th]:py-[0.48rem] lg:[&_td]:px-[0.6rem] lg:[&_td]:py-[0.48rem] [&_:is(th,td):first-child]:text-left [&_thead_th]:text-[0.72rem] [&_thead_th]:uppercase [&_thead_th]:tracking-[0.03em] [&_thead_th]:text-muted lg:[&_thead_th]:text-[0.8rem] [&_tfoot_:is(th,td)]:border-b-0 [&_tfoot_:is(th,td)]:font-extrabold [&_tfoot_:is(th,td)]:text-maroon-dark';
-    const C_DETAILS = 'mb-[0.65rem] overflow-hidden rounded-card border border-line shadow-card';
-    const C_SUMMARY = 'flex cursor-pointer list-none items-center gap-[0.55rem] px-[0.9rem] py-[0.8rem] font-bold [&::-webkit-details-marker]:hidden lg:px-[1.15rem] lg:py-[0.85rem]';
-    const C_CHEVRON = 'ml-[0.1rem] mr-[0.15rem] size-[0.65rem] shrink-0 -rotate-45 border-r-2 border-b-2 border-maroon transition-transform duration-200 motion-reduce:transition-none [details[open]>summary_&]:rotate-45';
+    const C_BTN_PRIMARY = 'min-h-10 cursor-pointer appearance-none rounded-full px-6 text-[0.875rem] leading-5 font-medium tracking-[0.1px] whitespace-nowrap focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary lg:min-h-11 relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12] bg-m3-primary text-m3-on-primary hover:shadow-m3-1';
+    const C_TABLE = 'w-full border-collapse text-[0.88rem] lg:text-[1.05rem] [&_caption]:mb-2 [&_caption]:text-left [&_caption]:text-[1rem] [&_caption]:leading-6 [&_caption]:font-medium [&_caption]:tracking-[0.15px] [&_caption]:text-m3-on-surface lg:[&_caption]:text-[1.125rem] [&_th]:border-b [&_th]:border-m3-outline-variant [&_th]:px-[0.35rem] [&_th]:py-[0.4rem] [&_th]:text-right [&_th]:tabular-nums [&_td]:border-b [&_td]:border-m3-outline-variant [&_td]:px-[0.35rem] [&_td]:py-[0.4rem] [&_td]:text-right [&_td]:tabular-nums lg:[&_th]:px-[0.6rem] lg:[&_th]:py-[0.48rem] lg:[&_td]:px-[0.6rem] lg:[&_td]:py-[0.48rem] [&_:is(th,td):first-child]:text-left [&_thead_th]:bg-m3-surface-container [&_thead_th]:text-[0.75rem] [&_thead_th]:font-medium [&_thead_th]:uppercase [&_thead_th]:tracking-[0.5px] [&_thead_th]:text-m3-on-surface-variant lg:[&_thead_th]:text-[0.8125rem] [&_tbody_tr:hover]:bg-m3-on-surface/[0.04] [&_tbody_th]:font-normal [&_tfoot_:is(th,td)]:border-b-0 [&_tfoot_:is(th,td)]:bg-m3-primary-container/50 [&_tfoot_:is(th,td)]:font-medium [&_tfoot_:is(th,td)]:text-m3-on-primary-container';
+    const C_DETAILS = 'mb-3 overflow-hidden rounded-m3-lg border border-m3-outline-variant';
+    const C_SUMMARY = 'flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 font-medium text-m3-on-surface hover:bg-m3-on-surface/8 focus-visible:bg-m3-on-surface/12 focus-visible:outline-none [&::-webkit-details-marker]:hidden lg:px-5';
+    const C_CHEVRON = 'ml-[0.1rem] mr-[0.15rem] size-[0.65rem] shrink-0 -rotate-45 border-r-2 border-b-2 border-m3-on-surface-variant transition-transform duration-200 motion-reduce:transition-none [details[open]>summary_&]:rotate-45';
     const C_SUMMARY_TEXT = 'min-w-0 flex-auto';
-    const C_SUMMARY_TITLE = 'block text-base lg:text-[1.18rem]';
-    const C_SUMMARY_META = 'mt-[0.15rem] block text-[0.78rem] font-semibold text-muted lg:text-[0.92rem]';
+    const C_SUMMARY_TITLE = 'block text-[1rem] leading-6 tracking-[0.15px] lg:text-[1.125rem]';
+    const C_SUMMARY_META = 'block text-[0.875rem] leading-5 font-normal tracking-[0.25px] text-m3-on-surface-variant';
     const C_PANEL_BODY = 'grid grid-rows-[0fr] transition-[grid-template-rows] duration-200 motion-reduce:transition-none [details[open]>&]:grid-rows-[1fr]';
-    const C_PANEL_INNER = 'overflow-hidden px-[0.85rem] pb-[0.9rem]';
-    const C_CHIP = 'min-h-10 cursor-pointer appearance-none rounded-full border-[1.5px] border-line bg-cream-light px-[0.8rem] py-[0.45rem] text-[0.82rem] font-bold text-ink aria-pressed:border-maroon aria-pressed:bg-maroon-soft aria-pressed:text-maroon-dark focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(122,10,16,0.45)] lg:px-[0.95rem] lg:text-[0.92rem]';
+    const C_PANEL_INNER = 'overflow-hidden px-4 pb-4';
+    const C_CHIP = "inline-flex min-h-10 cursor-pointer appearance-none items-center rounded-m3-sm border border-m3-outline bg-transparent px-4 text-[0.875rem] leading-5 font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-on-surface/8 aria-pressed:border-transparent aria-pressed:bg-m3-secondary-container aria-pressed:text-m3-on-secondary-container aria-pressed:before:mr-2 aria-pressed:before:text-[1rem] aria-pressed:before:content-['✓'] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary";
     const PANEL_STATE_KEY = 'poppinsAdminPanels';
     const MENU_ITEMS = [
       'Dates & Carrot Pudding (700g)',
@@ -483,10 +483,10 @@
       var picked = sales.pickedUp.cakes;
       var pct = ordered > 0 ? Math.min(100, Math.round((picked / ordered) * 100)) : 0;
       var label = ordered > 0 ? (picked + ' of ' + ordered + ' picked up') : 'No orders yet';
-      return '<div class="progress relative mt-[0.85rem] mb-4 min-h-[1.6rem] overflow-hidden rounded-full border border-line bg-cream-deep" role="progressbar" aria-valuemin="0" aria-valuemax="' + ordered +
+      return '<div class="progress relative mt-4 mb-4 min-h-6 overflow-hidden rounded-full bg-m3-surface-container-high" role="progressbar" aria-valuemin="0" aria-valuemax="' + ordered +
         '" aria-valuenow="' + picked + '" aria-label="' + escapeHtml(label) + '">' +
-        '<span class="progress-fill block h-[1.6rem] w-0 max-w-full bg-pine" style="width:' + pct + '%"></span>' +
-        '<span class="progress-label absolute inset-0 flex items-center justify-center text-[0.78rem] font-bold text-ink">' + escapeHtml(label) + '</span></div>';
+        '<span class="progress-fill block h-6 w-0 max-w-full rounded-full bg-pine" style="width:' + pct + '%"></span>' +
+        '<span class="progress-label absolute inset-0 flex items-center justify-center text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface">' + escapeHtml(label) + '</span></div>';
     }
 
     function soldTable(date, tableId) {
@@ -504,7 +504,7 @@
         return '<tr><th scope="row">' + escapeHtml(name) + '</th><td>' + ordered + '</td><td>' + picked +
           '</td><td>' + walk + '</td><td>' + sold + '</td></tr>';
       }).join('');
-      return '<table class="sold-table mt-[0.85rem] ' + C_TABLE + '" id="' + escapeHtml(tableId) + '">' +
+      return '<table class="sold-table mt-4 ' + C_TABLE + '" id="' + escapeHtml(tableId) + '">' +
         '<caption>Ordered vs sold — ' + escapeHtml(date.label) + '</caption>' +
         '<thead><tr><th scope="col">Item</th><th scope="col">Ordered</th><th scope="col">Picked up</th>' +
         '<th scope="col">Walk-in</th><th scope="col">Total sold</th></tr></thead>' +
@@ -516,7 +516,7 @@
     function datePanelHtml(date, open) {
       var meta = date.totals.cakes + (date.totals.cakes === 1 ? ' cake' : ' cakes') + ' · ' + formatINR(date.totals.amount) + ' · ' +
         date.totals.orders + (date.totals.orders === 1 ? ' order' : ' orders');
-      return '<details class="date-panel bg-cream-light ' + C_DETAILS + '" data-panel-id="' + escapeHtml(date.id) + '"' + (open ? ' open' : '') + '>' +
+      return '<details class="date-panel bg-m3-surface ' + C_DETAILS + '" data-panel-id="' + escapeHtml(date.id) + '"' + (open ? ' open' : '') + '>' +
         '<summary class="' + C_SUMMARY + '">' +
           '<span class="chevron ' + C_CHEVRON + '" aria-hidden="true"></span>' +
           '<span class="summary-text ' + C_SUMMARY_TEXT + '">' +
@@ -528,7 +528,7 @@
           cakesTable(date.items, 'Cakes to order — ' + date.label, 'table-' + date.id) +
           pickupProgress(date) +
           soldTable(date, 'sold-' + date.id) +
-          '<div class="table-actions mt-[0.7rem]">' +
+          '<div class="table-actions mt-4">' +
             '<button type="button" class="btn btn-primary copy-btn ' + C_BTN_PRIMARY + '" data-copy-id="' + escapeHtml(date.id) + '">Copy for Poppins</button>' +
           '</div>' +
         '</div></div>' +
@@ -552,7 +552,7 @@
       });
       if (selectedId === 'all' && past.length) {
         var pastOpen = panelShouldOpen('past', defaults);
-        html += '<details class="past-group bg-[#f3ece4] ' + C_DETAILS + '" data-panel-id="past"' + (pastOpen ? ' open' : '') + '>' +
+        html += '<details class="past-group bg-m3-surface-container ' + C_DETAILS + '" data-panel-id="past"' + (pastOpen ? ' open' : '') + '>' +
           '<summary class="' + C_SUMMARY + '"><span class="chevron ' + C_CHEVRON + '" aria-hidden="true"></span>' + '<span class="summary-text ' + C_SUMMARY_TEXT + '">' +
           '<span class="summary-title ' + C_SUMMARY_TITLE + '">Past dates</span>' +
           '<span class="summary-meta ' + C_SUMMARY_META + '">' + past.length + (past.length === 1 ? ' date' : ' dates') + '</span>' +
@@ -596,11 +596,11 @@
         footCells += '<td>' + d.totals.cakes + '</td>';
         footTotal += d.totals.cakes;
       });
-      els.matrixWrap.innerHTML = '<details class="matrix-panel hidden bg-cream-light lg:block min-[1100px]:sticky min-[1100px]:top-4 min-[1100px]:mb-0 ' + C_DETAILS + '" data-panel-id="matrix"' + (open ? ' open' : '') + '>' +
+      els.matrixWrap.innerHTML = '<details class="matrix-panel hidden bg-m3-surface lg:block min-[1100px]:sticky min-[1100px]:top-4 min-[1100px]:mb-0 ' + C_DETAILS + '" data-panel-id="matrix"' + (open ? ' open' : '') + '>' +
         '<summary class="' + C_SUMMARY + '"><span class="chevron ' + C_CHEVRON + '" aria-hidden="true"></span>' + '<span class="summary-text ' + C_SUMMARY_TEXT + '">' +
         '<span class="summary-title ' + C_SUMMARY_TITLE + '">All dates at a glance</span>' +
         '<span class="summary-meta ' + C_SUMMARY_META + '">Cakes by item and pickup date</span></span></summary>' +
-        '<div class="panel-body ' + C_PANEL_BODY + '"><div class="panel-inner matrix-wrap overflow-x-auto overflow-y-hidden px-[0.85rem] pb-[0.9rem]">' +
+        '<div class="panel-body ' + C_PANEL_BODY + '"><div class="panel-inner matrix-wrap overflow-x-auto overflow-y-hidden px-4 pb-4">' +
         '<table class="' + C_TABLE + '" id="matrix-table"><caption>Cakes to order across all pickup dates</caption>' +
         '<thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody>' +
         '<tfoot><tr><th scope="row">Total</th>' + footCells + '<td>' + footTotal + '</td></tr></tfoot>' +

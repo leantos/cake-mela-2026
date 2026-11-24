@@ -10,45 +10,45 @@
   <link rel="icon" href="logo.png" type="image/png">
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="/tailwind.css">
-  <style>button:not(:disabled) { cursor: pointer; }</style>
+  <style>button:not(:disabled) { cursor: pointer; } button:focus-visible, a:focus-visible, [role="tab"]:focus-visible { outline: 2px solid #7a0a10; outline-offset: 2px; }</style>
 </head>
 <body class="m-0 bg-page font-sans leading-[1.45] text-ink antialiased">
-  <div class="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-cream pb-[env(safe-area-inset-bottom)] shadow-[0_0_40px_rgba(42,35,6,0.12)] min-[720px]:max-w-[1100px]">
-    <header class="flex items-center gap-[0.7rem] border-b-[3px] border-maroon bg-cream-light px-[0.9rem] pt-[calc(0.7rem+env(safe-area-inset-top))] pb-[0.7rem] text-brand-blue min-[720px]:px-[1.4rem]">
+  <div class="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-m3-surface pb-[env(safe-area-inset-bottom)] shadow-[0_0_40px_rgba(42,35,6,0.12)] min-[720px]:max-w-[1100px]">
+    <header class="flex items-center gap-[0.7rem] relative z-10 bg-m3-surface px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 text-m3-on-surface shadow-m3-1 min-[720px]:px-[1.4rem]">
       <img class="block size-[52px] shrink-0" src="logo.png" width="52" height="52" alt="Vailankanni Parish Youth logo">
       <div class="min-w-0 flex-1 text-left">
-        <h1 class="font-serif text-[1.08rem] font-bold leading-[1.2] tracking-[0.01em] text-brand-blue min-[720px]:text-[1.3rem]">Vailankanni Parish Youth</h1>
-        <p class="mt-[0.15rem] text-[0.78rem] font-semibold text-muted">Staff desk • Christmas Cake Sale</p>
+        <h1 class="text-[1.25rem] font-medium leading-7 text-m3-primary min-[720px]:text-[1.375rem]">Vailankanni Parish Youth</h1>
+        <p class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant">Staff desk • Christmas Cake Sale</p>
       </div>
-      <button type="button" class="min-h-11 shrink-0 rounded-full border-[1.5px] border-maroon bg-transparent px-3 py-[0.4rem] text-[0.8rem] font-bold text-maroon" id="lock-btn">Lock</button>
+      <button type="button" class="min-h-12 shrink-0 rounded-full px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-primary hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]" id="lock-btn">Lock</button>
     </header>
     <p class="hidden border-b border-[#efd59a] bg-[#fff4d6] px-[0.9rem] py-[0.45rem] text-center text-[0.82rem] font-bold text-gold-dark in-[.is-preview]:block" id="example-banner">Example data — not live orders</p>
-    <div class="sticky top-0 z-5 grid grid-cols-2 gap-[0.4rem] bg-cream px-[0.9rem] pt-[0.7rem] min-[720px]:max-w-[420px] min-[720px]:px-[1.4rem] min-[720px]:pt-[0.9rem]" role="tablist" aria-label="Staff tasks">
-      <button type="button" class="min-h-12 rounded-full bg-cream-light text-[0.95rem] font-bold text-muted shadow-[inset_0_0_0_1.5px_var(--color-cream-deep)] aria-selected:bg-maroon aria-selected:text-white aria-selected:shadow-none" id="tab-orders" role="tab" aria-selected="true" aria-controls="panel-orders">Orders</button>
-      <button type="button" class="min-h-12 rounded-full bg-cream-light text-[0.95rem] font-bold text-muted shadow-[inset_0_0_0_1.5px_var(--color-cream-deep)] aria-selected:bg-maroon aria-selected:text-white aria-selected:shadow-none" id="tab-walkin" role="tab" aria-selected="false" aria-controls="panel-walkin">Walk-in sale</button>
+    <div class="sticky top-0 z-5 grid grid-cols-2 border-b border-m3-outline-variant bg-m3-surface min-[720px]:max-w-[420px] min-[720px]:px-[1.4rem]" role="tablist" aria-label="Staff tasks">
+      <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary" id="tab-orders" role="tab" aria-selected="true" aria-controls="panel-orders">Orders</button>
+      <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary" id="tab-walkin" role="tab" aria-selected="false" aria-controls="panel-walkin">Walk-in sale</button>
     </div>
     <main class="flex-1 px-[0.9rem] pt-[0.8rem] pb-[1.6rem] min-[720px]:px-[1.4rem] min-[720px]:pt-4 min-[720px]:pb-8">
       <section id="panel-orders" role="tabpanel" aria-labelledby="tab-orders">
         <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="date-chips" aria-label="Pickup date"></div>
         <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="mass-chips" aria-label="Mass"></div>
         <label class="sr-only" for="search">Search orders</label>
-        <input class="mb-[0.7rem] block min-h-12 w-full rounded-xl border-[1.5px] border-cream-deep bg-cream-light px-[0.85rem] py-[0.55rem] text-ink focus:border-gold focus:outline-2 focus:outline-offset-1 focus:outline-gold min-[720px]:max-w-[420px]" id="search" type="search" placeholder="Search name, phone, or order ID" autocomplete="off" enterkeyhint="search">
+        <input class="mb-[0.7rem] block min-h-12 w-full py-[0.55rem] rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary min-[720px]:max-w-[420px]" id="search" type="search" placeholder="Search name, phone, or order ID" autocomplete="off" enterkeyhint="search">
         <div class="mb-[0.8rem] grid grid-cols-[1.2fr_1fr_1fr] gap-[0.45rem] min-[720px]:grid-cols-[repeat(3,minmax(0,220px))] min-[720px]:gap-[0.8rem]" aria-label="Totals">
-          <article class="rounded-[14px] bg-cream-light px-[0.55rem] pt-[0.55rem] pb-[0.6rem] text-center shadow-card">
-            <p class="text-[0.68rem] font-bold tracking-[0.04em] text-muted uppercase">To collect</p>
-            <p class="mt-[0.15rem] text-[1.35rem] leading-[1.1] font-extrabold text-maroon" id="count-collect">0</p>
-            <p class="mt-[0.15rem] text-xs font-bold text-gold-dark" id="count-collect-amt">₹0</p>
+          <article class="rounded-m3-md bg-m3-surface-container px-[0.55rem] pt-[0.65rem] pb-[0.7rem] text-center">
+            <p class="text-[0.6875rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">To collect</p>
+            <p class="mt-[0.15rem] text-[1.5rem] leading-8 font-normal text-m3-primary" id="count-collect">0</p>
+            <p class="mt-[0.15rem] text-xs font-medium text-gold-dark" id="count-collect-amt">₹0</p>
           </article>
-          <article class="rounded-[14px] bg-cream-light px-[0.55rem] pt-[0.55rem] pb-[0.6rem] text-center shadow-card">
-            <p class="text-[0.68rem] font-bold tracking-[0.04em] text-muted uppercase">Picked up</p>
-            <p class="mt-[0.15rem] text-[1.35rem] leading-[1.1] font-extrabold text-maroon" id="count-picked">0</p>
+          <article class="rounded-m3-md bg-m3-surface-container px-[0.55rem] pt-[0.65rem] pb-[0.7rem] text-center">
+            <p class="text-[0.6875rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Picked up</p>
+            <p class="mt-[0.15rem] text-[1.5rem] leading-8 font-normal text-m3-primary" id="count-picked">0</p>
           </article>
-          <article class="rounded-[14px] bg-cream-light px-[0.55rem] pt-[0.55rem] pb-[0.6rem] text-center shadow-card">
-            <p class="text-[0.68rem] font-bold tracking-[0.04em] text-muted uppercase">Pending</p>
-            <p class="mt-[0.15rem] text-[1.35rem] leading-[1.1] font-extrabold text-maroon" id="count-pending">0</p>
+          <article class="rounded-m3-md bg-m3-surface-container px-[0.55rem] pt-[0.65rem] pb-[0.7rem] text-center">
+            <p class="text-[0.6875rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Pending</p>
+            <p class="mt-[0.15rem] text-[1.5rem] leading-8 font-normal text-m3-primary" id="count-pending">0</p>
           </article>
         </div>
-        <p class="mb-[0.7rem] text-[0.78rem] font-semibold text-muted" id="orders-updated">Sign in to load orders.</p>
+        <p class="mb-[0.7rem] text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant" id="orders-updated">Sign in to load orders.</p>
         <div class="flex flex-col gap-[0.7rem] min-[720px]:grid min-[720px]:grid-cols-2 min-[720px]:items-start min-[720px]:gap-[0.9rem] min-[1000px]:grid-cols-3" id="order-list"></div>
       </section>
       <section id="panel-walkin" role="tabpanel" aria-labelledby="tab-walkin" hidden>
@@ -56,34 +56,39 @@
         <div class="walkin-form">
         <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="walkin-date-chips" aria-label="Sale date"></div>
         <div class="mb-[0.85rem] grid grid-cols-2 gap-2 min-[720px]:grid-cols-3" id="item-grid"></div>
+        <div class="relative mb-4">
+          <input class="peer block min-h-14 w-full py-2 rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder-transparent" id="walkin-customer" type="text" maxlength="60" autocomplete="off" placeholder=" " aria-label="Customer name (optional)">
+          <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem]" for="walkin-customer">Customer name (optional)</label>
+        </div>
         <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
-          <span class="text-[0.82rem] font-extrabold tracking-[0.04em] text-muted uppercase">Quantity</span>
+          <span class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Quantity</span>
           <div class="flex items-center gap-[0.35rem]">
-            <button type="button" class="size-12 rounded-xl bg-maroon text-[1.4rem] leading-none font-bold text-white" id="qty-minus" aria-label="Decrease quantity">−</button>
-            <input class="h-12 w-14 rounded-xl border-[1.5px] border-cream-deep bg-cream-light text-center text-[1.1rem] font-extrabold" id="qty" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Quantity">
-            <button type="button" class="size-12 rounded-xl bg-maroon text-[1.4rem] leading-none font-bold text-white" id="qty-plus" aria-label="Increase quantity">+</button>
+            <button type="button" class="size-12 rounded-full bg-m3-primary text-[1.4rem] leading-none font-medium text-m3-on-primary shadow-m3-1 hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="qty-minus" aria-label="Decrease quantity">−</button>
+            <input class="h-12 w-14 text-center text-[1.1rem] font-medium rounded-m3-xs border border-m3-outline bg-transparent px-1 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary" id="qty" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Quantity">
+            <button type="button" class="size-12 rounded-full bg-m3-primary text-[1.4rem] leading-none font-medium text-m3-on-primary shadow-m3-1 hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="qty-plus" aria-label="Increase quantity">+</button>
           </div>
         </div>
         <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
-          <label class="text-[0.82rem] font-extrabold tracking-[0.04em] text-muted uppercase" for="walkin-mass">Mass</label>
-          <select class="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-cream-deep bg-cream-light px-[0.7rem] font-bold" id="walkin-mass">
+          <label class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase" for="walkin-mass">Mass</label>
+          <select class="min-h-12 min-w-0 flex-1 font-medium rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary" id="walkin-mass">
             <option value="6:30 AM Mass">6:30 AM Mass</option>
             <option value="8:30 AM Mass">8:30 AM Mass</option>
             <option value="Other">Other</option>
           </select>
         </div>
         <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
-          <span class="text-[0.82rem] font-extrabold tracking-[0.04em] text-muted uppercase">Payment</span>
-          <div class="flex gap-[0.4rem]" role="group" aria-label="Payment">
-            <button type="button" class="min-h-12 min-w-[72px] rounded-xl border-2 border-cream-deep bg-cream-light px-[0.9rem] py-[0.4rem] font-extrabold aria-pressed:border-pine aria-pressed:bg-pine aria-pressed:text-white" id="pay-cash" aria-pressed="true">Cash</button>
-            <button type="button" class="min-h-12 min-w-[72px] rounded-xl border-2 border-cream-deep bg-cream-light px-[0.9rem] py-[0.4rem] font-extrabold aria-pressed:border-pine aria-pressed:bg-pine aria-pressed:text-white" id="pay-upi" aria-pressed="false">UPI</button>
+          <span class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Payment</span>
+          <div class="flex" role="group" aria-label="Payment">
+            <button type="button" class="rounded-l-full min-h-12 min-w-[84px] border border-m3-outline px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface hover:bg-m3-on-surface/8 aria-pressed:bg-m3-tertiary-container aria-pressed:text-m3-on-tertiary-container aria-pressed:before:mr-1.5 aria-pressed:before:content-['✓']" id="pay-cash" aria-pressed="true">Cash</button>
+            <button type="button" class="-ml-px rounded-r-full min-h-12 min-w-[84px] border border-m3-outline px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface hover:bg-m3-on-surface/8 aria-pressed:bg-m3-tertiary-container aria-pressed:text-m3-on-tertiary-container aria-pressed:before:mr-1.5 aria-pressed:before:content-['✓']" id="pay-upi" aria-pressed="false">UPI</button>
           </div>
         </div>
-        <p class="mt-[0.2rem] mb-[0.85rem] text-center text-[1.8rem] font-extrabold text-maroon" id="live-amount">₹0</p>
-        <button type="button" class="min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55 w-full bg-maroon text-[1.05rem] text-white min-[720px]:max-w-[360px]" id="record-sale">Record sale</button>
+        <p class="mt-[0.2rem] mb-[0.35rem] min-h-[2.6rem] rounded-m3-md bg-m3-surface-container-high px-4 py-2 text-center text-[0.875rem] font-medium text-m3-on-surface" id="live-summary" role="status" aria-live="polite">Pick a cake to start</p>
+        <p class="mt-[0.2rem] mb-[0.85rem] text-center text-[2.25rem] leading-11 font-normal text-m3-primary" id="live-amount">₹0</p>
+        <button type="button" class="w-full bg-m3-primary text-m3-on-primary shadow-m3-1 hover:shadow-m3-2 min-[720px]:max-w-[360px] min-h-12 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] disabled:cursor-not-allowed disabled:opacity-[0.38] hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="record-sale">Record sale</button>
         </div>
         <div class="walkin-side">
-        <p class="mt-4 mb-[0.7rem] text-[0.78rem] font-semibold text-muted min-[720px]:mt-0" id="walkin-updated">Recent walk-ins</p>
+        <p class="mt-4 mb-[0.7rem] text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant min-[720px]:mt-0" id="walkin-updated">Recent walk-ins</p>
         <div class="flex flex-col gap-[0.7rem]" id="walkin-list"></div>
         </div>
         </div>
@@ -91,24 +96,24 @@
     </main>
   </div>
 
-  <div class="fixed inset-0 z-20 flex flex-col items-center justify-center bg-cream px-[1.2rem] py-[1.4rem]" id="pin-gate">
-    <form class="w-full max-w-[360px] rounded-[20px] bg-cream-light px-[1.15rem] pt-[1.3rem] pb-[1.2rem] text-center shadow-card" id="pin-form">
+  <div class="fixed inset-0 z-20 flex flex-col items-center justify-center bg-m3-surface px-[1.2rem] py-[1.4rem]" id="pin-gate">
+    <form class="w-full max-w-[360px] rounded-m3-xl bg-m3-surface-container-high px-6 pt-7 pb-6 text-center shadow-m3-3" id="pin-form">
       <img class="mx-auto size-[72px]" src="logo.png" width="72" height="72" alt="">
-      <h2 class="mt-[0.6rem] mb-[0.2rem] font-serif text-[1.35rem] font-bold text-brand-blue">Staff PIN</h2>
-      <p class="mb-[0.9rem] text-[0.92rem] text-muted">Enter the organiser PIN to mark payments and log walk-in sales.</p>
-      <input class="mb-[0.7rem] min-h-14 w-full rounded-xl border-[1.5px] border-cream-deep bg-white text-center text-2xl tracking-[0.35em]" id="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="12" aria-label="Staff PIN" required>
-      <button type="submit" class="min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55 w-full bg-maroon text-[1.05rem] text-white" id="pin-submit">Unlock</button>
-      <p class="mt-2 min-h-[1.3em] text-[0.88rem] font-bold text-maroon" id="pin-error" role="alert"></p>
+      <h2 class="mt-[0.6rem] mb-[0.2rem] text-[1.5rem] leading-8 font-normal text-m3-on-surface">Staff PIN</h2>
+      <p class="mb-[0.9rem] text-[0.875rem] text-m3-on-surface-variant">Enter the organiser PIN to mark payments and log walk-in sales.</p>
+      <input class="mb-[0.7rem] min-h-14 w-full text-center text-2xl tracking-[0.35em] rounded-m3-xs border border-m3-outline bg-transparent text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary" id="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="12" aria-label="Staff PIN" required>
+      <button type="submit" class="w-full bg-m3-primary text-m3-on-primary min-h-12 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] disabled:cursor-not-allowed disabled:opacity-[0.38] hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="pin-submit">Unlock</button>
+      <p class="mt-2 min-h-[1.3em] text-[0.875rem] font-medium text-m3-primary" id="pin-error" role="alert"></p>
     </form>
   </div>
 
-  <div class="fixed inset-0 z-25 flex items-center justify-center bg-[rgba(42,35,6,0.45)] p-[1.2rem]" id="confirm-modal" hidden>
-    <div class="w-[min(360px,100%)] rounded-[18px] bg-cream-light px-[1.05rem] pt-[1.15rem] pb-4 shadow-[0_16px_40px_rgba(42,35,6,0.22)]" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-body">
-      <h2 class="mb-[0.4rem] text-[1.15rem] font-bold text-maroon" id="confirm-title">Cancel this order?</h2>
-      <p class="mb-4 text-ink" id="confirm-body"></p>
-      <div class="flex gap-2">
-        <button type="button" class="min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55 flex-1 border-[1.5px] border-maroon bg-transparent text-maroon" id="confirm-no">Keep</button>
-        <button type="button" class="min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55 flex-1 bg-maroon text-white" id="confirm-yes">Cancel order</button>
+  <div class="fixed inset-0 z-25 flex items-center justify-center bg-[rgba(42,35,6,0.32)] p-[1.2rem]" id="confirm-modal" hidden>
+    <div class="w-[min(360px,100%)] rounded-m3-xl bg-m3-surface-container-high p-6 shadow-m3-3" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+      <h2 class="mb-4 text-[1.5rem] leading-8 font-normal text-m3-on-surface" id="confirm-title">Cancel this order?</h2>
+      <p class="mb-6 text-[0.875rem] leading-5 text-m3-on-surface-variant" id="confirm-body"></p>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="min-h-12 rounded-full px-3 text-[0.875rem] font-medium tracking-[0.1px] text-m3-primary hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]" id="confirm-no">Keep</button>
+        <button type="button" class="min-h-12 rounded-full px-3 text-[0.875rem] font-medium tracking-[0.1px] text-m3-primary hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]" id="confirm-yes">Cancel order</button>
       </div>
     </div>
   </div>
@@ -121,38 +126,38 @@
   const SHEETS_WEBAPP_URL = (window.SITE_CONFIG && window.SITE_CONFIG.appsScriptUrl) || 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec';
   // Tailwind utility strings for the markup this script renders.
   const CLS = {
-    chip: 'flex-none min-h-[42px] rounded-full border-[1.5px] border-cream-deep bg-cream-light px-[0.85rem] py-[0.4rem] text-[0.85rem] font-bold text-ink hover:border-gold aria-pressed:border-maroon aria-pressed:bg-maroon aria-pressed:text-white',
-    pill: 'inline-flex min-h-7 items-center rounded-full px-[0.6rem] py-[0.15rem] text-[0.72rem] font-extrabold tracking-[0.03em] whitespace-nowrap uppercase',
+    chip: "flex-none min-h-11 rounded-lg border border-m3-outline bg-transparent px-3 py-[0.4rem] text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-on-surface/8 aria-pressed:border-transparent aria-pressed:bg-m3-secondary-container aria-pressed:text-m3-on-secondary-container aria-pressed:before:mr-1.5 aria-pressed:before:content-['✓']",
+    pill: 'inline-flex min-h-6 items-center rounded-lg px-2 py-[0.1rem] text-[0.6875rem] font-medium tracking-[0.5px] whitespace-nowrap uppercase',
     pillPending: 'bg-[#f8e3bf] text-gold-dark',
     pillPaid: 'bg-[#dce8c8] text-pine',
     pillPicked: 'bg-[#d9e4fb] text-brand-blue-dark',
     pillCancelled: 'bg-[#ece8e1] text-muted',
     pillOversold: 'bg-[#fbd9cc] text-maroon-dark',
     pillQueued: 'bg-[#fff4d6] text-gold-dark',
-    empty: 'my-[0.6rem] rounded-card bg-cream-light px-[0.8rem] py-[1.1rem] text-center text-muted',
-    card: 'rounded-card bg-cream-light px-[0.9rem] pt-[0.85rem] pb-[0.9rem] shadow-card',
+    empty: 'my-[0.6rem] rounded-m3-md bg-m3-surface-container px-[0.8rem] py-[1.1rem] text-center text-[0.875rem] text-m3-on-surface-variant',
+    card: 'rounded-m3-md bg-m3-surface-container-low p-4 shadow-m3-1',
     top: 'flex items-start justify-between gap-[0.6rem]',
-    name: 'text-[1.08rem] font-extrabold text-ink',
-    meta: 'mt-[0.2rem] text-[0.88rem] text-muted',
-    phone: 'font-bold text-brand-blue no-underline',
-    items: 'mt-[0.45rem] text-[0.9rem] whitespace-pre-line text-ink',
-    total: 'mt-[0.35rem] text-[1.05rem] font-extrabold text-maroon',
-    actions: 'mt-3 flex flex-nowrap items-stretch gap-[0.45rem]',
-    btn: 'min-h-12 rounded-xl px-[0.9rem] py-[0.55rem] text-[0.95rem] font-extrabold disabled:cursor-not-allowed disabled:opacity-55',
-    btnPaid: 'min-w-0 flex-1 bg-pine text-white',
-    btnPicked: 'min-w-0 flex-1 bg-brand-blue text-white',
-    btnMore: 'min-w-12 bg-cream-deep text-ink',
-    menu: 'absolute right-0 bottom-[calc(100%+6px)] z-6 hidden min-w-40 rounded-xl bg-white p-[0.3rem] shadow-[0_10px_28px_rgba(42,35,6,0.18)] [&.is-open]:block',
-    menuBtn: 'block min-h-11 w-full rounded-lg bg-transparent px-[0.7rem] py-[0.4rem] text-left font-bold hover:bg-cream focus-visible:bg-cream',
-    itemBtn: 'min-h-[72px] rounded-[14px] border-2 border-cream-deep bg-cream-light px-[0.7rem] py-[0.65rem] text-left shadow-card hover:border-gold aria-pressed:border-maroon aria-pressed:bg-[#f6e7e4]',
-    iname: 'block text-[0.88rem] leading-[1.25] font-extrabold',
-    iprice: 'mt-[0.2rem] block font-extrabold text-maroon',
-    amount: 'font-extrabold text-maroon',
-    undo: 'min-h-11 min-w-[72px] rounded-[10px] bg-cream-deep font-extrabold text-maroon',
-    toast: 'pointer-events-none rounded-xl px-[0.95rem] py-3 text-[0.92rem] font-bold text-white shadow-card',
-    toastOk: 'bg-pine',
-    toastError: 'bg-maroon',
-    toastInfo: 'bg-ink'
+    name: 'text-[1rem] leading-6 font-medium tracking-[0.15px] text-m3-on-surface',
+    meta: 'mt-[0.2rem] text-[0.875rem] text-m3-on-surface-variant',
+    phone: 'font-medium text-brand-blue no-underline',
+    items: 'mt-[0.45rem] text-[0.875rem] leading-5 whitespace-pre-line text-m3-on-surface',
+    total: 'mt-[0.35rem] text-[1.125rem] leading-6 font-medium text-m3-primary',
+    actions: 'mt-3 flex flex-nowrap items-stretch gap-2',
+    btn: 'min-h-12 rounded-full px-4 py-[0.55rem] text-[0.875rem] font-medium tracking-[0.1px] disabled:cursor-not-allowed disabled:opacity-[0.38]',
+    btnPaid: 'min-w-0 flex-1 bg-m3-tertiary-container text-m3-on-tertiary-container hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]',
+    btnPicked: 'min-w-0 flex-1 bg-brand-blue text-white shadow-m3-1 hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]',
+    btnMore: 'min-w-12 border border-m3-outline bg-transparent px-0 text-m3-on-surface-variant hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]',
+    menu: 'absolute right-0 bottom-[calc(100%+6px)] z-6 hidden min-w-40 rounded-m3-xs bg-m3-surface-container py-2 shadow-m3-2 [&.is-open]:block',
+    menuBtn: 'block min-h-12 w-full bg-transparent px-3 py-[0.4rem] text-left text-[1rem] font-normal text-m3-on-surface hover:bg-m3-on-surface/8 focus-visible:bg-m3-on-surface/12',
+    itemBtn: 'min-h-[72px] rounded-m3-md border border-m3-outline-variant bg-m3-surface px-3 py-[0.65rem] text-left text-m3-on-surface shadow-m3-1 hover:bg-m3-on-surface/8 aria-pressed:border-m3-primary aria-pressed:bg-m3-primary-container aria-pressed:text-m3-on-primary-container',
+    iname: 'block text-[0.875rem] leading-5 font-medium tracking-[0.1px]',
+    iprice: 'mt-[0.2rem] block text-[0.875rem] font-medium text-m3-primary',
+    amount: 'font-medium text-m3-primary',
+    undo: 'min-h-12 min-w-[72px] rounded-full px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-primary hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]',
+    toast: 'pointer-events-none flex min-h-12 items-center rounded-m3-xs bg-ink px-4 py-3 text-[0.875rem] leading-5 text-white shadow-m3-3',
+    toastOk: 'border-l-4 border-[#a9c77a]',
+    toastError: 'border-l-4 border-[#f2a58c]',
+    toastInfo: ''
   };
 
   const PIN_KEY = 'poppinsStaffPin';
@@ -215,6 +220,7 @@
     qty: 1,
     walkinMass: '8:30 AM Mass',
     payment: 'Cash',
+    customer: '',
     lastOrdersAt: '',
     loading: false,
     ordersReq: 0,
@@ -406,6 +412,7 @@
         price: price,
         amount: price * payload.qty,
         payment: payload.payment,
+        customer: payload.customer || '',
         notes: payload.notes || '',
         voided: false
       };
@@ -463,6 +470,7 @@
             price: price,
             amount: price * e.payload.qty,
             payment: e.payload.payment,
+            customer: e.payload.customer || '',
             notes: e.payload.notes || '',
             voided: false,
             _queued: true
@@ -553,11 +561,15 @@
         '<span class="' + CLS.iprice + '">' + rupee(m.price) + '</span></button>';
     }).join('');
     $('qty').value = String(state.qty);
+    if ($('walkin-customer').value !== state.customer) $('walkin-customer').value = state.customer;
     $('walkin-mass').value = state.walkinMass;
     $('pay-cash').setAttribute('aria-pressed', state.payment === 'Cash' ? 'true' : 'false');
     $('pay-upi').setAttribute('aria-pressed', state.payment === 'UPI' ? 'true' : 'false');
     const amount = state.item ? itemPrice(state.item) * state.qty : 0;
     $('live-amount').textContent = rupee(amount);
+    $('live-summary').textContent = state.item
+      ? state.qty + ' × ' + state.item + ' · ' + rupee(itemPrice(state.item)) + ' each · ' + state.payment + ' · ' + state.walkinMass + (state.customer.trim() ? ' · for ' + state.customer.trim() : '')
+      : 'Pick a cake to start';
     $('record-sale').disabled = !state.item;
   }
 
@@ -573,7 +585,8 @@
       return '<article class="' + CLS.card + '" data-walkin="' + escapeAttr(w.walkinId) + '">' +
         '<div class="' + CLS.top + '"><div>' +
         '<p class="' + CLS.name + '">' + w.qty + ' × ' + escapeHtml(shortItem(w.item)) + '</p>' +
-        '<p class="' + CLS.meta + '">' + escapeHtml(w.mass || '') + ' · ' + escapeHtml(w.payment || '') + queued + '</p>' +
+        '<p class="' + CLS.meta + '">' + escapeHtml(w.mass || '') + ' · ' + escapeHtml(w.payment || '') +
+        (w.customer ? ' · <span class="walkin-customer">' + escapeHtml(w.customer) + '</span>' : '') + queued + '</p>' +
         '</div><div><p class="' + CLS.amount + '">' + rupee(w.amount) + '</p>' +
         '<button type="button" class="' + CLS.undo + '" data-undo="' + escapeAttr(w.walkinId) + '">Undo</button></div></div>' +
         '</article>';
@@ -783,6 +796,7 @@
       item: opts.item || state.item,
       qty: qty,
       payment: opts.payment || state.payment,
+      customer: String(opts.customer != null ? opts.customer : state.customer).trim().slice(0, 60),
       notes: opts.notes || ''
     };
     const price = itemPrice(payload.item);
@@ -795,6 +809,7 @@
       price: price,
       amount: price * payload.qty,
       payment: payload.payment,
+      customer: payload.customer,
       notes: payload.notes,
       voided: false,
       _queued: true
@@ -816,6 +831,7 @@
         removeOutbox(payload.walkinId);
         local._queued = false;
         if (res.amount) local.amount = res.amount;
+        if (opts.customer == null) { state.customer = ''; renderWalkinForm(); }
         renderWalkins();
         if (!opts.silent) toast('Recorded ' + rupee(local.amount) + ' ' + local.payment + '.', 'ok');
         return res;
@@ -1017,6 +1033,10 @@
       state.item = btn.getAttribute('data-item');
       renderWalkinForm();
     });
+    $('walkin-customer').addEventListener('input', function () {
+      state.customer = $('walkin-customer').value.slice(0, 60);
+      renderWalkinForm();
+    });
     $('qty-minus').addEventListener('click', function () {
       state.qty = Math.max(1, state.qty - 1);
       renderWalkinForm();
@@ -1133,6 +1153,7 @@
         item: state.item,
         qty: state.qty,
         payment: state.payment,
+        customer: state.customer,
         walkinMass: state.walkinMass,
         outbox: readOutbox(),
         isPreview: isPreview

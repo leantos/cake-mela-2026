@@ -189,7 +189,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-24.1';
+var SCRIPT_VERSION = '2026-11-24.2';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -3412,7 +3412,7 @@ function staffSetStatus_(data) {
 
 function ensureWalkInExtraColumns_(tab) {
   var headers = getHeaders_(tab);
-  var extras = ['Walk-in ID', 'Void'];
+  var extras = ['Walk-in ID', 'Void', 'Customer'];
   var i, name;
   for (i = 0; i < extras.length; i++) {
     name = extras[i];
@@ -3515,6 +3515,7 @@ function staffWalkInsFromValues_(values, opts) {
     amount = Number(wcell(row, 'Amount') || 0) || (qty * price);
     payment = normalizePayment_(wcell(row, 'Payment'));
     notes = String(wcell(row, 'Notes') || '').trim();
+    var customer = String(wcell(row, 'Customer') || '').trim();
     list.push({
       row: r + 1,
       walkinId: walkinId,
@@ -3526,6 +3527,7 @@ function staffWalkInsFromValues_(values, opts) {
       amount: amount,
       payment: payment,
       notes: notes,
+      customer: customer,
       voided: voided
     });
   }
@@ -3557,6 +3559,7 @@ function staffAddWalkIn_(data) {
   var qty = Math.max(0, Math.floor(Number(data && data.qty) || 0));
   var payment = normalizePayment_(data && data.payment);
   var notes = String(data && data.notes || '').trim();
+  var customer = String(data && data.customer || '').replace(/\s+/g, ' ').trim().slice(0, 60);
   if (!walkinId) return { ok: false, error: 'Missing walkinId' };
   if (!dateId) return { ok: false, error: 'Missing date' };
   if (!item) return { ok: false, error: 'Missing item' };
@@ -3592,6 +3595,8 @@ function staffAddWalkIn_(data) {
     var notesCol = headers.indexOf('Notes');
     var idCol = headers.indexOf('Walk-in ID');
     var voidCol = headers.indexOf('Void');
+    var customerCol = headers.indexOf('Customer');
+    if (customerCol >= 0 && customer) tab.getRange(nextRow, customerCol + 1).setNumberFormat('@').setValue(customer);
     if (dateCol >= 0) tab.getRange(nextRow, dateCol + 1).setValue(dateId);
     if (massCol >= 0) tab.getRange(nextRow, massCol + 1).setValue(mass);
     if (itemCol >= 0) tab.getRange(nextRow, itemCol + 1).setValue(item);

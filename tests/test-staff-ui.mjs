@@ -153,9 +153,22 @@ async function loadPreview() {
     document.getElementById('live-amount').textContent.replace(/\s/g, '').includes('1,300') ||
     document.getElementById('live-amount').textContent.includes('1300'),
     document.getElementById('live-amount').textContent);
+  const liveSum = document.getElementById('live-summary').textContent;
+  assert('live summary shows qty, item, payment and mass',
+    liveSum.includes('2 ×') && liveSum.includes('Dates & Carrot Pudding (700g)') && liveSum.includes('UPI') && liveSum.includes('Mass'), liveSum);
 
+  const custInput = document.getElementById('walkin-customer');
+  assert('customer name field is an optional text input (maxlength 60, autocomplete off)',
+    custInput && custInput.type === 'text' && custInput.maxLength === 60 && custInput.getAttribute('autocomplete') === 'off');
+  custInput.value = '  Maria  ';
+  custInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert('live summary shows the customer name', document.getElementById('live-summary').textContent.includes('for Maria'), document.getElementById('live-summary').textContent);
   const beforeWalk = window.__staff.getState().walkins.filter((w) => !w.voided).length;
   await window.__staff.addWalkin();
+  assert('recorded walk-in carries the trimmed customer name',
+    window.__staff.getState().walkins.some((w) => w.customer === 'Maria'), JSON.stringify(window.__staff.getState().walkins[0]));
+  assert('Recent walk-ins card shows the customer name', document.getElementById('walkin-list').textContent.includes('Maria'));
+  assert('customer field is cleared after a successful record', custInput.value === '' && window.__staff.getState().customer === '');
   const afterWalk = window.__staff.getState().walkins.filter((w) => !w.voided);
   const recorded = afterWalk.find((w) => w.payment === 'UPI' && w.amount === 1300);
   assert('recording a walk-in sale adds it to the recent list',
@@ -207,7 +220,7 @@ async function loadPreview() {
     }
     if (body.action === 'staff_walkins') return { ok: true, date: '2026-11-29', walkins: store.walkins.slice() };
     if (body.action === 'staff_add_walkin') {
-      const row = { walkinId: body.walkinId, date: body.date, mass: body.mass, item: body.item, qty: body.qty, amount: 650, payment: body.payment, voided: false };
+      const row = { walkinId: body.walkinId, date: body.date, mass: body.mass, item: body.item, qty: body.qty, amount: 650, payment: body.payment, customer: body.customer || '', voided: false };
       store.walkins.unshift(row);
       return Object.assign({ ok: true }, row);
     }
@@ -273,6 +286,15 @@ async function loadPreview() {
     JSON.stringify(window.__staff.getState().outbox));
   assert('server status is Paid after the retry',
     store.orders.find((o) => o.orderId === 'PB-1').status === 'Paid');
+  failNetwork = true;
+  window.__staff.setItem('Rich Plum Cake (400g)');
+  await window.__staff.addWalkin({ customer: 'Joseph' });
+  const wEntry = window.__staff.getState().outbox.find((e) => e.type === 'walkin');
+  assert('offline walk-in outbox entry keeps the customer', wEntry && wEntry.payload.customer === 'Joseph', JSON.stringify(wEntry));
+  failNetwork = false;
+  await window.__staff.flushOutbox({ force: true });
+  await sleep(30);
+  assert('queued walk-in is sent with the customer name', store.walkins.some((w) => w.customer === 'Joseph'), JSON.stringify(store.walkins));
 
   window.__staff.logout();
   assert('Lock clears the session PIN and shows the gate again',
