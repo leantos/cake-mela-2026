@@ -81,7 +81,9 @@ assert('helper normalizePhone is global', typeof w.normalizePhone === 'function'
 assert('helper formatINR is global', typeof w.formatINR === 'function');
 assert('helper showOrderConfirmation is global', typeof w.showOrderConfirmation === 'function');
 assert('WhatsApp is gone: no message builder, opener or url helper', typeof w.buildWhatsAppMessage === 'undefined' && typeof w.openWhatsApp === 'undefined' && typeof w.whatsAppUrl === 'undefined');
-assert('WhatsApp is gone: no WhatsApp text, and exactly one wa.me link in the page (the UPI screenshot button)', !/whatsapp/i.test(rawIndexHtml) && (rawIndexHtml.match(/wa\.me/g) || []).length === 1, String((rawIndexHtml.match(/wa\.me/g) || []).length));
+assert('WhatsApp is only a link label: the word appears only on wa.me links, never in the Place order button',
+  Array.from(document.querySelectorAll('*')).filter((el) => Array.from(el.childNodes).some((n) => n.nodeType === 3 && /whatsapp/i.test(n.textContent)) && !el.matches('a[href*="wa.me"], script, style')).length === 0 &&
+  !/whatsapp/i.test(document.getElementById('place-order-btn') ? document.getElementById('place-order-btn').outerHTML : ''));
 assert('contact assignment is gone: no random contact or assignment helpers', typeof w.pickRandomContact === 'undefined' && typeof w.applyContactToOrder === 'undefined' && typeof w.resolveContact === 'undefined');
 assert('there is no payment line: no payment note and no PAYMENT_LINE in the page', !document.querySelector('.payment-note') && !document.getElementById('payment-note') && !document.getElementById('confirm-payment') && !/PAYMENT_LINE|Pay at pickup, or UPI to/.test(rawIndexHtml));
 const enquire = document.getElementById('enquire');
@@ -105,8 +107,9 @@ assert('site-config.js loaded two contacts', w.eval('CONTACTS.length') === 2 && 
     !!btn && btn.getAttribute('aria-haspopup') === 'menu' && btn.getAttribute('aria-expanded') === 'false' &&
     btn.getAttribute('aria-controls') === 'contact-menu' && !!menu && menu.getAttribute('role') === 'menu' && menu.hidden === true);
   const links = Array.from(menu.querySelectorAll('a[role="menuitem"]'));
-  assert('Contact menu links are built from SITE_CONFIG.contacts',
-    links.length === cfg.length && cfg.every((c, i) => links[i].getAttribute('href') === 'tel:+' + c.number && links[i].textContent.includes(c.name)),
+  assert('Contact menu has a Call and a WhatsApp item per contact, built from SITE_CONFIG.contacts',
+    links.length === cfg.length * 2 && cfg.every((c, i) => links[i * 2].getAttribute('href') === 'tel:+' + c.number && links[i * 2].textContent.includes('Call ' + c.name.split(' ')[0]) &&
+      links[i * 2 + 1].getAttribute('href').startsWith('https://wa.me/' + c.number + '?text=') && links[i * 2 + 1].textContent.includes('WhatsApp ' + c.name.split(' ')[0])),
     menu.innerHTML);
   assert('Contact menu items are at least 48px tall (min-h-12)', links.every((a) => a.className.includes('min-h-12')));
 
@@ -129,6 +132,68 @@ assert('site-config.js loaded two contacts', w.eval('CONTACTS.length') === 2 && 
   assert('Choosing a contact closes the menu', menu.hidden === true);
 }
 
+
+// ---- Contact us: Call + WhatsApp for both contacts (top-bar pills, menu, static fallback) ----
+const contactGreeting = (c) => 'Hi ' + c.name.split(' ')[0] + ', I have a question about the Vailankanni Matha Youth Christmas cake sale.';
+const waOk = (a, c) => {
+  const href = a.getAttribute('href') || '';
+  const u = new URL(href);
+  const text = u.searchParams.get('text');
+  return u.origin + u.pathname === 'https://wa.me/' + c.number && text === contactGreeting(c) &&
+    Array.from(text).every((ch) => ch.codePointAt(0) <= 0xFFFF) && /^[\x20-\x7E]*$/.test(href) && /%20/.test(href) &&
+    a.getAttribute('target') === '_blank' && /noopener/.test(a.getAttribute('rel') || '');
+};
+{
+  const cfg = w.SITE_CONFIG.contacts;
+  const groups = Array.from(document.querySelectorAll('#enquire .contact-group'));
+  assert('contact pills: one group per contact with a Call and a WhatsApp action and the right numbers',
+    groups.length === cfg.length && cfg.every((c, i) => groups[i].querySelector('a.contact-call').getAttribute('href') === 'tel:+' + c.number && waOk(groups[i].querySelector('a.contact-wa'), c)),
+    document.getElementById('enquire').innerHTML);
+  assert('contact pills: each group shows the name, and the actions are labelled per contact for screen readers',
+    cfg.every((c, i) => groups[i].textContent.includes(c.name) && groups[i].querySelector('a.contact-call').getAttribute('aria-label') === 'Call ' + c.name &&
+      groups[i].querySelector('a.contact-wa').getAttribute('aria-label') === 'WhatsApp ' + c.name));
+  assert('contact pills: the WhatsApp action has the WhatsApp label and a green dot, the Call action a phone glyph',
+    groups.every((g) => /WhatsApp/.test(g.querySelector('a.contact-wa').textContent) && !!g.querySelector('a.contact-wa .text-wa') && /Call/.test(g.querySelector('a.contact-call').textContent)));
+
+  const menu = document.getElementById('contact-menu');
+  const btn = document.getElementById('contact-btn');
+  const items = Array.from(menu.querySelectorAll('a[role="menuitem"]'));
+  assert('contact menu: a labelled group per contact with the name and number as its heading',
+    menu.querySelectorAll('[role="group"]').length === cfg.length &&
+    cfg.every((c) => { const g = menu.querySelector('[role="group"][aria-label="' + c.name + '"]'); return !!g && g.textContent.includes(c.name + ' • ' + (c.display || ('+' + c.number))); }));
+  assert('contact menu: Call and WhatsApp items for each contact, right numbers, greeting encoded and BMP-only, rel=noopener',
+    items.length === cfg.length * 2 && cfg.every((c, i) => items[i * 2].getAttribute('href') === 'tel:+' + c.number && waOk(items[i * 2 + 1], c)),
+    menu.innerHTML);
+  assert('contact menu: every item is a 48px target and the WhatsApp items carry the green dot',
+    items.every((a) => a.className.includes('min-h-12')) && items.filter((a) => a.classList.contains('contact-wa')).every((a) => !!a.querySelector('.text-wa')));
+  items.forEach((a) => a.addEventListener('click', (e) => e.preventDefault()));
+  const key = (k) => menu.dispatchEvent(new window.KeyboardEvent('keydown', { key: k, bubbles: true }));
+  btn.click();
+  assert('contact menu: opens on Call Cyril', menu.hidden === false && document.activeElement === items[0]);
+  key('ArrowDown');
+  assert('contact menu: ArrowDown moves to WhatsApp Cyril', document.activeElement === items[1]);
+  key('End');
+  assert('contact menu: End goes to the last item', document.activeElement === items[items.length - 1]);
+  key('ArrowDown');
+  assert('contact menu: ArrowDown wraps to the first item', document.activeElement === items[0]);
+  key('ArrowUp');
+  assert('contact menu: ArrowUp wraps to the last item', document.activeElement === items[items.length - 1]);
+  key('Home');
+  assert('contact menu: Home goes to the first item', document.activeElement === items[0]);
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert('contact menu: Escape still closes it and returns focus to the button', menu.hidden === true && document.activeElement === btn);
+  btn.click();
+  items[1].click();
+  assert('contact menu: choosing WhatsApp closes the menu', menu.hidden === true);
+
+  const staticDoc = new window.DOMParser().parseFromString(rawIndexHtml, 'text/html');
+  const four = (list) => list.length === 4 && cfg.every((c) => list.some((a) => a.getAttribute('href') === 'tel:+' + c.number) && list.some((a) => waOk(a, c)));
+  assert('static fallback: the top-bar pills contain the four links without JS', four(Array.from(staticDoc.querySelectorAll('#enquire a'))));
+  assert('static fallback: the contact menu contains the four links without JS', four(Array.from(staticDoc.querySelectorAll('#contact-menu a'))));
+  assert('static fallback matches what the script renders (same hrefs in the same order)',
+    Array.from(staticDoc.querySelectorAll('#enquire a')).map((a) => a.getAttribute('href')).join('|') === Array.from(document.querySelectorAll('#enquire a')).map((a) => a.getAttribute('href')).join('|') &&
+    Array.from(staticDoc.querySelectorAll('#contact-menu a')).map((a) => a.getAttribute('href')).join('|') === items.map((a) => a.getAttribute('href')).join('|'));
+}
 
 assert('helper isSheetsUrlConfigured is global', typeof w.isSheetsUrlConfigured === 'function');
 assert('helper isValidIndianMobile is global', typeof w.isValidIndianMobile === 'function');
@@ -226,11 +291,18 @@ assert('closed banner hidden while dates remain', !document.getElementById('preo
   const cl = document.getElementById('confirm-lines').textContent.replace(/\s+/g, ' ');
   assert('confirmation: lists the cakes with quantities and line totals', cl.includes('2 × Rich Plum Cake (400g)') && cl.includes('₹700') && cl.includes('1 × Dates & Carrot Pudding (700g)') && cl.includes('₹650'), cl);
   assert('confirmation: shows the total', document.getElementById('confirm-total').textContent === '₹1,350', document.getElementById('confirm-total').textContent);
-  const calls = Array.from(document.querySelectorAll('#confirm-call a'));
+  const calls = Array.from(document.querySelectorAll('#confirm-call a[href^="tel:"]'));
   assert('confirmation: two tonal tel: Call us links from SITE_CONFIG.contacts',
     calls.length === 2 && calls[0].getAttribute('href') === 'tel:+917204017793' && calls[1].getAttribute('href') === 'tel:+918050764341' &&
     calls.every((a) => a.className.includes('bg-m3-secondary-container') && a.className.includes('min-h-12')),
     calls.map((a) => a.outerHTML).join(' '));
+  const confirmWa = Array.from(document.querySelectorAll('#confirm-call a.contact-wa'));
+  const confirmGroups = Array.from(document.querySelectorAll('#confirm-call .confirm-contact'));
+  assert('confirmation: each contact has both a Call and a WhatsApp action, all tonal 48px targets',
+    confirmGroups.length === 2 && confirmWa.length === 2 &&
+    w.SITE_CONFIG.contacts.every((c, i) => !!confirmGroups[i].querySelector('a[href="tel:+' + c.number + '"]') && waOk(confirmGroups[i].querySelector('a.contact-wa'), c)) &&
+    Array.from(document.querySelectorAll('#confirm-call a')).every((a) => a.className.includes('bg-m3-secondary-container') && a.className.includes('min-h-12')),
+    document.getElementById('confirm-call').innerHTML);
   assert('confirmation: has a filled Place another order button', document.getElementById('place-another').textContent.trim() === 'Place another order' && document.getElementById('place-another').className.includes('bg-m3-primary'));
   w.showOrderConfirmation(sample, { offline: true });
   assert('confirmation: offline variant says the order is saved and will be sent when online',
@@ -287,9 +359,15 @@ assert('closed banner hidden while dates remain', !document.getElementById('preo
     cmsg === 'Hi Cyril, I have paid ₹650 for my cake order. Screenshot attached.' && !/PB-|order PB/.test(cmsg) && cshot.getAttribute('target') === '_blank' && /noopener/.test(cshot.getAttribute('rel')), cmsg);
   zeroCart();
   const waLinks = Array.from(document.querySelectorAll('a[href*="wa.me"]'));
-  assert('upi: the only wa.me links in the page are the two screenshot buttons, both to Cyril',
-    waLinks.length === 2 && waLinks.every((a) => a.classList.contains('upi-screenshot') && a.getAttribute('href').startsWith('https://wa.me/917204017793?text=')),
+  const shotLinks = waLinks.filter((a) => a.classList.contains('upi-screenshot'));
+  const contactWa = waLinks.filter((a) => !a.classList.contains('upi-screenshot'));
+  assert('upi: the screenshot buttons all go to Cyril; every other wa.me link is a contact link',
+    shotLinks.length === 2 && shotLinks.every((a) => a.getAttribute('href').startsWith('https://wa.me/917204017793?text=')) &&
+    contactWa.length > 0 && contactWa.every((a) => a.classList.contains('contact-wa') && w.SITE_CONFIG.contacts.some((c) => waOk(a, c)) && !!a.closest('#enquire, #contact-menu, #confirm-call')),
     waLinks.map((a) => a.getAttribute('href')).join(' | '));
+  assert('upi: no wa.me link sits in the Place order button, the confirmation title or the payment copy',
+    waLinks.every((a) => !a.closest('#place-order-btn, #order-confirmation-title') && (!a.closest('#confirm-upi, #pay-upi-body') || a.classList.contains('upi-screenshot'))) &&
+    !/wa\.me/.test(Array.from(document.querySelectorAll('#confirm-upi .pay-choice, #confirm-upi .upi-note, #pay-upi-body .pay-choice, #pay-upi-body .upi-note')).map((e) => e.innerHTML).join(' ')));
 }
 
 function zeroCart() {
@@ -990,7 +1068,7 @@ assert('wide desktop summary is minmax(300px, 22%)', appCls.includes('xl:grid-co
 assert('menu grid fills with auto-fill 260px', menuCls.includes('lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]'), menuCls);
 assert('xl (1280px) breakpoint puts the summary in a third column',
   document.querySelector('.sticky-bar').className.includes('xl:col-start-3'));
-assert('CTA says Place order with a check icon and no WhatsApp', document.getElementById('place-order-btn').textContent === 'Place order' && /\.cta::before/.test(html) && !/25D366/i.test(rawIndexHtml) && !/aria-label="[^"]*whatsapp/i.test(rawIndexHtml));
+assert('CTA says Place order with a check icon and no WhatsApp', document.getElementById('place-order-btn').textContent === 'Place order' && /\.cta::before/.test(html) && !/whatsapp/i.test(document.getElementById('place-order-btn').outerHTML));
 
 // ---- Stock limits: out of stock, caps, clamp, 409, pre-submit refresh ----
 {
@@ -1360,7 +1438,9 @@ assert('CTA says Place order with a check icon and no WhatsApp', document.getEle
 assert('rename: no visible or meta text still says Parish Youth', !/Parish Youth/.test(document.documentElement.outerHTML.replace(/alt="[^"]*poster[^"]*"/i, '')));
 assert('rename: header, title and description say Vailankanni Matha Youth',
   document.querySelector('header.hero-head h1').textContent === 'Vailankanni Matha Youth' && /Vailankanni Matha Youth/.test(document.title) && /Vailankanni Matha Youth/.test(document.querySelector('meta[name="description"]').content));
-assert('rename: index.html no longer mentions WhatsApp anywhere', !/whatsapp/i.test(rawIndexHtml));
+assert('rename: the title, meta tags and heading do not mention WhatsApp',
+  !/whatsapp/i.test(document.title) && !Array.from(document.querySelectorAll('meta')).some((m) => /whatsapp/i.test(m.getAttribute('content') || '')) &&
+  !/whatsapp/i.test((document.querySelector('h1') || {}).textContent || ''));
 
 const failed = results.filter((r) => !r.ok);
 console.log('\n--- ' + (results.length - failed.length) + '/' + results.length + ' passed ---');
