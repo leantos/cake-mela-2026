@@ -104,8 +104,20 @@ function makeWorld(opts = {}) {
     }
     setNote() { return this; }
     setFontWeight() { return this; }
-    setBackground() { return this; }
-    setFontColor() { return this; }
+    _style(key, value) {
+      this.sheet.styles = this.sheet.styles || {};
+      for (let i = 0; i < this.nRows; i++) {
+        const row = this.r + i;
+        this.sheet.styles[row] = Object.assign(this.sheet.styles[row] || {}, { [key]: value, cols: this.nCols });
+      }
+      return this;
+    }
+    setBackground(v) { return this._style('background', v); }
+    setFontColor(v) { return this._style('color', v); }
+    setFontLine(v) {
+      if (this.sheet.failFontLine) throw new Error('setFontLine failed');
+      return this._style('line', v);
+    }
     setNumberFormat() { return this; }
     setFontSize() { return this; }
     setFormula(f) { rec('setFormula', { r: this.r, c: this.c }); this.sheet.formulas = this.sheet.formulas || {}; this.sheet.formulas[this.r + ':' + this.c] = f; return this; }
@@ -161,8 +173,10 @@ function makeWorld(opts = {}) {
     }
     setFrozenRows() {}
     setFrozenColumns() {}
-    setColumnWidth() {}
-    hideColumns(col) { this.hiddenCols.push(col); }
+    setColumnWidth(col, w) { this.widths = this.widths || {}; this.widths[col] = w; }
+    hideColumns(col) { if (this.hiddenCols.indexOf(col) < 0) this.hiddenCols.push(col); }
+    showColumns(col) { this.hiddenCols = this.hiddenCols.filter((c) => c !== col); }
+    isColumnHiddenByUser(col) { return this.hiddenCols.indexOf(col) >= 0; }
     getMaxRows() { return 1000; }
     getConditionalFormatRules() { return this._cf || []; }
     setConditionalFormatRules(rules) { this._cf = rules; }
@@ -352,7 +366,7 @@ function seed(world, extra = {}) {
 }
 
 // ---- static source checks ----
-assert('version is 2026-11-24.5', /var SCRIPT_VERSION = '2026-11-24.5'/.test(src));
+assert('version is 2026-11-24.6', /var SCRIPT_VERSION = '2026-11-24.6'/.test(src));
 assert('doPost routes staff actions without using processOrder_ first',
   /isStaffAction_\(data\.action\)/.test(src) &&
   /handleStaffAction_\(data\)/.test(src));
@@ -517,7 +531,7 @@ assert('void walk-ins are skipped in the summary',
     pin: '2468',
     clientToken: 'deviceTokenE5'
   });
-  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-24.5');
+  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-24.6');
 
   const listed = world.ctx.handleStaffAction_({
     action: 'staff_orders',
@@ -675,6 +689,27 @@ assert('void walk-ins are skipped in the summary',
     !afterVoid.walkins.some((w) => w.walkinId === 'WI-NEW-1'),
     JSON.stringify(afterVoid.walkins.map((w) => w.walkinId)));
 
+  // ---- visible VOID marker ----
+  const st = tab.styles && tab.styles[first.row];
+  assert('undo greys the row and strikes it through',
+    !!st && st.color === '#9aa0a6' && st.line === 'line-through' && st.background === '#f1f3f4' && st.cols === headers.length,
+    JSON.stringify(st));
+  const rowsBefore2 = tab.data.filter((r) => (r || []).some((c) => c !== '' && c != null)).length;
+  const again = world.ctx.staffDeleteWalkIn_({ walkinId: 'WI-NEW-1' });
+  assert('a second undo is harmless (still VOID, same row, no new row)',
+    again.ok && again.voided === true && again.row === first.row &&
+    String(tab.data[first.row - 1][voidCol]) === 'VOID' &&
+    tab.data.filter((r) => (r || []).some((c) => c !== '' && c != null)).length === rowsBefore2);
+  assert('rows that were not undone are not restyled',
+    !(tab.styles && (tab.styles[2] || tab.styles[3])), JSON.stringify(tab.styles));
+  tab.failFontLine = true;
+  const second = world.ctx.staffAddWalkIn_({ walkinId: 'WI-NEW-2', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 1, payment: 'UPI' });
+  const brokenFmt = world.ctx.staffDeleteWalkIn_({ walkinId: 'WI-NEW-2' });
+  tab.failFontLine = false;
+  assert('a formatting error never fails the undo',
+    second.ok && brokenFmt.ok === true && brokenFmt.voided === true && String(tab.data[second.row - 1][voidCol]) === 'VOID',
+    JSON.stringify(brokenFmt));
+
   const summary = world.ctx.computeOrderSummaryFromValues_(
     world.sheets['Orders'].data,
     DATES,
@@ -690,6 +725,35 @@ assert('void walk-ins are skipped in the summary',
     JSON.stringify(nov && nov.sales && nov.sales.walkIn));
 }
 
+// ---- visible VOID marker: legacy rows and column visibility ----
+{
+  const world = makeWorld({ props: { STAFF_PIN: '2468' } });
+  const hdr = WALKIN.concat(['Customer', 'Recorded At']);
+  const mk = (id, voidCell, notes) => {
+    const r = hdr.map(() => '');
+    r[0] = '2026-11-29'; r[2] = 'Dates & Carrot Pudding (700g)'; r[3] = 1; r[6] = 'Cash';
+    r[hdr.indexOf('Notes')] = notes || '';
+    r[hdr.indexOf('Walk-in ID')] = id; r[hdr.indexOf('Void')] = voidCell;
+    return r;
+  };
+  seed(world, { walkins: [hdr.slice(), mk('L-LIVE', '', ''), mk('L-VOID', 'VOID', ''), mk('L-NOTES', '', 'VOID old note')] });
+  const tab = world.sheets['Walk-in Sales'];
+  const n = world.ctx.restyleVoidedWalkIns_(tab);
+  assert('setupSheets restyles walk-ins undone before the marker existed (Void cell or legacy VOID note)',
+    n === 2 && tab.styles && tab.styles[3] && tab.styles[4] && tab.styles[3].line === 'line-through' && tab.styles[4].line === 'line-through',
+    JSON.stringify({ n, styles: tab.styles }));
+  assert('the legacy restyle leaves live rows alone', !(tab.styles && tab.styles[2]), JSON.stringify(tab.styles));
+  assert('setupSheets runs the legacy restyle', /restyleVoidedWalkIns_\(walkInTab\)/.test(src));
+
+  const voidCol1 = hdr.indexOf('Void') + 1;
+  const idCol1 = hdr.indexOf('Walk-in ID') + 1;
+  tab.hiddenCols = [voidCol1]; // an older version hid it
+  world.ctx.ensureWalkInExtraColumns_(tab);
+  assert('the Void column is shown again and the Walk-in ID column stays hidden',
+    tab.hiddenCols.indexOf(voidCol1) < 0 && tab.hiddenCols.indexOf(idCol1) >= 0, JSON.stringify(tab.hiddenCols));
+  assert('the Void column gets a visible width', tab.widths && tab.widths[voidCol1] >= 50, JSON.stringify(tab.widths));
+}
+
 // ---- doPost routing keeps the customer hot path ----
 {
   const world = makeWorld({ props: { STAFF_PIN: '2468' } });
@@ -698,7 +762,7 @@ assert('void walk-ins are skipped in the summary',
     postData: { contents: JSON.stringify({ action: 'staff_login', pin: '2468', clientToken: 'deviceTokenF6' }) }
   });
   const staffBody = JSON.parse(staffRes.body);
-  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-24.5');
+  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-24.6');
 
   const beforeRows = world.sheets['Orders'].data.length;
   const order = {

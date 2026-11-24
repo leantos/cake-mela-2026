@@ -164,7 +164,8 @@ function setupSheets() {
   var orders = getOrCreateSheet_(ss, ORDERS_SHEET_NAME);
   ensureOrdersSchema_(orders, MENU_ITEM_COLUMNS);
   ensureOrdersStatusValidation_(orders);
-  ensureWalkInSalesSheet_(ss);
+  var walkInTab = ensureWalkInSalesSheet_(ss);
+  restyleVoidedWalkIns_(walkInTab); // mark rows undone before the visible marker existed
   ensureStockSheet_(ss, MENU_ITEM_COLUMNS);
   rebuildTallySheet_(ss);
   refreshWeeklySummary_(ss, orders);
@@ -181,7 +182,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-24.5';
+var SCRIPT_VERSION = '2026-11-24.6';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -3393,6 +3394,7 @@ function staffSetStatus_(data) {
 function ensureWalkInExtraColumns_(tab) {
   var headers = getHeaders_(tab);
   var extras = ['Walk-in ID', 'Void', 'Customer', 'Recorded At'];
+  var hadVoidHeader = headers.indexOf('Void') !== -1;
   var i, name;
   for (i = 0; i < extras.length; i++) {
     name = extras[i];
@@ -3403,6 +3405,7 @@ function ensureWalkInExtraColumns_(tab) {
   }
   var idCol = headers.indexOf('Walk-in ID');
   var voidCol = headers.indexOf('Void');
+  var voidWasMissing = !hadVoidHeader;
   try {
     // ISO timestamps must stay text so Sheets never converts/mangles them.
     var recCol = headers.indexOf('Recorded At');
@@ -3412,8 +3415,54 @@ function ensureWalkInExtraColumns_(tab) {
   } catch (err0) {}
   try {
     if (idCol >= 0 && tab.hideColumns) tab.hideColumns(idCol + 1);
-    if (voidCol >= 0 && tab.hideColumns) tab.hideColumns(voidCol + 1);
   } catch (err) {}
+  try {
+    // The Void column is visible so undone sales are obvious; unhide it if an
+    // older version hid it.
+    if (voidCol >= 0) {
+      var voidHidden = tab.isColumnHiddenByUser ? !!tab.isColumnHiddenByUser(voidCol + 1) : false;
+      if (voidHidden && tab.showColumns) tab.showColumns(voidCol + 1);
+      if ((voidHidden || voidWasMissing) && tab.setColumnWidth) tab.setColumnWidth(voidCol + 1, 70);
+    }
+  } catch (err2) {}
+}
+
+var VOID_ROW_FONT_COLOR = '#9aa0a6';
+var VOID_ROW_BACKGROUND = '#f1f3f4';
+
+/** Grey + strikethrough one walk-in row. Never throws: a formatting failure must not fail an undo. */
+function styleVoidedWalkInRow_(tab, row, lastCol) {
+  try {
+    var range = tab.getRange(row, 1, 1, Math.max(lastCol || 1, 1));
+    range.setFontColor(VOID_ROW_FONT_COLOR);
+    range.setBackground(VOID_ROW_BACKGROUND);
+    range.setFontLine('line-through');
+  } catch (err) {}
+}
+
+/** setupSheets only: restyle rows that were undone before the visible marker existed. */
+function restyleVoidedWalkIns_(tab) {
+  try {
+    if (!tab) return 0;
+    var headers = getHeaders_(tab);
+    var lastRow = tab.getLastRow();
+    if (!headers.length || lastRow < 2) return 0;
+    var voidIdx = headers.indexOf('Void');
+    var notesIdx = headers.indexOf('Notes');
+    var values = tab.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    var count = 0;
+    var r, row;
+    for (r = 0; r < values.length; r++) {
+      row = values[r] || [];
+      if (isVoidWalkIn_(voidIdx >= 0 ? row[voidIdx] : '', notesIdx >= 0 ? row[notesIdx] : '')) {
+        styleVoidedWalkInRow_(tab, r + 2, headers.length);
+        count++;
+      }
+    }
+    return count;
+  } catch (err) {
+    return 0;
+  }
 }
 
 function nextWalkInDataRow_(sheet, headers) {
@@ -3657,6 +3706,7 @@ function staffDeleteWalkIn_(data) {
         tab.getRange(row, notesCol + 1).setValue(existingNotes ? ('VOID ' + existingNotes) : 'VOID');
       }
     }
+    styleVoidedWalkInRow_(tab, row, headers.length); // visible grey + strikethrough, best effort
     invalidateSummaryCache_();
     invalidateStockCache_(); // a voided walk-in gives the stock back
     return { ok: true, walkinId: walkinId, row: row, voided: true };

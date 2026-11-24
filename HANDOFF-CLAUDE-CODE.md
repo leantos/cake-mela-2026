@@ -30,7 +30,7 @@ You are picking up an existing, working project. Read this fully, then `README.m
   - **Fallback.** If `/api/order` can't be reached (offline, or a Netlify Drop deploy returning 404), the page uses its localStorage outbox, picks a random contact and posts straight to Apps Script (text/plain POST, sendBeacon/keepalive). Later retries try `/api/order` first and pass along the chosen contact.
 - Async Workloads were deliberately **not** used, because they need a team extension and an API key on Starter. The scheduled sweep is used instead.
 
-## Apps Script (`apps-script/Code.gs`, SCRIPT_VERSION `2026-11-24.5`)
+## Apps Script (`apps-script/Code.gs`, SCRIPT_VERSION `2026-11-24.6`)
 - **Live deployment URL (keep this one):** `https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec` (the "QyGs" deployment). Check `?action=debug` for the version it currently serves; redeploy after any Code.gs change.
   - **Redeploy without changing the URL:** paste the code → Save → Deploy → Manage deployments → pencil on the existing deployment → Version: New version → Deploy. Choosing "New deployment" creates a new URL, so avoid that.
   - Old unused deployments ending `...RstCz` and `...67X5n` can be deleted.
@@ -51,6 +51,7 @@ You are picking up an existing, working project. Read this fully, then `README.m
   - The Status dropdown and its colours: Paid gold, Picked up green, Cancelled grey strikethrough.
   - The Walk-in Sales tab and a hidden `_ItemPrices` sheet.
   - The Status Updated, Walk-in ID, Void and **Assigned To** columns. Assigned To is added as the last column, and existing rows are untouched.
+  - **Undone walk-ins stay in the Sheet, visibly marked.** `staff_delete_walkin` sets the Void cell to `VOID` (summaries, the Recent list and stock all ignore VOID rows) and also greys the row with strikethrough. The Void column is now visible (Walk-in ID stays hidden). `setupSheets` restyles rows that were undone before this version. Styling is best effort and can never fail an undo.
   - The Weekly Summary, which excludes Cancelled and has Picked up and Walk-in columns.
 - **Known Sheets gotchas (already fixed, don't regress):**
   - Sheets auto-converts "2026-11-29" and "06:30" into Date objects. Normalise them in Asia/Calcutta when reading, and write those cells as `@` text format.
@@ -94,7 +95,7 @@ You are picking up an existing, working project. Read this fully, then `README.m
 2. In Netlify, import from Git, or link the repo to the existing site. No env vars are needed; `APPS_SCRIPT_URL` can optionally override the Apps Script URL.
 3. In Apps Script, paste `apps-script/Code.gs`, Save, and run `setupSheets`. Then publish a New version on the existing QyGs deployment.
 4. Verify:
-   - `?action=debug` reports `2026-11-24.5`.
+   - `?action=debug` reports `2026-11-24.6`.
    - `https://<site>/api/order` returns `{"ok":true,"pending":0}`.
    - One real test order lands in the Sheet with Assigned To filled in. Delete it afterwards.
 5. Optional polish: on mobile, the confirmation line wraps to two lines, which makes the sticky bar taller after ordering.
@@ -111,4 +112,4 @@ You are picking up an existing, working project. Read this fully, then `README.m
 - **Walk-in recorded time:** Walk-in Sales gets a `Recorded At` text column (ISO 8601, added automatically like `Customer`). `staff_add_walkin` accepts an optional `recordedAt` from the client (offline-queued sales keep their real time); it must be a real date within the last 14 days and at most 5 minutes ahead, otherwise the server time is used. `staff_walkins` rows return `recordedAt` (`''` for legacy rows). A duplicate `walkinId` never overwrites the time.
 - **/orders is PIN-gated and lists pending orders:** each date's "Pending orders" card also lists the orders whose status is exactly Pending (name, tel: link, items, total, "To: <assignee>"), oldest first, loaded lazily per open date panel through the PIN-protected `staff_orders` action (no `Code.gs` change) and refreshed with the 60s timer. A failed load shows the real error with a Retry button; a wrong/locked/unauthorized answer returns to the gate.
   - **Privacy, honestly:** names and phone numbers are returned ONLY by PIN-protected `staff_orders`. The Apps Script `?action=summary` GET is still public and returns aggregates only (no names, phones or order IDs); gating the page does not make that URL private.
-- **Apps Script:** SCRIPT_VERSION `2026-11-24.5`; redeploy as a New version of the existing deployment and run `setupSheets`.
+- **Apps Script:** SCRIPT_VERSION `2026-11-24.6`; redeploy as a New version of the existing deployment and run `setupSheets`.
