@@ -27,14 +27,14 @@
 </head>
 <body class="m-0 min-h-dvh bg-m3-surface font-sans text-ink antialiased">
   <div class="app flex min-h-dvh w-full flex-col bg-m3-surface pb-10">
-    <header class="hero-head sticky top-0 z-30 flex items-center gap-4 border-b border-m3-outline-variant bg-m3-surface-container px-4 py-2 text-brand-blue shadow-m3-1 lg:px-6 lg:py-3">
-      <img class="logo block size-14 shrink-0 lg:size-16" src="logo.png" width="56" height="56" alt="Vailankanni Matha Youth logo">
+    <header class="hero-head sticky top-0 z-30 flex items-center gap-[0.7rem] bg-m3-surface px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 text-m3-on-surface shadow-m3-1 min-[720px]:px-6">
+      <img class="logo block size-[52px] shrink-0" src="logo.png" width="52" height="52" alt="Vailankanni Matha Youth logo">
       <div class="brand min-w-0 flex-1 text-left">
-        <h1 class="m-0 font-serif text-[1.375rem] leading-7 font-bold text-brand-blue lg:text-[1.75rem] lg:leading-9">Vailankanni Matha Youth</h1>
-        <p class="tagline mt-0.5 text-[0.75rem] leading-4 font-medium tracking-[0.5px] text-m3-on-surface-variant lg:text-[0.875rem] lg:leading-5">Order dashboard • Christmas Cake Sale</p>
+        <h1 class="m-0 text-[1.25rem] font-medium leading-7 text-m3-primary min-[720px]:text-[1.375rem]">Vailankanni Matha Youth</h1>
+        <p class="tagline text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant">Order dashboard • Christmas Cake Sale</p>
       </div>
-      <a class="staff-link ml-auto inline-flex min-h-10 shrink-0 items-center self-center rounded-full bg-m3-primary-container px-4 text-[0.875rem] font-medium tracking-[0.1px] whitespace-nowrap text-m3-on-primary-container no-underline hover:shadow-m3-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12]" href="staff.html">Staff mode</a>
-      <button type="button" class="lock-btn inline-flex min-h-10 shrink-0 cursor-pointer appearance-none items-center self-center rounded-full border-0 bg-transparent px-4 text-[0.875rem] font-medium tracking-[0.1px] whitespace-nowrap text-m3-primary hover:bg-m3-primary/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" id="lock-btn" hidden>Lock</button>
+      <a class="staff-link ml-auto inline-flex min-h-12 shrink-0 items-center self-center rounded-full bg-m3-primary-container px-4 text-[0.875rem] font-medium tracking-[0.1px] whitespace-nowrap text-m3-on-primary-container no-underline hover:shadow-m3-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12]" href="staff.html">Staff mode</a>
+      <button type="button" class="lock-btn inline-flex min-h-12 shrink-0 cursor-pointer appearance-none items-center self-center rounded-full border-0 bg-transparent px-4 text-[0.875rem] font-medium tracking-[0.1px] whitespace-nowrap text-m3-primary hover:bg-m3-primary/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" id="lock-btn" hidden>Lock</button>
     </header>
     <div class="page-body flex-1 lg:pb-7" id="page-body" hidden>
       <p class="example-banner m-0 hidden bg-m3-secondary-container px-4 py-2 text-center text-[0.875rem] font-medium text-m3-on-secondary-container [&.visible]:block" id="example-banner">Example data — not live orders</p>
