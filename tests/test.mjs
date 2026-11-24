@@ -84,6 +84,44 @@ assert('enquiries list both contacts', !!(enquire &&
   enquire.querySelector('a[href="tel:+917204017793"]') && enquire.querySelector('a[href="tel:+918050764341"]')),
   enquire && enquire.innerHTML);
 assert('site-config.js loaded two contacts', w.eval('CONTACTS.length') === 2 && w.SITE_CONFIG && w.SITE_CONFIG.contacts.length === 2);
+
+// ---- Contact us lives in the top bar (inline pills on wide screens, menu on narrow) ----
+{
+  const header = document.querySelector('header.hero-head');
+  const cfg = w.SITE_CONFIG.contacts;
+  assert('Contact us: old contact card below the poster is gone', !document.querySelector('.contact-card'));
+  assert('Contact us: inline tel links are inside the top bar',
+    !!header && cfg.every((c) => header.querySelector('#enquire a[href="tel:+' + c.number + '"]')));
+  const btn = document.getElementById('contact-btn');
+  const menu = document.getElementById('contact-menu');
+  assert('Contact menu button has menu semantics',
+    !!btn && btn.getAttribute('aria-haspopup') === 'menu' && btn.getAttribute('aria-expanded') === 'false' &&
+    btn.getAttribute('aria-controls') === 'contact-menu' && !!menu && menu.getAttribute('role') === 'menu' && menu.hidden === true);
+  const links = Array.from(menu.querySelectorAll('a[role="menuitem"]'));
+  assert('Contact menu links are built from SITE_CONFIG.contacts',
+    links.length === cfg.length && cfg.every((c, i) => links[i].getAttribute('href') === 'tel:+' + c.number && links[i].textContent.includes(c.name)),
+    menu.innerHTML);
+  assert('Contact menu items are at least 48px tall (min-h-12)', links.every((a) => a.className.includes('min-h-12')));
+
+  btn.click();
+  assert('Contact menu opens on click and focuses the first link',
+    menu.hidden === false && btn.getAttribute('aria-expanded') === 'true' && document.activeElement === links[0]);
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert('Contact menu closes on Escape and returns focus to the button',
+    menu.hidden === true && btn.getAttribute('aria-expanded') === 'false' && document.activeElement === btn);
+
+  btn.click();
+  document.body.click();
+  assert('Contact menu closes on an outside click', menu.hidden === true && btn.getAttribute('aria-expanded') === 'false');
+
+  btn.click();
+  menu.click();
+  assert('Clicking inside the menu (not on a link) keeps it open', menu.hidden === false);
+  links[0].addEventListener('click', (e) => e.preventDefault());
+  links[0].click();
+  assert('Choosing a contact closes the menu', menu.hidden === true);
+}
+
 assert('payment note sits above the place-order button in the sticky bar',
   !!(payNote && payNote.closest('.sticky-bar') && document.getElementById('place-order-btn') &&
     (payNote.compareDocumentPosition(document.getElementById('place-order-btn')) & window.Node.DOCUMENT_POSITION_FOLLOWING)));
@@ -1122,6 +1160,127 @@ assert('CTA text is unchanged for WhatsApp', document.getElementById('place-orde
   w.__setSheetsUrlForTest('');
   w.__setStockForTest({}, 'ok', null);
   zeroCart();
+}
+
+// ---- order tabs: Cakes | Your details ----
+{
+  const $ = (id) => document.getElementById(id);
+  const tabCakes = $('tab-cakes');
+  const tabDetails = $('tab-details');
+  const sel = (t) => t.getAttribute('aria-selected');
+  w.resetSubmitButton();
+  w.__setStockForTest({}, 'ok', null);
+  zeroCart();
+  w.selectPickupDate('2026-11-29');
+  $('buyer-name').value = '';
+  $('buyer-phone').value = '';
+  if (formAlert && !formAlert.hidden) $('form-alert-ok').click();
+
+  assert('tabs: tablist with two tabs', $('order-tabs')?.getAttribute('role') === 'tablist' &&
+    tabCakes?.getAttribute('role') === 'tab' && tabDetails?.getAttribute('role') === 'tab');
+  assert('tabs: Cakes is selected first, Your details panel hidden',
+    sel(tabCakes) === 'true' && sel(tabDetails) === 'false' && $('panel-cakes').hidden === false && $('panel-details').hidden === true);
+  assert('tabs: tabs control their panels',
+    tabCakes.getAttribute('aria-controls') === 'panel-cakes' && tabDetails.getAttribute('aria-controls') === 'panel-details' &&
+    $('panel-cakes').getAttribute('role') === 'tabpanel' && $('panel-details').getAttribute('aria-labelledby') === 'tab-details');
+  assert('tabs: pickup date, Mass, menu and cart error live in the Cakes panel',
+    ['field-pickup-date', 'field-mass', 'menu-list', 'cart-error', 'date-chips', 'mass-options'].every((id) => $('panel-cakes').contains($(id))));
+  assert('tabs: name and phone live in the details panel (inside #order-form)',
+    $('panel-details').contains($('buyer-name')) && $('panel-details').contains($('buyer-phone')) && $('order-form').contains($('buyer-phone')));
+  assert('tabs: pickup selector is not in the details panel',
+    !$('panel-details').contains($('field-pickup-date')) && !$('panel-details').contains($('field-mass')));
+  assert('tabs: the order bar and summary sit outside both panels',
+    !$('panel-cakes').contains($('place-order-btn')) && !$('panel-details').contains($('place-order-btn')) &&
+    !$('panel-cakes').contains($('summary-total')));
+
+  // badge
+  assert('tabs: badge hidden with an empty cart', $('tab-cakes-badge').classList.contains('hidden'));
+  cards[0].querySelector('.plus').click();
+  cards[0].querySelector('.plus').click();
+  cards[5].querySelector('.plus').click();
+  assert('tabs: badge counts cakes selected', $('tab-cakes-badge').textContent === '3' && !$('tab-cakes-badge').classList.contains('hidden'),
+    $('tab-cakes-badge').textContent);
+  cards[5].querySelector('.minus').click();
+  assert('tabs: badge follows the cart', $('tab-cakes-badge').textContent === '2');
+
+  // switching
+  tabDetails.click();
+  assert('tabs: clicking Your details switches panels',
+    sel(tabDetails) === 'true' && sel(tabCakes) === 'false' && $('panel-details').hidden === false && $('panel-cakes').hidden === true &&
+    tabDetails.tabIndex === 0 && tabCakes.tabIndex === -1);
+  assert('tabs: the sticky order bar stays visible on the details tab',
+    !$('place-order-btn').closest('[hidden]') && $('summary-count').textContent === '2 items', $('summary-count').textContent);
+  $('order-tabs').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+  assert('tabs: ArrowLeft moves back to Cakes and focuses it', sel(tabCakes) === 'true' && document.activeElement === tabCakes);
+  $('order-tabs').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+  assert('tabs: ArrowRight moves to Your details', sel(tabDetails) === 'true' && document.activeElement === tabDetails);
+  $('order-tabs').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+  assert('tabs: Home selects the first tab', sel(tabCakes) === 'true');
+  $('order-tabs').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+  assert('tabs: End selects the last tab', sel(tabDetails) === 'true');
+  $('back-to-cakes').click();
+  assert('tabs: Back to cakes returns to the Cakes tab', sel(tabCakes) === 'true' && $('panel-cakes').hidden === false);
+  $('next-to-details').click();
+  assert('tabs: Next goes to Your details', sel(tabDetails) === 'true' && $('panel-details').hidden === false);
+  $('back-to-cakes').click();
+
+  // invalid details from the Cakes tab -> details tab + focus on first invalid field
+  w.selectMass('06:30');
+  assert('tabs: starts on the Cakes tab for the validation check', sel(tabCakes) === 'true');
+  $('place-order-btn').click();
+  assert('tabs: missing name/phone switches to Your details', sel(tabDetails) === 'true' && $('panel-details').hidden === false);
+  assert('tabs: the Almost there! dialog opens', !formAlert.hidden && /Enter your name/.test(formAlert.textContent), formAlert.textContent);
+  assert('tabs: inline errors show on the details fields',
+    $('field-name').classList.contains('invalid') && $('field-phone').classList.contains('invalid'));
+  assert('tabs: the Your details tab shows an attention dot, Cakes does not',
+    !$('tab-details-dot').classList.contains('hidden') && $('tab-cakes-dot').classList.contains('hidden'));
+  $('form-alert-ok').click();
+  assert('tabs: closing the dialog focuses the first invalid field', document.activeElement === $('buyer-name'),
+    document.activeElement && (document.activeElement.id || document.activeElement.className));
+
+  // missing cart/date from the details tab -> Cakes tab
+  $('buyer-name').value = 'Asha Rao';
+  $('buyer-name').dispatchEvent(new window.Event('input', { bubbles: true }));
+  $('buyer-phone').value = '9876543210';
+  $('buyer-phone').dispatchEvent(new window.Event('input', { bubbles: true }));
+  zeroCart();
+  tabDetails.click();
+  assert('tabs: starts on the details tab for the cart check', sel(tabDetails) === 'true');
+  $('place-order-btn').click();
+  assert('tabs: an empty cart switches to the Cakes tab', sel(tabCakes) === 'true' && $('panel-cakes').hidden === false);
+  assert('tabs: the empty-cart dialog and inline error show',
+    !formAlert.hidden && /Please add at least one cake/.test(formAlert.textContent) && $('cart-error').classList.contains('visible'));
+  assert('tabs: the Cakes tab shows an attention dot', !$('tab-cakes-dot').classList.contains('hidden'));
+  $('form-alert-ok').click();
+
+  cards[0].querySelector('.plus').click();
+  $('pickup-date').value = '';
+  $('pickup-mass').value = '';
+  tabDetails.click();
+  $('place-order-btn').click();
+  assert('tabs: missing pickup date/Mass switches to the Cakes tab', sel(tabCakes) === 'true' &&
+    $('field-pickup-date').classList.contains('invalid') && $('field-mass').classList.contains('invalid'));
+  $('form-alert-ok').click();
+
+  // end to end from the details tab
+  w.selectPickupDate('2026-11-29');
+  w.selectMass('06:30');
+  tabDetails.click();
+  let tabRedirect = '';
+  w.openWhatsApp = function (message) { tabRedirect = message; };
+  const realFetchTabs = window.fetch;
+  window.fetch = (...args) => Promise.resolve({ ok: true, json: async () => ({ ok: true, status: 'saved' }) });
+  w.resetSubmitButton();
+  await w.placeOrder();
+  window.fetch = realFetchTabs;
+  assert('tabs: an order placed from the details tab still goes to WhatsApp', /Asha Rao/.test(tabRedirect) && tabRedirect.length > 20, tabRedirect.slice(0, 80));
+  assert('tabs: no attention dots remain after a valid order',
+    $('tab-details-dot').classList.contains('hidden') && $('tab-cakes-dot').classList.contains('hidden'));
+  w.resetSubmitButton();
+  zeroCart();
+  $('buyer-name').value = '';
+  $('buyer-phone').value = '';
+  tabCakes.click();
 }
 
 const failed = results.filter((r) => !r.ok);

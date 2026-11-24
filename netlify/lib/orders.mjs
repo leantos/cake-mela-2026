@@ -279,6 +279,12 @@ export async function acceptOrder(store, raw, opts = {}) {
     }
   }
   await store.setJSON('pending/' + order.orderId, { orderId: order.orderId, queuedAt: record.receivedAt });
+  // A duplicate request may already have forwarded this order (and cleared
+  // its marker) between the two writes above. forwardOrder marks the record
+  // sent BEFORE deleting the marker, so if it is sent now, drop the marker
+  // we just wrote instead of leaving an orphan behind.
+  const fresh = await store.get(key, { type: 'json' });
+  if (fresh && fresh.sent) await store.delete('pending/' + order.orderId);
   return {
     status: 200,
     record,
@@ -389,7 +395,7 @@ export async function sweepPending(store, opts = {}) {
   const now = opts.now || Date.now;
   const budgetMs = opts.budgetMs || 25000;
   const started = now();
-  const { blobs } = await store.list({ prefix: 'pending/' });
+  const blobs = await listPendingBlobs(store);
   const summary = { pending: blobs.length, tried: 0, sent: 0, failed: 0, skipped: 0 };
   for (const blob of blobs) {
     if (now() - started > budgetMs) break;
@@ -407,7 +413,15 @@ export async function sweepPending(store, opts = {}) {
   return summary;
 }
 
-export async function countPending(store) {
+/**
+ * Pending markers for real orders only. The Blobs store can briefly list its
+ * own in-flight temp files (e.g. 'pending/.abc123'), which aren't orders.
+ */
+async function listPendingBlobs(store) {
   const { blobs } = await store.list({ prefix: 'pending/' });
-  return blobs.length;
+  return blobs.filter((b) => ORDER_ID_RE.test(String(b.key).slice('pending/'.length)));
+}
+
+export async function countPending(store) {
+  return (await listPendingBlobs(store)).length;
 }

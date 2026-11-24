@@ -213,7 +213,9 @@ assert('pending marker removed after success', (await lib.countPending(store)) =
   await r.settle();
   let rec = await store.get('order/' + o.orderId, { type: 'json' });
   assert('failed forward is recorded with a retry time', rec.sent === false && rec.attempts === 1 && rec.nextAttemptAt > Date.now(), JSON.stringify(rec));
-  assert('pending count shows it', (await lib.countPending(store)) === 1);
+  const pendingNow = (await store.list({ prefix: 'pending/' })).blobs.map((b) => b.key);
+  const pendingDetail = JSON.stringify(await Promise.all(pendingNow.map(async (k) => ({ k, rec: await store.get('order/' + k.slice(8), { type: 'json' }) }))));
+  assert('pending count shows it', (await lib.countPending(store)) === 1, pendingDetail);
   const g = await call(null, 'GET');
   assert('GET /api/order reports the pending count only', g.json.ok && g.json.pending === 1 && Object.keys(g.json).length === 2, JSON.stringify(g.json));
 
@@ -233,6 +235,32 @@ assert('pending marker removed after success', (await lib.countPending(store)) =
   await store.setJSON('order/' + o2.orderId, Object.assign(await store.get('order/' + o2.orderId, { type: 'json' }), { nextAttemptAt: 0 }));
   await sweepFn();
   assert('scheduled sweep-orders function sends due orders', sheetRows.has(o2.orderId) && (await lib.countPending(store)) === 0);
+}
+
+// ---- race: a duplicate forwards the order between the record and marker writes ----
+{
+  sheetMode = 'ok';
+  const o = order();
+  let raced = false;
+  const racing = new Proxy(store, {
+    get(target, prop) {
+      const v = target[prop];
+      if (prop === 'setJSON') {
+        return async (key, ...rest) => {
+          if (!raced && String(key).startsWith('pending/')) {
+            raced = true;
+            await lib.forwardOrder(target, String(key).slice('pending/'.length), { url: mockUrl });
+          }
+          return v.call(target, key, ...rest);
+        };
+      }
+      return typeof v === 'function' ? v.bind(target) : v;
+    }
+  });
+  const res = await lib.acceptOrder(racing, o);
+  assert('race: order accepted', res.status === 200 && res.body.ok && raced);
+  assert('race: no orphan pending marker is left for an already-sent order',
+    (await lib.countPending(store)) === 0 && sheetRows.has(o.orderId), String(await lib.countPending(store)));
 }
 
 // ---- invalid_date from Apps Script → resend with fallback so the order isn't lost ----
