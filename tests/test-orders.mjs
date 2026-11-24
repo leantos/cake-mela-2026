@@ -280,8 +280,19 @@ const fetchDom = new JSDOM(html, {
       clear() { store.clear(); }
     };
     Object.defineProperty(win, 'localStorage', { configurable: true, value: mem });
+    // /orders is PIN-gated now: start from an unlocked staff session (the same sessionStorage key staff.html uses).
+    const sess = new Map([['poppinsStaffPin', '2468']]);
+    Object.defineProperty(win, 'sessionStorage', { configurable: true, value: {
+      getItem(k) { return sess.has(k) ? sess.get(k) : null; },
+      setItem(k, v) { sess.set(k, String(v)); },
+      removeItem(k) { sess.delete(k); },
+      clear() { sess.clear(); }
+    } });
     win.fetch = async function (url, opts) {
       fetchCalls.push({ url: String(url), method: (opts && opts.method) || 'GET' });
+      if (opts && opts.method === 'POST') {
+        return { ok: true, status: 200, text: async function () { return JSON.stringify({ ok: true, status: 'ok' }); } };
+      }
       return {
         ok: true,
         status: 200,
@@ -305,6 +316,206 @@ assert('mocked fetch is not marked as example/preview data',
 
 if (fetchDom.window.__orders && typeof fetchDom.window.__orders.stop === 'function') fetchDom.window.__orders.stop();
 fetchDom.window.close();
+
+// ---- PIN gate + pending order list (staff_login / staff_orders) ----
+{
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const waitFor = async (fn, ms = 1500) => { const t = Date.now(); while (Date.now() - t < ms) { if (fn()) return true; await sleep(15); } return !!fn(); };
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const gated = clone(mock);
+  gated.dates.find((d) => d.id === '2026-11-29').pending = { orders: 3, cakes: 5, amount: 1750 };
+
+  function mkPage({ url, session, handler }) {
+    const calls = [];
+    const sess = new Map(session || []);
+    const local = new Map();
+    const d = new JSDOM(html, {
+      url: url || 'https://example.com/orders.html',
+      runScripts: 'dangerously',
+      pretendToBeVisual: true,
+      beforeParse(win) {
+        win.__TEST_NOW = new Date('2026-11-23T12:00:00+05:30');
+        Object.defineProperty(win, 'localStorage', { configurable: true, value: {
+          getItem(k) { return local.has(k) ? local.get(k) : null; },
+          setItem(k, v) { local.set(k, String(v)); },
+          removeItem(k) { local.delete(k); },
+          clear() { local.clear(); }
+        } });
+        Object.defineProperty(win, 'sessionStorage', { configurable: true, value: {
+          getItem(k) { return sess.has(k) ? sess.get(k) : null; },
+          setItem(k, v) { sess.set(k, String(v)); },
+          removeItem(k) { sess.delete(k); },
+          clear() { sess.clear(); }
+        } });
+        win.fetch = async function (u, opts) {
+          const method = (opts && opts.method) || 'GET';
+          let body = null;
+          if (opts && opts.body) { try { body = JSON.parse(opts.body); } catch (e) { body = null; } }
+          calls.push({ url: String(u), method, type: opts && opts.headers && opts.headers['Content-Type'], body });
+          if (!handler) throw new Error('network disabled in tests');
+          const out = handler(String(u), method, body);
+          return { ok: true, status: 200, json: async () => clone(out), text: async () => JSON.stringify(out) };
+        };
+      }
+    });
+    return { dom: d, win: d.window, doc: d.window.document, calls, sess, local };
+  }
+  const pageDone = (pg) => { try { if (pg.win.__orders) pg.win.__orders.stop(); } catch (e) {} pg.win.close(); };
+  const summaryGets = (pg) => pg.calls.filter((c) => c.method === 'GET' && /action=summary/.test(c.url));
+
+  const ORDERS = [
+    { row: 5, orderId: 'PB-X-3', name: 'Zed Third', phone: '9000000003', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Pending', assignedTo: '' },
+    { row: 2, orderId: 'PB-X-1', name: 'Asha Rao', phone: '9876543210', pickupDate: '2026-11-29', items: '2 × Rich Plum Cake (400g)\n1 × Dates & Carrot Pudding (700g)', total: 1350, status: 'Pending', assignedTo: 'Cyril Martin' },
+    { row: 3, orderId: 'PB-X-2', name: 'Paid Person', phone: '9000000002', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (800g)', total: 650, status: 'Paid', assignedTo: '' },
+    { row: 4, orderId: 'PB-X-4', name: 'Oversold Person', phone: '9000000004', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'OVERSOLD', assignedTo: '' },
+    { row: 6, orderId: 'PB-X-5', name: 'Picked Person', phone: '9000000005', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Picked up', assignedTo: '' },
+    { row: 7, orderId: 'PB-X-6', name: 'Cancelled Person', phone: '9000000006', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Cancelled', assignedTo: '' }
+  ];
+  let staffOrdersMode = 'ok';
+  const handler = (u, method, body) => {
+    if (method === 'GET') return clone(gated);
+    if (body && body.action === 'staff_login') return body.pin === '2468' ? { ok: true, status: 'ok' } : { ok: false, status: 'unauthorized', error: 'Wrong PIN.' };
+    if (body && body.action === 'staff_orders') {
+      if (staffOrdersMode === 'error') return { ok: false, error: 'Sheet exploded' };
+      if (staffOrdersMode === 'unauthorized') return { ok: false, status: 'unauthorized', error: 'Please sign in again.' };
+      if (staffOrdersMode === 'paid-only') return { ok: true, orders: ORDERS.filter((o) => o.status === 'Paid') };
+      return { ok: true, orders: ORDERS.filter((o) => o.pickupDate === body.pickupDate) };
+    }
+    return { ok: false, error: 'unknown' };
+  };
+
+  // locked: gate shown, nothing rendered, nothing fetched
+  let pg = mkPage({ handler });
+  await sleep(80);
+  assert('gate: PIN gate is shown when locked and the dashboard is hidden',
+    pg.doc.getElementById('pin-gate').hidden === false && pg.doc.getElementById('page-body').hidden === true);
+  assert('gate: no totals or orders are fetched or rendered while locked',
+    summaryGets(pg).length === 0 && pg.doc.querySelectorAll('details').length === 0 &&
+    pg.doc.getElementById('card-cakes').textContent === '—' && !pg.calls.some((c) => c.body && c.body.action === 'staff_orders'),
+    JSON.stringify(pg.calls.map((c) => c.url)));
+  assert('gate: Lock button is hidden while locked', pg.doc.getElementById('lock-btn').hidden === true);
+
+  // too-short PIN
+  pg.doc.getElementById('pin-input').value = '12';
+  pg.doc.getElementById('pin-form').dispatchEvent(new pg.win.Event('submit', { cancelable: true }));
+  await sleep(30);
+  assert('gate: a PIN shorter than 4 digits is refused without a request',
+    /at least 4 digits/.test(pg.doc.getElementById('pin-error').textContent) && pg.calls.length === 0);
+
+  // wrong PIN
+  pg.doc.getElementById('pin-input').value = '1111';
+  pg.doc.getElementById('pin-form').dispatchEvent(new pg.win.Event('submit', { cancelable: true }));
+  await waitFor(() => /Wrong PIN/.test(pg.doc.getElementById('pin-error').textContent));
+  assert('gate: a wrong PIN stays on the gate with the message and keeps nothing',
+    pg.doc.getElementById('pin-gate').hidden === false && /Wrong PIN/.test(pg.doc.getElementById('pin-error').textContent) &&
+    pg.sess.size === 0 && summaryGets(pg).length === 0);
+
+  // correct PIN
+  pg.doc.getElementById('pin-input').value = '2468';
+  pg.doc.getElementById('pin-form').dispatchEvent(new pg.win.Event('submit', { cancelable: true }));
+  await waitFor(() => pg.doc.getElementById('pin-gate').hidden === true && !!pg.doc.getElementById('pending-2026-11-29') && pg.doc.querySelectorAll('.pending-order').length > 0);
+  const loginCall = pg.calls.find((c) => c.body && c.body.action === 'staff_login' && c.body.pin === '2468');
+  assert('gate: the correct PIN unlocks the dashboard and loads the totals',
+    pg.doc.getElementById('pin-gate').hidden === true && pg.doc.getElementById('page-body').hidden === false &&
+    summaryGets(pg).length >= 1 && pg.doc.getElementById('card-cakes').textContent === '23');
+  assert('gate: staff POSTs are text/plain JSON with the PIN and a client token',
+    !!loginCall && loginCall.type === 'text/plain' && !!loginCall.body.clientToken, JSON.stringify(loginCall));
+  assert('gate: the PIN is kept only in sessionStorage under the staff key (never localStorage)',
+    pg.sess.get('poppinsStaffPin') === '2468' && ![...pg.local.values()].some((v) => v.indexOf('2468') >= 0));
+  assert('gate: Lock button shows once unlocked', pg.doc.getElementById('lock-btn').hidden === false);
+
+  // pending list
+  const orderCall = pg.calls.find((c) => c.body && c.body.action === 'staff_orders');
+  assert('pending list: asks staff_orders for the date with the PIN',
+    !!orderCall && orderCall.body.pickupDate === '2026-11-29' && orderCall.body.pin === '2468');
+  const rows = [...pg.doc.querySelectorAll('#pending-2026-11-29 .pending-order')];
+  assert('pending list: only orders whose status is exactly Pending are shown',
+    rows.length === 2 && rows.every((r) => !/Paid Person|Oversold|Picked Person|Cancelled Person/.test(r.textContent)),
+    rows.map((r) => r.textContent).join(' | '));
+  assert('pending list: oldest first (by sheet row)',
+    rows.map((r) => r.querySelector('.pending-name').textContent).join(',') === 'Asha Rao,Zed Third');
+  const first = rows[0];
+  assert('pending list: each order shows name, tel: link, items, total and assignee',
+    first.querySelector('a.pending-phone').getAttribute('href') === 'tel:+919876543210' &&
+    /\+91 98765 43210/.test(first.querySelector('a.pending-phone').textContent) &&
+    /2 × Rich Plum Cake \(400g\) · 1 × Dates & Carrot Pudding \(700g\)/.test(first.querySelector('.pending-items-text').textContent) &&
+    /1,350/.test(first.querySelector('.pending-total').textContent) &&
+    /To: Cyril Martin/.test(first.querySelector('.pending-assigned').textContent) &&
+    !rows[1].querySelector('.pending-assigned'));
+  assert('pending list: sits inside that date\'s Pending orders card',
+    pg.doc.querySelector('details[data-panel-id="2026-11-29"] #pending-2026-11-29 .pending-orders') !== null);
+
+  // lock again
+  pg.doc.getElementById('lock-btn').click();
+  await sleep(30);
+  assert('lock: Lock returns to the gate and wipes every order and total from the page',
+    pg.doc.getElementById('pin-gate').hidden === false && pg.doc.getElementById('page-body').hidden === true &&
+    pg.doc.querySelectorAll('details').length === 0 && pg.doc.querySelectorAll('.pending-order').length === 0 &&
+    pg.doc.getElementById('card-cakes').textContent === '—' && pg.sess.size === 0 && pg.doc.getElementById('pin-input').value === '');
+  pageDone(pg);
+
+  // an existing staff session (same sessionStorage key as staff.html) unlocks /orders without typing
+  pg = mkPage({ handler, session: [['poppinsStaffPin', '2468']] });
+  await waitFor(() => pg.doc.getElementById('pin-gate').hidden === true && pg.doc.querySelectorAll('.pending-order').length === 2);
+  assert('session: a PIN already in the staff sessionStorage key unlocks /orders',
+    pg.doc.getElementById('pin-gate').hidden === true && pg.calls.some((c) => c.body && c.body.action === 'staff_login' && c.body.pin === '2468') &&
+    pg.doc.querySelectorAll('.pending-order').length === 2);
+  pageDone(pg);
+
+  // a stale/wrong stored PIN falls back to the gate
+  pg = mkPage({ handler, session: [['poppinsStaffPin', '9999']] });
+  await waitFor(() => /Wrong PIN/.test(pg.doc.getElementById('pin-error').textContent));
+  assert('session: a wrong stored PIN returns to the gate and is cleared',
+    pg.doc.getElementById('pin-gate').hidden === false && pg.sess.size === 0 && summaryGets(pg).length === 0);
+  pageDone(pg);
+
+  // error + Retry (no stale content)
+  staffOrdersMode = 'error';
+  pg = mkPage({ handler, session: [['poppinsStaffPin', '2468']] });
+  await waitFor(() => !!pg.doc.querySelector('#pending-2026-11-29 .pending-orders-error'));
+  const errBox = pg.doc.querySelector('#pending-2026-11-29 .pending-orders-error');
+  assert('error: a failed staff_orders shows the real error with a Retry button and no list',
+    !!errBox && /Sheet exploded/.test(errBox.textContent) && !!errBox.querySelector('[data-retry-pending="2026-11-29"]') &&
+    pg.doc.querySelectorAll('.pending-order').length === 0);
+  staffOrdersMode = 'ok';
+  pg.doc.querySelector('[data-retry-pending="2026-11-29"]').click();
+  await waitFor(() => pg.doc.querySelectorAll('#pending-2026-11-29 .pending-order').length === 2);
+  assert('error: Retry reloads the list', pg.doc.querySelectorAll('#pending-2026-11-29 .pending-order').length === 2 && !pg.doc.querySelector('.pending-orders-error'));
+  // a later refresh that fails replaces the list with the error (no stale rows)
+  staffOrdersMode = 'error';
+  await pg.win.__orders.loadPending('2026-11-29', { silent: true });
+  assert('error: a failing refresh does not leave stale orders on screen',
+    !!pg.doc.querySelector('#pending-2026-11-29 .pending-orders-error') && pg.doc.querySelectorAll('.pending-order').length === 0);
+  pageDone(pg);
+
+  // auth failure while loading the list -> back to the gate
+  staffOrdersMode = 'unauthorized';
+  pg = mkPage({ handler, session: [['poppinsStaffPin', '2468']] });
+  await waitFor(() => pg.doc.getElementById('pin-gate').hidden === false && /sign in again/.test(pg.doc.getElementById('pin-error').textContent));
+  assert('auth: unauthorized from staff_orders returns to the gate with the message and shows no orders',
+    pg.doc.getElementById('pin-gate').hidden === false && /sign in again/.test(pg.doc.getElementById('pin-error').textContent) &&
+    pg.doc.querySelectorAll('.pending-order').length === 0 && pg.sess.size === 0);
+  pageDone(pg);
+
+  // empty state: the card says pending exist but the list has none to show
+  staffOrdersMode = 'paid-only';
+  pg = mkPage({ handler, session: [['poppinsStaffPin', '2468']] });
+  await waitFor(() => !!pg.doc.querySelector('#pending-2026-11-29 .pending-orders-empty'));
+  assert('empty: a friendly empty state shows when the list has no Pending orders',
+    !!pg.doc.querySelector('#pending-2026-11-29 .pending-orders-empty') && pg.doc.querySelectorAll('.pending-order').length === 0);
+  staffOrdersMode = 'ok';
+  pageDone(pg);
+
+  // preview mode: example data, no gate, no network
+  pg = mkPage({ url: 'https://example.com/orders.html?preview=1' });
+  await waitFor(() => pg.doc.querySelectorAll('#pending-2026-11-29 .pending-order').length > 0);
+  const names = [...pg.doc.querySelectorAll('#pending-2026-11-29 .pending-name')].map((n) => n.textContent);
+  assert('preview: ?preview=1 skips the gate and lists the example Pending orders only',
+    pg.doc.getElementById('pin-gate').hidden === true && names.join(',') === 'Asha Rao,Joseph Dsouza' && pg.calls.length === 0,
+    names.join(',') + ' | ' + pg.calls.length);
+  assert('preview: no Lock button in preview mode', pg.doc.getElementById('lock-btn').hidden === true);
+  pageDone(pg);
+}
 
 const failed = results.filter((r) => !r.ok);
 console.log('\n--- orders page ' + (results.length - failed.length) + '/' + results.length + ' passed ---');

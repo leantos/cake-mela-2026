@@ -5,7 +5,7 @@ Static order page + Netlify Functions queue + Google Sheets (Apps Script).
 ```
 public/                 ← published site (Netlify "publish" dir)
   index.html            customer order page
-  orders.html           at-a-glance order dashboard at /orders (no personal data; /admin redirects here)
+  orders.html           order dashboard at /orders, behind the staff PIN (totals + pending orders list; /admin redirects here)
   staff.html            PIN-protected staff tools (status, walk-ins)
   site-config.js        ★ ONE settings file: poster, WhatsApp contacts,
                           payment line, Apps Script URL

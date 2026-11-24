@@ -34,8 +34,9 @@
         <p class="tagline mt-0.5 text-[0.75rem] leading-4 font-medium tracking-[0.5px] text-m3-on-surface-variant lg:text-[0.875rem] lg:leading-5">Order dashboard • Christmas Cake Sale</p>
       </div>
       <a class="staff-link ml-auto inline-flex min-h-10 shrink-0 items-center self-center rounded-full bg-m3-primary-container px-4 text-[0.875rem] font-medium tracking-[0.1px] whitespace-nowrap text-m3-on-primary-container no-underline hover:shadow-m3-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12]" href="staff.html">Staff mode</a>
+      <button type="button" class="lock-btn inline-flex min-h-10 shrink-0 cursor-pointer appearance-none items-center self-center rounded-full border-0 bg-transparent px-4 text-[0.875rem] font-medium tracking-[0.1px] whitespace-nowrap text-m3-primary hover:bg-m3-primary/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" id="lock-btn" hidden>Lock</button>
     </header>
-    <div class="page-body flex-1 lg:pb-7">
+    <div class="page-body flex-1 lg:pb-7" id="page-body" hidden>
       <p class="example-banner m-0 hidden bg-m3-secondary-container px-4 py-2 text-center text-[0.875rem] font-medium text-m3-on-secondary-container [&.visible]:block" id="example-banner">Example data — not live orders</p>
       <div class="toolbar flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pt-4 pb-2 lg:px-6">
         <p class="updated m-0 flex-[1_1_12rem] text-[0.875rem] leading-5 tracking-[0.25px] text-m3-on-surface-variant" id="updated">Loading totals…</p>
@@ -93,12 +94,26 @@
       </div>
     </div>
   </div>
+  <div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-m3-surface px-[1.2rem] py-[1.4rem]" id="pin-gate">
+    <form class="w-full max-w-[360px] rounded-m3-xl bg-m3-surface-container-high px-6 pt-7 pb-6 text-center shadow-m3-3" id="pin-form">
+      <img class="mx-auto size-[72px]" src="logo.png" width="72" height="72" alt="">
+      <h2 class="mt-[0.6rem] mb-[0.2rem] text-[1.5rem] leading-8 font-normal text-m3-on-surface">Staff PIN</h2>
+      <p class="mb-[0.9rem] text-[0.875rem] text-m3-on-surface-variant">Enter the organiser PIN to see orders and totals.</p>
+      <input class="mb-[0.7rem] min-h-14 w-full text-center text-2xl tracking-[0.35em] rounded-m3-xs border border-m3-outline bg-transparent text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary" id="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="12" aria-label="Staff PIN" required>
+      <button type="submit" class="w-full bg-m3-primary text-m3-on-primary min-h-12 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] disabled:cursor-not-allowed disabled:opacity-[0.38] hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="pin-submit">Unlock</button>
+      <p class="mt-2 min-h-[1.3em] text-[0.875rem] font-medium text-m3-primary" id="pin-error" role="alert"></p>
+    </form>
+  </div>
   <div class="toast pointer-events-none fixed bottom-4 left-1/2 z-40 flex min-h-12 w-[calc(100vw-2rem)] max-w-[34rem] -translate-x-1/2 translate-y-2 items-center rounded-m3-xs bg-m3-on-surface px-4 py-3 text-[0.875rem] leading-5 tracking-[0.25px] text-m3-surface shadow-m3-3 opacity-0 transition-[opacity,translate] duration-200 motion-reduce:transition-none [&.visible]:translate-y-0 [&.visible]:opacity-100" id="toast" role="status" aria-live="polite"></div>
 
   <script src="site-config.js"></script>
   <script>
     const SHEETS_WEBAPP_URL = (window.SITE_CONFIG && window.SITE_CONFIG.appsScriptUrl) || 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec';
     const REFRESH_MS = 60000;
+    // Same keys as staff.html, so unlocking one page unlocks the other (sessionStorage is per tab).
+    const PIN_KEY = 'poppinsStaffPin';
+    const TOKEN_KEY = 'poppinsStaffClientToken';
+    const STAFF_POST_MS = 12000;
     // Tailwind class strings for markup generated below (kept here so the
     // Tailwind CLI sees them; the plain class names are test/JS hooks).
     const C_BTN_PRIMARY = 'min-h-10 cursor-pointer appearance-none rounded-full px-6 text-[0.875rem] leading-5 font-medium tracking-[0.1px] whitespace-nowrap focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary lg:min-h-11 relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12] bg-m3-primary text-m3-on-primary hover:shadow-m3-1';
@@ -274,6 +289,15 @@
       summary.grand.sales = grandSales;
     }
     enrichDemoSales(MOCK_SUMMARY);
+
+    // Example orders for ?preview=1 only. Obviously fake data.
+    const MOCK_STAFF_ORDERS = [
+      { row: 2, orderId: 'PB-261123-DEMO1', name: 'Asha Rao', phone: '9876543210', pickupDate: '2026-11-29', items: '2 × Rich Plum Cake (400g)', total: 700, status: 'Pending', assignedTo: 'Cyril Martin' },
+      { row: 3, orderId: 'PB-261123-DEMO2', name: 'Joseph Dsouza', phone: '9845012345', pickupDate: '2026-11-29', items: '1 × Dates & Carrot Pudding (700g)\n1 × Butterscotch Pudding (350g)', total: 1000, status: 'Pending', assignedTo: 'Aashwin Alfy' },
+      { row: 4, orderId: 'PB-261123-DEMO3', name: 'Maria Fernandes', phone: '9988776655', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (800g)', total: 650, status: 'Paid', assignedTo: 'Cyril Martin' },
+      { row: 5, orderId: 'PB-261123-DEMO4', name: 'Sunita Rao', phone: '9000011122', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (350g)', total: 350, status: 'Cancelled', assignedTo: '' },
+      { row: 6, orderId: 'PB-261123-DEMO5', name: 'Peter Lobo', phone: '9123456780', pickupDate: '2026-12-06', items: '3 × Rich Plum Cake (400g)', total: 1050, status: 'Pending', assignedTo: 'Aashwin Alfy' }
+    ];
 
     const els = {
       banner: document.getElementById('example-banner'),
@@ -508,7 +532,7 @@
           (list ? '<ul class="pending-items mt-2 flex flex-col gap-1 text-[0.875rem] leading-5">' + list + '</ul>' : '');
       }
       return '<section class="pending-section mt-4 rounded-m3-md bg-m3-secondary-container p-4 text-m3-on-secondary-container" id="pending-' + id +
-        '" aria-label="Pending orders — ' + escapeHtml(date.label) + '">' + head + body + '</section>';
+        '" aria-label="Pending orders — ' + escapeHtml(date.label) + '">' + head + body + pendingOrdersHtml(date) + '</section>';
     }
 
     function soldTable(date, tableId) {
@@ -637,6 +661,7 @@
       renderPanels(data);
       renderMatrix(data);
       var latest = data && data.latestOrderAt ? ' Latest order ' + data.latestOrderAt + '.' : '';
+      syncPending({ silent: true });
       els.updated.textContent = data && data.lastUpdated
         ? ('Last updated ' + data.lastUpdated + '.' + latest)
         : 'Last updated —';
@@ -701,6 +726,261 @@
         showToast('Could not copy automatically — the text is in the console.');
         try { console.log(text); } catch (err2) {}
       }
+    }
+
+    /* ---------- Staff PIN gate + pending order list ---------- */
+    var pin = '';
+    var unlocked = false;
+    var pendingByDate = {};   // dateId -> { status: 'loading' | 'ok' | 'error', orders: [], error: '' }
+    var pendingReq = {};
+
+    // Preview / test mode: example data only, no PIN, never touches the live Sheet.
+    function isMockMode() {
+      return isPreviewMode() || !!window.__USE_MOCK_SUMMARY;
+    }
+
+    function readPin() {
+      try { return sessionStorage.getItem(PIN_KEY) || ''; } catch (err) { return ''; }
+    }
+    function writePin(value) {
+      try {
+        if (value) sessionStorage.setItem(PIN_KEY, value);
+        else sessionStorage.removeItem(PIN_KEY);
+      } catch (err) {}
+    }
+    function getClientToken() {
+      try {
+        var t = localStorage.getItem(TOKEN_KEY);
+        if (t && t.length >= 8) return t;
+        t = 'c' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem(TOKEN_KEY, t);
+        return t;
+      } catch (err) {
+        return 'anon-local';
+      }
+    }
+
+    function mockStaff(payload) {
+      var action = payload && payload.action;
+      if (action === 'staff_login') return Promise.resolve({ ok: true, status: 'ok' });
+      if (action === 'staff_orders') {
+        var source = window.__MOCK_STAFF_ORDERS || (isPreviewMode() ? MOCK_STAFF_ORDERS : []);
+        var date = payload.pickupDate;
+        return Promise.resolve({
+          ok: true,
+          pickupDate: date,
+          orders: source.filter(function (o) { return !date || o.pickupDate === date; }).map(function (o) { return Object.assign({}, o); })
+        });
+      }
+      return Promise.resolve({ ok: false, error: 'Unsupported in preview' });
+    }
+
+    // Same wire format as staff.html: text/plain JSON with pin + clientToken.
+    async function staffPost(payload) {
+      if (isMockMode()) return mockStaff(payload);
+      var body = Object.assign({}, payload, { pin: pin, clientToken: getClientToken() });
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, STAFF_POST_MS);
+      try {
+        var res = await fetch(getSheetsUrl(), {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+        var text = await res.text();
+        try { return JSON.parse(text); } catch (err) { return { ok: false, error: text || 'Bad response' }; }
+      } catch (err) {
+        return { ok: false, status: 'network', error: 'Could not reach the server. Check the connection.' };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function isAuthFailure(res) {
+      return !!res && (res.status === 'unauthorized' || res.status === 'locked' || res.status === 'pin_unset');
+    }
+
+    function telHref(phone) {
+      var digits = String(phone || '').replace(/\D/g, '');
+      if (!digits) return '';
+      if (digits.length === 10) return 'tel:+91' + digits;
+      if (digits.indexOf('91') === 0 && digits.length === 12) return 'tel:+' + digits;
+      return 'tel:' + digits;
+    }
+
+    function formatPhone(phone) {
+      var digits = String(phone || '').replace(/\D/g, '');
+      if (digits.length === 10) return '+91 ' + digits.slice(0, 5) + ' ' + digits.slice(5);
+      return String(phone || '');
+    }
+
+    function pendingAggregateOrders(dateId) {
+      var d = summaryState && (summaryState.dates || []).find(function (x) { return x.id === dateId; });
+      return d && d.pending ? Number(d.pending.orders || 0) : 0;
+    }
+
+    // The list lives inside the Pending orders card; it only ever renders after unlock.
+    function pendingOrdersHtml(date) {
+      var dateId = date && date.id;
+      var id = escapeHtml(dateId);
+      var st = unlocked ? pendingByDate[dateId] : null;
+      var inner = '';
+      if (st && st.status === 'loading') {
+        inner = '<p class="pending-orders-loading mt-1 text-[0.875rem] leading-5">Loading pending orders…</p>';
+      } else if (st && st.status === 'error') {
+        inner = '<div class="pending-orders-error mt-1 text-[0.875rem] leading-5" role="alert">Couldn’t load the pending orders: ' + escapeHtml(st.error) +
+          ' <button type="button" class="mt-2 inline-flex min-h-10 cursor-pointer appearance-none items-center rounded-full border-0 bg-m3-primary px-5 text-[0.875rem] font-medium text-m3-on-primary" data-retry-pending="' + id + '">Retry</button></div>';
+      } else if (st && st.status === 'ok') {
+        if (!st.orders.length) {
+          if (pendingAggregateOrders(dateId) > 0) inner = '<p class="pending-orders-empty mt-1 text-[0.875rem] leading-5">No pending orders found for this date.</p>';
+        } else {
+          inner = '<ul class="pending-orders mt-3 flex flex-col gap-2 p-0" style="list-style:none">' + st.orders.map(function (o) {
+            var href = telHref(o.phone);
+            var phone = href
+              ? '<a class="pending-phone inline-flex min-h-10 items-center text-[0.875rem] font-medium text-m3-primary underline" href="' + escapeHtml(href) + '">' + escapeHtml(formatPhone(o.phone)) + '</a>'
+              : '';
+            var items = String(o.items || '').split(/\r?\n/).map(escapeHtml).join(' · ');
+            return '<li class="pending-order rounded-m3-sm bg-m3-surface px-3 py-2 text-m3-on-surface shadow-m3-1" data-order="' + escapeHtml(o.orderId || '') + '">' +
+              '<div class="flex items-baseline justify-between gap-3"><strong class="pending-name font-medium">' + escapeHtml(o.name || 'Customer') + '</strong>' +
+              '<span class="pending-total tabular-nums font-medium">' + formatINR(o.total) + '</span></div>' +
+              (phone ? '<div>' + phone + '</div>' : '') +
+              '<p class="pending-items-text m-0 text-[0.875rem] leading-5 text-m3-on-surface-variant">' + items + '</p>' +
+              (o.assignedTo ? '<p class="pending-assigned m-0 text-[0.75rem] leading-4 text-m3-on-surface-variant">To: ' + escapeHtml(o.assignedTo) + '</p>' : '') +
+              '</li>';
+          }).join('') + '</ul>';
+        }
+      }
+      return '<div class="pending-orders-wrap" data-pending-for="' + id + '">' + inner + '</div>';
+    }
+
+    function rerenderPending(dateId) {
+      var date = summaryState && (summaryState.dates || []).find(function (x) { return x.id === dateId; });
+      if (!date) return;
+      var html = pendingOrdersHtml(date);
+      document.querySelectorAll('[data-pending-for]').forEach(function (el) {
+        if (el.getAttribute('data-pending-for') === dateId) el.outerHTML = html;
+      });
+    }
+
+    async function loadPending(dateId, opts) {
+      opts = opts || {};
+      if (!unlocked || !dateId) return;
+      var req = pendingReq[dateId] = (pendingReq[dateId] || 0) + 1;
+      // A silent refresh keeps the current list on screen until the answer arrives.
+      if (!opts.silent || !pendingByDate[dateId]) {
+        pendingByDate[dateId] = { status: 'loading', orders: [], error: '' };
+        rerenderPending(dateId);
+      }
+      var res = await staffPost({ action: 'staff_orders', pickupDate: dateId, q: '' });
+      if (req !== pendingReq[dateId] || !unlocked) return;
+      if (!res || !res.ok) {
+        if (isAuthFailure(res)) { lock(res.error || 'Please sign in again.'); return; }
+        pendingByDate[dateId] = { status: 'error', orders: [], error: String((res && (res.error || res.status)) || 'No response from the server'), at: Date.now() };
+      } else {
+        var list = (res.orders || []).filter(function (o) { return o && o.status === 'Pending'; });
+        list.sort(function (a, b) { return (Number(a.row) || 0) - (Number(b.row) || 0); });
+        pendingByDate[dateId] = { status: 'ok', orders: list, error: '', at: Date.now() };
+      }
+      rerenderPending(dateId);
+    }
+
+    // Date panels the user can see open right now (the lazy-load targets).
+    function openDateIds() {
+      var ids = [];
+      document.querySelectorAll('details.date-panel[data-panel-id]').forEach(function (el) {
+        var id = el.getAttribute('data-panel-id');
+        if (el.open && summaryState && (summaryState.dates || []).some(function (d) { return d.id === id; })) ids.push(id);
+      });
+      return ids;
+    }
+
+    function syncPending(opts) {
+      opts = opts || {};
+      if (!unlocked) return;
+      openDateIds().forEach(function (id) {
+        if (opts.force || !pendingByDate[id]) loadPending(id, { silent: !!opts.silent });
+      });
+    }
+
+    function showGate(show) {
+      document.getElementById('pin-gate').hidden = !show;
+      document.getElementById('page-body').hidden = !!show;
+      document.getElementById('lock-btn').hidden = !!show || isMockMode();
+      if (show) setTimeout(function () { document.getElementById('pin-input').focus(); }, 30);
+    }
+
+    function stopTimer() {
+      if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+    }
+
+    function startDashboard() {
+      stopTimer();
+      loadSummary({ initial: true });
+      refreshTimer = setInterval(function () {
+        loadSummary({ keepSelection: true, silent: true }).then(function () { syncPending({ force: true, silent: true }); });
+      }, REFRESH_MS);
+    }
+
+    async function login(given) {
+      var value = String(given || '').trim();
+      var errEl = document.getElementById('pin-error');
+      if (!/^\d{4,}$/.test(value)) {
+        errEl.textContent = 'Enter at least 4 digits.';
+        return { ok: false, error: 'Enter at least 4 digits.' };
+      }
+      pin = value;
+      var res = await staffPost({ action: 'staff_login', pin: pin, clientToken: getClientToken() });
+      if (res && res.ok) {
+        writePin(pin);
+        unlocked = true;
+        errEl.textContent = '';
+        showGate(false);
+        startDashboard();
+        return res;
+      }
+      unlocked = false;
+      pin = '';
+      writePin('');
+      errEl.textContent = (res && res.status === 'locked')
+        ? (res.error || 'Too many attempts. Try again later.')
+        : (res && res.status === 'pin_unset')
+          ? (res.error || 'Staff PIN is not set yet.')
+          : (res && res.error) || 'Wrong PIN.';
+      return res || { ok: false, error: errEl.textContent };
+    }
+
+    // Back to the gate and wipe every order/total from the page.
+    function lock(message) {
+      pin = '';
+      unlocked = false;
+      writePin('');
+      stopTimer();
+      summaryState = null;
+      pendingByDate = {};
+      pendingReq = {};
+      els.panels.innerHTML = '';
+      els.matrixWrap.innerHTML = '';
+      els.chips.innerHTML = '';
+      [els.cakes, els.amount, els.orders, els.ordered, els.pickedup, els.walkin, els.sold, els.collected].forEach(function (el) { if (el) el.textContent = '—'; });
+      els.updated.textContent = 'Locked.';
+      setStatus('', false);
+      document.getElementById('pin-input').value = '';
+      document.getElementById('pin-error').textContent = typeof message === 'string' ? message : '';
+      showGate(true);
+    }
+
+    async function boot() {
+      if (isMockMode()) {
+        unlocked = true;
+        showGate(false);
+        startDashboard();
+        return;
+      }
+      var stored = readPin();
+      showGate(true);
+      if (stored) await login(stored);
     }
 
     function setSelected(id) {
@@ -769,18 +1049,33 @@
       setSelected(btn.getAttribute('data-id'));
     });
     els.panels.addEventListener('click', function (event) {
+      var retry = event.target.closest('[data-retry-pending]');
+      if (retry) { loadPending(retry.getAttribute('data-retry-pending')); return; }
       var copy = event.target.closest('[data-copy-id]');
       if (copy) copyForPoppins(copy.getAttribute('data-copy-id'));
     });
     els.panels.addEventListener('toggle', function (event) {
-      if (event.target && event.target.matches && event.target.matches('details[data-panel-id]')) persistOpenFromDom();
+      if (event.target && event.target.matches && event.target.matches('details[data-panel-id]')) {
+        persistOpenFromDom();
+        var pid = event.target.getAttribute('data-panel-id');
+        var cur = pendingByDate[pid];
+        // Re-rendered open panels also fire toggle; skip if it was just loaded.
+        if (event.target.open && event.target.classList.contains('date-panel') && (!cur || (cur.status !== 'loading' && Date.now() - (cur.at || 0) > 3000))) loadPending(pid, { silent: !!cur });
+      }
     }, true);
     els.matrixWrap.addEventListener('toggle', function (event) {
       if (event.target && event.target.matches && event.target.matches('details[data-panel-id]')) persistOpenFromDom();
     }, true);
     els.expandAll.addEventListener('click', function () { setAllPanels(true); });
     els.collapseAll.addEventListener('click', function () { setAllPanels(false); });
-    els.refresh.addEventListener('click', function () { loadSummary({ keepSelection: true, silent: false }); });
+    els.refresh.addEventListener('click', function () {
+      loadSummary({ keepSelection: true, silent: false }).then(function () { syncPending({ force: true, silent: true }); });
+    });
+    document.getElementById('pin-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      login(document.getElementById('pin-input').value);
+    });
+    document.getElementById('lock-btn').addEventListener('click', function () { lock(''); });
     if (els.copySelected) {
       els.copySelected.addEventListener('click', function () { copyForPoppins(selectedId); });
     }
@@ -798,8 +1093,7 @@
       });
     });
 
-    loadSummary({ initial: true });
-    refreshTimer = setInterval(function () { loadSummary({ keepSelection: true, silent: true }); }, REFRESH_MS);
+    boot();
 
     window.__orders = {
       MOCK_SUMMARY: MOCK_SUMMARY,
@@ -810,10 +1104,12 @@
       nextUpcomingId: nextUpcomingId,
       isPastDate: isPastDate,
       formatINR: formatINR,
-      getState: function () { return { selectedId: selectedId, summary: summaryState, usingMock: usingMock }; },
-      stop: function () {
-        if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
-      }
+      getState: function () { return { selectedId: selectedId, summary: summaryState, usingMock: usingMock, unlocked: unlocked }; },
+      login: login,
+      lock: lock,
+      loadPending: loadPending,
+      getPending: function (id) { return pendingByDate[id] || null; },
+      stop: stopTimer
     };
   </script>
 </body>
