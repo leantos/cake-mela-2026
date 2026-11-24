@@ -1,0 +1,24 @@
+# Netlify build settings for the Vailankanni Parish Youth cake pre-order site.
+[build]
+  publish = "public"
+  command = "echo 'static site, no build step'"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Never cache the settings file or pages for long, so edits show up at once.
+[[headers]]
+  for = "/site-config.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/poster.*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"

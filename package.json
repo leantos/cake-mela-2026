@@ -1,0 +1,20 @@
+{
+  "name": "poppins-bakers-cake-sale",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Vailankanni Parish Youth x Poppins Bakers Christmas cake pre-orders (Netlify + Google Sheets)",
+  "scripts": {
+    "dev": "netlify dev",
+    "test": "node tests/run-all.mjs",
+    "zip": "node scripts/make-drop-zip.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.10"
+  },
+  "devDependencies": {
+    "jsdom": "^31.0.1"
+  }
+}

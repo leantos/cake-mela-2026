@@ -1,0 +1,1711 @@
+/**
+ * Vailankanni Parish Youth — Christmas cake sale order logger
+ * (cakes by Poppins Bakers)
+ * --------------------------------------------------------------------------
+ * Container-bound Google Apps Script for a Google Sheet. The ordering page
+ * POSTs each order as text/plain JSON (e.postData.contents) and also GETs
+ * live stock via ?action=stock.
+ *
+ * Setup (do this after pasting / updating this file)
+ * --------------------------------------------------
+ * 1. Create a Google Sheet (e.g. "Parish Youth Cake Sale").
+ *    Extensions → Apps Script, replace any stub with this file, Save.
+ *
+ * 2. In the editor, select setupSheets and click Run. Authorise when asked.
+ *    This creates/repairs the Orders, Weekly Summary, and Stock tabs.
+ *    The Stock tab is the source of truth for pickup dates. To add a
+ *    date: type it in the next empty column header (e.g. 27 Dec 2026),
+ *    then fill quantities below. Blank = sold out. Or use the menu
+ *    Cake Sale → Add pickup date…. A change goes live on the next stock
+ *    fetch (no redeploy). Use Cake Sale → Refresh Weekly Summary after
+ *    adding a date if you want the summary tab updated immediately.
+ *
+ * 3. Deploy the web app:
+ *      Deploy → New deployment → Web app
+ *        Execute as: Me
+ *        Who has access: Anyone
+ *    Copy the Web App URL into SHEETS_WEBAPP_URL in index.html.
+ *
+ * 4. Drag the poppins-bakers folder (index.html + poster.jpg + logo.png)
+ *    onto Netlify Drop.
+ *
+ * IMPORTANT — after any later edit to this script
+ * -----------------------------------------------
+ * Saving Code.gs is not enough. The live Web App keeps serving the last
+ * deployed version until you publish a new one:
+ *   Deploy → Manage deployments → pencil (Edit) → Version: New version → Deploy
+ * The Web App URL stays the same, so you do not need to change index.html.
+ *
+ * Notes
+ * -----
+ * Order reserve (readable): POST text/plain JSON (no no-cors) or
+ * GET ?action=order&payload=<urlencoded JSON>. The response is parsed.
+ * Under LockService.waitLock (serialised, like SELECT FOR UPDATE):
+ *   (a) if orderId already exists (CacheService + Order ID column),
+ *       return {ok:true,status:'duplicate'} with no write;
+ *   (b) recompute remaining for the pickup date; if the cart would
+ *       oversell, return {ok:false,status:'insufficient',remaining}
+ *       with no row written;
+ *   (c) otherwise append Status OK, flush, return {ok:true,status:'saved'}.
+ * A no-cors fallback POST (payload.fallback=true) still dedupes by ID,
+ * but if stock is short it writes the row with Status "OVERSOLD - CHECK"
+ * so a network-timeout checkout is not lost.
+ * doGet(?action=stock) returns JSON (fetch with redirect: follow);
+ * ?callback=name also wraps the same payload as JSONP.
+ * Stock responses are cached in CacheService for 25 seconds and
+ * invalidated on every written order (see getStockRemaining_).
+ */
+
+var ORDERS_SHEET_NAME = 'Orders';
+var SUMMARY_SHEET_NAME = 'Weekly Summary';
+var STOCK_SHEET_NAME = 'Stock';
+var TALLY_SHEET_NAME = 'Tally';
+
+/** Cached doGet stock JSON. Short TTL so a missed invalidation heals quickly. */
+var STOCK_CACHE_KEY = 'stock-json-v1';
+var STOCK_CACHE_GEN_KEY = 'stock-gen-v1';
+var STOCK_CACHE_TTL = 25; // seconds
+
+/**
+ * Seeded only when setupSheets creates a brand-new, empty Stock tab.
+ * After that, pickup dates come exclusively from Stock column headers.
+ */
+var DEFAULT_OPENING_DATE_ID = '2026-11-29';
+
+/** Keep labels in sync with MASS_TIMES in index.html. */
+var MASS_TIMES = [
+  { id: '06:30', label: '6:30 AM Mass' },
+  { id: '08:30', label: '8:30 AM Mass' }
+];
+
+
+/**
+ * Seed item names for Orders qty columns, Stock rows, and the Weekly
+ * Summary. Must match the frontend display names ("Name (weight)").
+ * New names that arrive on an order are appended automatically.
+ */
+var MENU_ITEM_COLUMNS = [
+  'Dates & Carrot Pudding (700g)',
+  'Dates & Carrot Pudding (350g)',
+  'Butterscotch Pudding (700g)',
+  'Butterscotch Pudding (350g)',
+  'Rich Plum Cake (800g)',
+  'Rich Plum Cake (400g)'
+];
+
+/**
+ * Opening stock for 29 Nov 2026, seeded only into empty cells of a
+ * matching Stock column (matched by ISO date, never overwriting edits).
+ * Add later dates on the Stock tab; they start blank (sold out) until
+ * you type quantities.
+ */
+var INITIAL_STOCK = {
+  '2026-11-29': {
+    'Dates & Carrot Pudding (700g)': 15,
+    'Dates & Carrot Pudding (350g)': 35,
+    'Butterscotch Pudding (700g)': 10,
+    'Butterscotch Pudding (350g)': 25,
+    'Rich Plum Cake (800g)': 20,
+    'Rich Plum Cake (400g)': 50
+  }
+};
+
+var BASE_HEADERS = [
+  'Timestamp',
+  'Order ID',
+  'Pickup Date',
+  'Mass',
+  'Name',
+  'Phone',
+  'Items',
+  'Total Items',
+  'Total Amount (₹)',
+  'Status',
+  'Raw JSON'
+];
+
+/** Older columns we no longer write. Left in place on existing sheets so
+ *  historical rows stay intact, and never treated as menu-item qty columns. */
+var LEGACY_HEADERS = [
+  'Delivery Option',
+  'Flat/Block'
+];
+
+/**
+ * Run once from the Apps Script editor (select setupSheets → Run).
+ * Safe to run again: it repairs missing tabs/columns/rows and rewrites
+ * Weekly Summary formulas from current Stock dates × Mass times, but
+ * does not wipe Stock quantities or Orders.
+ */
+function setupSheets() {
+  var ss = getSpreadsheet_();
+  var orders = getOrCreateSheet_(ss, ORDERS_SHEET_NAME);
+  ensureOrdersSchema_(orders, MENU_ITEM_COLUMNS);
+  ensureStockSheet_(ss, MENU_ITEM_COLUMNS);
+  rebuildTallySheet_(ss);
+  refreshWeeklySummary_(ss, orders);
+  invalidateStockCache_();
+}
+
+/**
+ * Health check, live stock (?action=stock), or a readable order reserve
+ * (?action=order&payload=...). Optional ?callback= wraps JSON as JSONP.
+ */
+/** Bump when the script changes, so a deployed version can be identified. */
+var SCRIPT_VERSION = '2026-11-23.3';
+
+function doGet(e) {
+  var params = (e && e.parameter) ? e.parameter : {};
+  if (params.action === 'order') {
+    try {
+      if (!params.payload && !params.data) {
+        return jsonpOrJson_({ ok: false, error: 'Empty payload' }, params.callback);
+      }
+      var data = JSON.parse(params.payload || params.data);
+      var result = processOrder_(data, { fallback: params.fallback === '1' || params.fallback === 'true' });
+      return jsonpOrJson_(result, params.callback);
+    } catch (err) {
+      return jsonpOrJson_({
+        ok: false,
+        error: String(err && err.message ? err.message : err)
+      }, params.callback);
+    }
+  }
+  var payload;
+  if (params.action === 'debug') {
+    // Read-only diagnostics: stock layout + ordered tally. No buyer names/phones.
+    try {
+      var dss = getSpreadsheet_();
+      var dstock = dss.getSheetByName(STOCK_SHEET_NAME);
+      var dorders = dss.getSheetByName(ORDERS_SHEET_NAME);
+      var dvals = (dstock && dstock.getLastRow() > 0) ? dstock.getDataRange().getValues() : [];
+      var ddates = getStockDatesFromHeaderRow_(dvals[0] || []);
+      var dordered = getTallyOrRebuild_(dss, dorders, ddates, dvals);
+      payload = {
+        ok: true,
+        version: SCRIPT_VERSION,
+        spreadsheetTz: dss.getSpreadsheetTimeZone(),
+        stockRows: dvals.slice(0, 12).map(function (row) {
+          return row.slice(0, 14).map(function (v) {
+            return (Object.prototype.toString.call(v) === '[object Date]') ? ('DATE:' + v.toISOString()) : v;
+          });
+        }),
+        parsedDates: ddates,
+        ordered: dordered,
+        ordersLastRow: dorders ? dorders.getLastRow() : 0,
+        computed: computeRemainingFromTables_(dvals, dordered, MENU_ITEM_COLUMNS).remaining
+      };
+    } catch (err) {
+      payload = { ok: false, version: SCRIPT_VERSION, error: String(err && err.stack ? err.stack : err) };
+    }
+  } else if (params.action === 'stock') {
+    try {
+      payload = getStockRemaining_(); // uses 25s CacheService when fresh
+    } catch (err) {
+      payload = { ok: false, error: String(err && err.message ? err.message : err), remaining: {} };
+    }
+  } else {
+    payload = {
+      ok: true,
+      service: 'Vailankanni Parish Youth Cake Sale',
+      sheet: ORDERS_SHEET_NAME
+    };
+  }
+  return jsonpOrJson_(payload, params.callback);
+}
+
+/**
+ * Readable or fallback order intake. Body is text/plain JSON
+ * (e.postData.contents). If data.fallback is true, an oversold cart is
+ * still written with Status "OVERSOLD - CHECK"; otherwise it is rejected
+ * with no write. See processOrder_.
+ */
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return jsonResponse({ ok: false, error: 'Empty request body' });
+    }
+    var data = JSON.parse(e.postData.contents);
+    var result = processOrder_(data, { fallback: !!data.fallback });
+    return jsonResponse(result);
+  } catch (err) {
+    return jsonResponse({
+      ok: false,
+      error: String(err && err.message ? err.message : err)
+    });
+  }
+}
+
+var ORDER_ID_CACHE_PREFIX = 'oid:';
+var ORDER_ID_CACHE_TTL = 21600; // 6 hours, CacheService maximum
+
+/**
+ * Atomic reserve under LockService.waitLock (serialises concurrent
+ * checkouts, like SELECT FOR UPDATE):
+ *   (a) duplicate orderId → {ok:true,status:'duplicate'}, no write
+ *   (b) not enough remaining → {ok:false,status:'insufficient',remaining}
+ *       and no write, unless options.fallback (no-cors timeout path), in
+ *       which case the row is still written as "OVERSOLD - CHECK"
+ *   (c) else append Status OK, flush, {ok:true,status:'saved'}
+ */
+function processOrder_(data, options) {
+  options = options || {};
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+
+    var itemNames = collectItemNames_(data);
+    var ss = getSpreadsheet_();
+    var sheet = getOrCreateSheet_(ss, ORDERS_SHEET_NAME);
+    ensureOrdersSchema_(sheet, itemNames);
+    ensureStockSheet_(ss, itemNames, { light: true });
+
+    var orderId = String((data && data.orderId) || '').trim();
+    if (orderId && orderIdExists_(sheet, orderId)) {
+      return { ok: true, status: 'duplicate', orderId: orderId };
+    }
+
+    // Always recompute under the lock; never trust the doGet stock cache here.
+    var remainingPayload = getStockRemaining_({ bypassCache: true, spreadsheet: ss });
+    var date = findStockDate_(data && (data.pickupDate || data.pickupDateLabel), remainingPayload.dates);
+    if (!date) {
+      if (!options.fallback) {
+        return {
+          ok: false,
+          status: 'invalid_date',
+          orderId: orderId,
+          dates: remainingPayload.dates,
+          remaining: remainingPayload.remaining
+        };
+      }
+    }
+    var remainingForDate = (date && remainingPayload.remaining[date.id]) ? remainingPayload.remaining[date.id] : {};
+    var insufficient = orderExceedsRemaining_(data && data.items, remainingForDate);
+
+    if (insufficient && !options.fallback) {
+      return {
+        ok: false,
+        status: 'insufficient',
+        orderId: orderId,
+        dates: remainingPayload.dates,
+        remaining: remainingPayload.remaining
+      };
+    }
+
+    var rowStatus = !date ? 'INVALID DATE - CHECK' : (insufficient ? 'OVERSOLD - CHECK' : 'OK');
+    appendOrderRow_(sheet, data, rowStatus);
+    if (date) incrementTallyForOrder_(ss, date.id, data && data.items, sheet);
+    SpreadsheetApp.flush();
+    if (orderId) rememberOrderId_(orderId);
+    var nextRemaining = date
+      ? subtractOrderFromRemaining_(remainingPayload, date.id, data && data.items)
+      : remainingPayload;
+    bumpStockCache_(nextRemaining);
+    refreshWeeklySummaryIfNeeded_(ss, sheet);
+
+    return {
+      ok: true,
+      status: 'saved',
+      orderId: orderId,
+      row: sheet.getLastRow(),
+      oversold: insufficient
+    };
+  } finally {
+    try {
+      if (lock.hasLock()) SpreadsheetApp.flush();
+    } catch (flushErr) {}
+    try {
+      lock.releaseLock();
+    } catch (releaseErr) {
+      // Lock may not have been acquired if waitLock timed out.
+    }
+  }
+}
+
+function cacheKeyForOrderId_(orderId) {
+  return ORDER_ID_CACHE_PREFIX + String(orderId);
+}
+
+function rememberOrderId_(orderId) {
+  try {
+    CacheService.getScriptCache().put(cacheKeyForOrderId_(orderId), '1', ORDER_ID_CACHE_TTL);
+  } catch (err) {
+    // Cache is a hint; the Orders column remains the source of truth.
+  }
+}
+
+function orderIdExists_(sheet, orderId) {
+  if (!orderId) return false;
+  try {
+    if (CacheService.getScriptCache().get(cacheKeyForOrderId_(orderId))) return true;
+  } catch (err) {}
+
+  var headers = getHeaders_(sheet);
+  var col = headers.indexOf('Order ID');
+  if (col < 0 || sheet.getLastRow() < 2) return false;
+  // Bounded to the used Order ID column (not A:A / full-column scans).
+  var range = sheet.getRange(2, col + 1, sheet.getLastRow() - 1, 1);
+  var found = range.createTextFinder(String(orderId))
+    .matchEntireCell(true)
+    .matchCase(true)
+    .findNext();
+  if (found) {
+    rememberOrderId_(orderId);
+    return true;
+  }
+  return false;
+}
+
+function orderExceedsRemaining_(items, remainingForDate) {
+  items = items || [];
+  remainingForDate = remainingForDate || {};
+  for (var i = 0; i < items.length; i++) {
+    var line = items[i];
+    if (!line || !line.name) continue;
+    var qty = Number(line.qty || 0);
+    if (!qty) continue;
+    var rem = remainingForDate[line.name];
+    if (rem === null || typeof rem === 'undefined' || rem === '') rem = 0;
+    if (qty > Number(rem)) return true;
+  }
+  return false;
+}
+
+/* ---------- Spreadsheet helpers ---------- */
+
+function getSpreadsheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    throw new Error('No active spreadsheet. Bind this script to a Google Sheet (Extensions → Apps Script).');
+  }
+  return ss;
+}
+
+function getOrCreateSheet_(ss, name) {
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  return sheet;
+}
+
+function getHeaders_(sheet) {
+  if (sheet.getLastRow() === 0 || sheet.getLastColumn() === 0) return [];
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function (v) {
+    return String(v || '').trim();
+  });
+}
+
+/**
+ * Create or migrate the Orders header row by name so an existing sheet
+ * with the older column set keeps its data. Missing "Pickup Date" is
+ * inserted immediately after "Order ID". Missing "Mass" is inserted
+ * immediately after "Pickup Date". Missing "Status" is inserted
+ * immediately before "Raw JSON" (or appended). Retired columns such as
+ * "Delivery Option" and "Flat/Block" are left in place. New menu-item
+ * quantity columns are appended at the right.
+ */
+function ensureOrdersSchema_(sheet, itemNames) {
+  if (sheet.getLastRow() === 0) {
+    var initial = BASE_HEADERS.concat(itemNames || []);
+    sheet.getRange(1, 1, 1, initial.length).setValues([initial]);
+    styleOrdersHeader_(sheet);
+    return;
+  }
+
+  var headers = getHeaders_(sheet);
+  if (headers[0] !== 'Timestamp') {
+    sheet.insertRowBefore(1);
+    sheet.getRange(1, 1, 1, BASE_HEADERS.length).setValues([BASE_HEADERS]);
+    headers = getHeaders_(sheet);
+  }
+
+  if (headers.indexOf('Pickup Date') === -1) {
+    var orderIdIdx = headers.indexOf('Order ID');
+    var afterCol = (orderIdIdx >= 0 ? orderIdIdx + 1 : 2); // 1-based
+    sheet.insertColumnAfter(afterCol);
+    sheet.getRange(1, afterCol + 1).setValue('Pickup Date');
+    headers = getHeaders_(sheet);
+  }
+
+  if (headers.indexOf('Mass') === -1) {
+    var pickupIdx = headers.indexOf('Pickup Date');
+    var afterPickup = (pickupIdx >= 0 ? pickupIdx + 1 : 3); // 1-based
+    sheet.insertColumnAfter(afterPickup);
+    sheet.getRange(1, afterPickup + 1).setValue('Mass');
+    headers = getHeaders_(sheet);
+  }
+
+  if (headers.indexOf('Status') === -1) {
+    var rawIdx = headers.indexOf('Raw JSON');
+    if (rawIdx >= 0) {
+      sheet.insertColumnBefore(rawIdx + 1);
+      sheet.getRange(1, rawIdx + 1).setValue('Status');
+    } else {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue('Status');
+    }
+    headers = getHeaders_(sheet);
+  }
+
+  var i, h;
+  for (i = 0; i < BASE_HEADERS.length; i++) {
+    h = BASE_HEADERS[i];
+    headers = getHeaders_(sheet);
+    if (headers.indexOf(h) === -1) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(h);
+    }
+  }
+
+  var names = itemNames || [];
+  for (i = 0; i < names.length; i++) {
+    h = names[i];
+    if (!h) continue;
+    headers = getHeaders_(sheet);
+    if (headers.indexOf(h) === -1) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(h);
+    }
+  }
+
+  styleOrdersHeader_(sheet);
+}
+
+function styleOrdersHeader_(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), BASE_HEADERS.length);
+  var range = sheet.getRange(1, 1, 1, lastCol);
+  range.setFontWeight('bold');
+  range.setBackground('#b91c1c');
+  range.setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+  sheet.setColumnWidth(1, 180);
+  sheet.setColumnWidth(2, 150);
+  sheet.setColumnWidth(3, 160);
+}
+
+function appendOrderRow_(sheet, data, status) {
+  var headers = getHeaders_(sheet);
+  var row = [];
+  var i;
+  for (i = 0; i < headers.length; i++) row.push('');
+
+  function set(name, value) {
+    var idx = headers.indexOf(name);
+    if (idx >= 0) row[idx] = value;
+  }
+
+  set('Timestamp', data.timestamp || new Date());
+  set('Order ID', data.orderId || '');
+  set('Pickup Date', data.pickupDate || data.pickupDateLabel || '');
+  set('Mass', data.massLabel || data.mass || '');
+  set('Name', data.name || '');
+  set('Phone', data.phone || '');
+  set('Items', formatItems_(data.items));
+  set('Total Items', data.totalItems || 0);
+  set('Total Amount (₹)', data.totalAmount || 0);
+  set('Status', status || 'OK');
+  set('Raw JSON', JSON.stringify(data));
+
+  var items = data.items || [];
+  for (i = 0; i < items.length; i++) {
+    var line = items[i];
+    if (line && line.name) set(line.name, line.qty || 0);
+  }
+
+  sheet.getRange(sheet.getLastRow() + 1, 1, 1, row.length).setValues([row]);
+}
+
+function collectItemNames_(data) {
+  var seen = {};
+  var out = MENU_ITEM_COLUMNS.slice();
+  MENU_ITEM_COLUMNS.forEach(function (n) { seen[n] = true; });
+  var items = (data && data.items) || [];
+  for (var i = 0; i < items.length; i++) {
+    var name = items[i] && items[i].name;
+    if (name && !seen[name]) {
+      seen[name] = true;
+      out.push(name);
+    }
+  }
+  return out;
+}
+
+function getItemColumnNames_(ordersSheet) {
+  var headers = getHeaders_(ordersSheet);
+  var base = {};
+  BASE_HEADERS.concat(LEGACY_HEADERS).forEach(function (h) { base[h] = true; });
+  var names = [];
+  var i;
+  for (i = 0; i < headers.length; i++) {
+    if (headers[i] && !base[headers[i]]) names.push(headers[i]);
+  }
+  // Keep a stable, known-first order, then any extras.
+  var ordered = [];
+  var seen = {};
+  MENU_ITEM_COLUMNS.forEach(function (n) {
+    if (headers.indexOf(n) >= 0) {
+      ordered.push(n);
+      seen[n] = true;
+    }
+  });
+  for (i = 0; i < names.length; i++) {
+    if (!seen[names[i]]) ordered.push(names[i]);
+  }
+  return ordered;
+}
+
+/* ---------- Stock ---------- */
+
+/* ---- date helpers (testable) ---- */
+
+var MONTH_NAME_INDEX_ = {
+  jan: 1, january: 1,
+  feb: 2, february: 2,
+  mar: 3, march: 3,
+  apr: 4, april: 4,
+  may: 5,
+  jun: 6, june: 6,
+  jul: 7, july: 7,
+  aug: 8, august: 8,
+  sep: 9, sept: 9, september: 9,
+  oct: 10, october: 10,
+  nov: 11, november: 11,
+  dec: 12, december: 12
+};
+
+function pad2_(n) {
+  n = Number(n);
+  return n < 10 ? '0' + n : String(n);
+}
+
+function isItemOrTotalHeader_(value) {
+  var s = String(value || '').trim().toUpperCase();
+  return s === 'ITEM' || s === 'TOTAL';
+}
+
+function istClockFromDate_(date) {
+  if (typeof Utilities !== 'undefined' && Utilities.formatDate) {
+    var parts = Utilities.formatDate(date, 'Asia/Kolkata', 'yyyy-MM-dd-HH-mm-ss').split('-');
+    return {
+      y: +parts[0], m: +parts[1], d: +parts[2],
+      h: +parts[3], min: +parts[4], sec: +parts[5]
+    };
+  }
+  var fmt = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false, hourCycle: 'h23'
+  });
+  var map = {};
+  fmt.formatToParts(date).forEach(function (p) { map[p.type] = p.value; });
+  var h = Number(map.hour);
+  if (h === 24) h = 0;
+  return { y: +map.year, m: +map.month, d: +map.day, h: h, min: +map.minute, sec: +map.second };
+}
+
+function formatShortPickupLabel_(y, m, d) {
+  var date = new Date(Date.UTC(y, m - 1, d, 6, 30, 0));
+  if (typeof Utilities !== 'undefined' && Utilities.formatDate) {
+    return Utilities.formatDate(date, 'Asia/Kolkata', 'EEE, d MMM');
+  }
+  var parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short'
+  }).formatToParts(date);
+  function part(t) {
+    for (var i = 0; i < parts.length; i++) if (parts[i].type === t) return parts[i].value;
+    return '';
+  }
+  return part('weekday') + ', ' + part('day') + ' ' + part('month');
+}
+
+function closesAtIso_(y, m, d, h, min) {
+  return y + '-' + pad2_(m) + '-' + pad2_(d) + 'T' + pad2_(h) + ':' + pad2_(min) + ':00+05:30';
+}
+
+function currentIstYear_() {
+  if (typeof Utilities !== 'undefined' && Utilities.formatDate) {
+    return Number(Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy'));
+  }
+  var parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric'
+  }).formatToParts(new Date());
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i].type === 'year') return Number(parts[i].value);
+  }
+  return new Date().getFullYear();
+}
+
+function parseTimeFromHeaderText_(s) {
+  var m = s.match(/(?:^|\s)(\d{1,2}):(\d{2})\s*(am|pm)\b/i);
+  if (m) {
+    var h = Number(m[1]);
+    var min = Number(m[2]);
+    var ap = m[3].toLowerCase();
+    if (ap === 'am') { if (h === 12) h = 0; }
+    else if (h !== 12) h += 12;
+    return {
+      h: h,
+      min: min,
+      rest: (s.slice(0, m.index) + ' ' + s.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim()
+    };
+  }
+  m = s.match(/(?:^|\s)(\d{1,2})\s*(am|pm)\b/i);
+  if (m) {
+    var h2 = Number(m[1]);
+    var ap2 = m[2].toLowerCase();
+    if (ap2 === 'am') { if (h2 === 12) h2 = 0; }
+    else if (h2 !== 12) h2 += 12;
+    return {
+      h: h2,
+      min: 0,
+      rest: (s.slice(0, m.index) + ' ' + s.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim()
+    };
+  }
+  m = s.match(/(?:^|\s)(\d{1,2}):(\d{2})(?::(\d{2}))?\b/);
+  if (m) {
+    var h3 = Number(m[1]);
+    var min3 = Number(m[2]);
+    if (h3 >= 0 && h3 <= 23 && min3 >= 0 && min3 <= 59) {
+      return {
+        h: h3,
+        min: min3,
+        rest: (s.slice(0, m.index) + ' ' + s.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim()
+      };
+    }
+  }
+  return null;
+}
+
+function parseYmdFromText_(s) {
+  s = String(s || '').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  var iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso) return { y: +iso[1], m: +iso[2], d: +iso[3] };
+  var ymd = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+  if (ymd) return { y: +ymd[1], m: +ymd[2], d: +ymd[3] };
+  var dmy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if (dmy) return { y: +dmy[3], m: +dmy[2], d: +dmy[1] };
+  var first = s.split(' ')[0];
+  if (/^(sun|mon|tue|wed|thu|fri|sat)[a-z]*$/i.test(first)) {
+    s = s.replace(/^\S+\s+/, '');
+  }
+  var dMonY = s.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+  if (dMonY && MONTH_NAME_INDEX_[dMonY[2].toLowerCase()]) {
+    return { y: +dMonY[3], m: MONTH_NAME_INDEX_[dMonY[2].toLowerCase()], d: +dMonY[1] };
+  }
+  var monDY = s.match(/^([A-Za-z]+)\s+(\d{1,2})\s+(\d{4})$/);
+  if (monDY && MONTH_NAME_INDEX_[monDY[1].toLowerCase()]) {
+    return { y: +monDY[3], m: MONTH_NAME_INDEX_[monDY[1].toLowerCase()], d: +monDY[2] };
+  }
+  var dMon = s.match(/^(\d{1,2})\s+([A-Za-z]+)$/);
+  if (dMon && MONTH_NAME_INDEX_[dMon[2].toLowerCase()]) {
+    return { y: currentIstYear_(), m: MONTH_NAME_INDEX_[dMon[2].toLowerCase()], d: +dMon[1] };
+  }
+  var monD = s.match(/^([A-Za-z]+)\s+(\d{1,2})$/);
+  if (monD && MONTH_NAME_INDEX_[monD[1].toLowerCase()]) {
+    return { y: currentIstYear_(), m: MONTH_NAME_INDEX_[monD[1].toLowerCase()], d: +monD[2] };
+  }
+  return null;
+}
+
+function isValidYmd_(y, m, d) {
+  y = Number(y); m = Number(m); d = Number(d);
+  if (!y || m < 1 || m > 12 || d < 1 || d > 31) return false;
+  var dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
+/**
+ * Parse a Stock column header: a Sheets Date cell, or text such as
+ * "27 Dec 2026", "Sun 29 Nov 2026", "2026-12-27", optionally with a
+ * cutoff time ("27 Dec 2026 10:00 AM"). Default cutoff is 8:30 AM IST.
+ * Returns { id, label, closesAt, col } or null.
+ */
+function parseStockDateHeader_(raw, col) {
+  if (raw === '' || raw === null || typeof raw === 'undefined') return null;
+  if (isItemOrTotalHeader_(raw)) return null;
+
+  var y, m, d, h = 8, min = 30;
+
+  if (Object.prototype.toString.call(raw) === '[object Date]' && !isNaN(raw.getTime())) {
+    var clock = istClockFromDate_(raw);
+    y = clock.y; m = clock.m; d = clock.d;
+    if (!(clock.h === 0 && clock.min === 0 && clock.sec === 0)) {
+      h = clock.h;
+      min = clock.min;
+    }
+  } else {
+    var text = String(raw).replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!text) return null;
+    var time = parseTimeFromHeaderText_(text);
+    var dateText = text;
+    if (time) {
+      h = time.h;
+      min = time.min;
+      dateText = time.rest;
+    }
+    var ymd = parseYmdFromText_(dateText);
+    if (!ymd) return null;
+    y = ymd.y; m = ymd.m; d = ymd.d;
+  }
+
+  if (!isValidYmd_(y, m, d)) return null;
+  return {
+    id: y + '-' + pad2_(m) + '-' + pad2_(d),
+    label: formatShortPickupLabel_(y, m, d),
+    closesAt: closesAtIso_(y, m, d, h, min),
+    col: col || 0
+  };
+}
+
+function findStockDate_(value, dates) {
+  dates = dates || [];
+  var s = String(value || '').trim();
+  if (!s) return null;
+  var i;
+  for (i = 0; i < dates.length; i++) {
+    if (dates[i].id === s || dates[i].label === s) return dates[i];
+  }
+  var parsed = parseStockDateHeader_(s);
+  if (parsed) {
+    for (i = 0; i < dates.length; i++) {
+      if (dates[i].id === parsed.id) return dates[i];
+    }
+  }
+  return null;
+}
+
+function publicStockDates_(dates) {
+  return (dates || []).map(function (d) {
+    return { id: d.id, label: d.label, closesAt: d.closesAt };
+  });
+}
+
+/* ---- end date helpers ---- */
+
+function getHeaderRaw_(sheet) {
+  if (sheet.getLastRow() === 0 || sheet.getLastColumn() === 0) return [];
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+}
+
+/**
+ * Date columns on the Stock tab (after the item-name column), first
+ * occurrence of each ISO id, then sorted by date for the website and
+ * Weekly Summary.
+ */
+function getStockDatesFromSheet_(sheet) {
+  if (!sheet || sheet.getLastRow() === 0 || sheet.getLastColumn() === 0) return [];
+  return getStockDatesFromHeaderRow_(sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]);
+}
+
+function ensureStockSheet_(ss, itemNames, options) {
+  options = options || {};
+  var sheet = ss.getSheetByName(STOCK_SHEET_NAME);
+  if (options.light && sheet && sheet.getLastRow() >= 2 && sheet.getLastColumn() >= 2) {
+    return sheet;
+  }
+  if (!sheet) sheet = getOrCreateSheet_(ss, STOCK_SHEET_NAME);
+  if (sheet.getLastRow() === 0 || sheet.getLastColumn() === 0) {
+    sheet.getRange(1, 1).setValue('Item');
+    var opening = new Date(2026, 10, 29);
+    sheet.getRange(1, 2).setValue(opening);
+    sheet.getRange(1, 2).setNumberFormat('d mmm yyyy');
+    styleStockHeader_(sheet);
+  }
+
+  var headersNow = getHeaders_(sheet);
+  if (!headersNow.length || String(headersNow[0] || '').trim() !== 'Item') {
+    sheet.getRange(1, 1).setValue('Item');
+  }
+
+  var names = uniqueNames_(MENU_ITEM_COLUMNS.concat(itemNames || []));
+  var existing = {};
+  if (sheet.getLastRow() >= 2) {
+    var nameCol = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+    for (var r = 0; r < nameCol.length; r++) {
+      existing[String(nameCol[r][0] || '').trim()] = true;
+    }
+  }
+  var totalRow = findStockTotalRow_(sheet);
+  for (var i = 0; i < names.length; i++) {
+    if (names[i] && !existing[names[i]]) {
+      if (totalRow) {
+        sheet.insertRowBefore(totalRow);
+        sheet.getRange(totalRow, 1).setValue(names[i]);
+        totalRow += 1;
+      } else {
+        sheet.getRange(sheet.getLastRow() + 1, 1).setValue(names[i]);
+      }
+      existing[names[i]] = true;
+    }
+  }
+
+  seedInitialStock_(sheet);
+  refreshStockTotals_(sheet);
+  styleStockHeader_(sheet);
+  sheet.getRange(1, 1).setNote(
+    'To add a date: type it in the next empty column header (e.g. 27 Dec 2026), then fill quantities. Blank = sold out.'
+  );
+  return sheet;
+}
+
+function findStockTotalRow_(sheet) {
+  if (sheet.getLastRow() < 2) return 0;
+  var names = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+  for (var i = 0; i < names.length; i++) {
+    if (String(names[i][0] || '').trim().toUpperCase() === 'TOTAL') return i + 2;
+  }
+  return 0;
+}
+
+function findStockTotalCol_(sheet) {
+  var raw = getHeaderRaw_(sheet);
+  for (var c = 0; c < raw.length; c++) {
+    if (String(raw[c] || '').trim().toUpperCase() === 'TOTAL') return c + 1;
+  }
+  return 0;
+}
+
+function dateColumnsFromSheet_(sheet) {
+  var raw = getHeaderRaw_(sheet);
+  var cols = [];
+  for (var c = 0; c < raw.length; c++) {
+    if (c === 0) continue;
+    var parsed = parseStockDateHeader_(raw[c], c + 1);
+    if (parsed) cols.push(parsed.col);
+  }
+  return cols;
+}
+
+function ensureTotalColumnIsLast_(sheet) {
+  var totalCol = findStockTotalCol_(sheet);
+  var last = sheet.getLastColumn();
+  if (totalCol > 0 && totalCol < last) {
+    sheet.moveColumns(totalCol, last + 1);
+  }
+}
+
+/** Write opening stock only into empty cells; never overwrite an edit. */
+function seedInitialStock_(sheet) {
+  var lastCol = sheet.getLastColumn();
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 1 || lastCol < 2) return;
+  var raw = getHeaderRaw_(sheet);
+  var values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  var rowOf = {};
+  var r, c;
+  for (r = 1; r < values.length; r++) {
+    var name = String(values[r][0] || '').trim();
+    if (name && name.toUpperCase() !== 'TOTAL') rowOf[name] = r + 1;
+  }
+  var dateIds = Object.keys(INITIAL_STOCK);
+  for (var d = 0; d < dateIds.length; d++) {
+    var id = dateIds[d];
+    var col = -1;
+    for (c = 1; c < raw.length; c++) {
+      var parsed = parseStockDateHeader_(raw[c], c + 1);
+      if (parsed && parsed.id === id) {
+        col = c;
+        break;
+      }
+    }
+    if (col < 0) continue;
+    var items = INITIAL_STOCK[id];
+    var itemNames = Object.keys(items);
+    for (var i = 0; i < itemNames.length; i++) {
+      var item = itemNames[i];
+      var row = rowOf[item];
+      if (!row) continue;
+      var cell = sheet.getRange(row, col + 1);
+      var current = cell.getValue();
+      if (current === '' || current === null || typeof current === 'undefined') {
+        cell.setValue(items[item]);
+      }
+    }
+  }
+}
+
+/**
+ * Add or refresh a Total column (sum of numbered date caps per item) and
+ * a TOTAL row (sum of numbered caps per date). Only parseable date columns
+ * are included — new date columns are picked up automatically. Blank cells
+ * are excluded from COUNTs, so a fully blank date column stays blank until
+ * a quantity is typed.
+ */
+function refreshStockTotals_(sheet) {
+  if (!sheet || sheet.getLastRow() === 0) return;
+  ensureTotalColumnIsLast_(sheet);
+
+  var dateCols = dateColumnsFromSheet_(sheet);
+  var totalCol = findStockTotalCol_(sheet);
+  if (totalCol <= 0) {
+    totalCol = sheet.getLastColumn() + 1;
+    sheet.getRange(1, totalCol).setValue('Total');
+  }
+
+  var lastRow = sheet.getLastRow();
+  var totalRow = findStockTotalRow_(sheet);
+  var firstItem = 2;
+  var lastItem;
+  if (totalRow) lastItem = totalRow - 1;
+  else lastItem = lastRow >= 2 ? lastRow : 1;
+
+  function cellsInRow_(row) {
+    return dateCols.map(function (c) { return colLetter_(c) + row; }).join(',');
+  }
+
+  if (lastItem >= firstItem && dateCols.length) {
+    for (var r = firstItem; r <= lastItem; r++) {
+      var itemName = String(sheet.getRange(r, 1).getValue() || '').trim();
+      if (!itemName || itemName.toUpperCase() === 'TOTAL') continue;
+      var rowCells = cellsInRow_(r);
+      sheet.getRange(r, totalCol).setFormula(
+        '=IF(COUNT(' + rowCells + ')=0,"",SUM(' + rowCells + '))'
+      );
+    }
+  }
+
+  if (lastItem >= firstItem) {
+    if (!totalRow) {
+      totalRow = lastItem + 1;
+      sheet.getRange(totalRow, 1).setValue('TOTAL');
+    }
+    sheet.getRange(totalRow, 1).setValue('TOTAL');
+    sheet.getRange(totalRow, 1, totalRow, totalCol).setFontWeight('bold');
+    var i;
+    for (i = 0; i < dateCols.length; i++) {
+      var col = dateCols[i];
+      var colRange = colLetter_(col) + firstItem + ':' + colLetter_(col) + lastItem;
+      sheet.getRange(totalRow, col).setFormula(
+        '=IF(COUNT(' + colRange + ')=0,"",SUM(' + colRange + '))'
+      );
+    }
+    if (dateCols.length) {
+      var blockCells = [];
+      for (i = 0; i < dateCols.length; i++) {
+        blockCells.push(colLetter_(dateCols[i]) + firstItem + ':' + colLetter_(dateCols[i]) + lastItem);
+      }
+      var block = blockCells.join(',');
+      sheet.getRange(totalRow, totalCol).setFormula(
+        '=IF(COUNT(' + block + ')=0,"",SUM(' + block + '))'
+      );
+    }
+  }
+}
+
+function styleStockHeader_(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var range = sheet.getRange(1, 1, 1, lastCol);
+  range.setFontWeight('bold');
+  range.setBackground('#0d3d8c');
+  range.setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+  sheet.setFrozenColumns(1);
+  sheet.setColumnWidth(1, 260);
+}
+
+function getOrderedQtys_(ordersSheet, dates) {
+  if (!ordersSheet || ordersSheet.getLastRow() < 2) return {};
+  return getOrderedQtysFromValues_(ordersSheet.getDataRange().getValues(), dates);
+}
+
+function getOrderedQtysFromValues_(values, dates) {
+  var byDate = {};
+  if (!values || values.length < 2) return byDate;
+  var headers = values[0].map(function (v) { return String(v || '').trim(); });
+  var pickupIdx = headers.indexOf('Pickup Date');
+  if (pickupIdx === -1) return byDate;
+  var itemIdxs = [];
+  var base = {};
+  BASE_HEADERS.concat(LEGACY_HEADERS).forEach(function (h) { base[h] = true; });
+  var c;
+  for (c = 0; c < headers.length; c++) {
+    if (headers[c] && !base[headers[c]]) itemIdxs.push(c);
+  }
+  for (var r = 1; r < values.length; r++) {
+    var raw = values[r][pickupIdx];
+    var label = (Object.prototype.toString.call(raw) === '[object Date]' && !isNaN(raw.getTime()))
+      ? ''
+      : String(raw || '').trim();
+    var date = findStockDate_(label || raw, dates);
+    if (!date && Object.prototype.toString.call(raw) === '[object Date]') {
+      date = findStockDate_(parseStockDateHeader_(raw) && parseStockDateHeader_(raw).id, dates);
+    }
+    if (!date) continue;
+    if (!byDate[date.id]) byDate[date.id] = {};
+    for (var j = 0; j < itemIdxs.length; j++) {
+      var col = itemIdxs[j];
+      var name = headers[col];
+      var qty = Number(values[r][col] || 0);
+      if (!qty) continue;
+      byDate[date.id][name] = (byDate[date.id][name] || 0) + qty;
+    }
+  }
+  return byDate;
+}
+
+/**
+ * Remaining stock: Stock cells minus the Tally of Orders already logged
+ * for that date. Blank or missing cells, and dates/items not listed on
+ * the Stock tab, are 0 (sold out / not yet confirmed) — never unlimited.
+ * dates is an ordered list of {id, label, closesAt} from Stock headers.
+ *
+ * doGet uses CacheService for STOCK_CACHE_TTL seconds. processOrder_
+ * always passes bypassCache so the reserve sees fresh remaining, then
+ * busts and rewrites the cache after a write.
+ */
+function getStockRemaining_(options) {
+  options = options || {};
+  if (!options.bypassCache) {
+    var cached = readStockCache_();
+    if (cached) return cached;
+  }
+
+  var ss = options.spreadsheet || getSpreadsheet_();
+  var stock = ss.getSheetByName(STOCK_SHEET_NAME);
+  var orders = ss.getSheetByName(ORDERS_SHEET_NAME);
+  var stockValues = (stock && stock.getLastRow() > 0) ? stock.getDataRange().getValues() : [];
+  var dates = getStockDatesFromHeaderRow_(stockValues[0] || []);
+  var ordered = getTallyOrRebuild_(ss, orders, dates, stockValues);
+  var payload = computeRemainingFromTables_(stockValues, ordered, MENU_ITEM_COLUMNS);
+
+  if (!options.bypassCache) putStockCache_(payload);
+  return payload;
+}
+
+/* ---- stock compute (testable) ---- */
+
+function getStockDatesFromHeaderRow_(headerRow) {
+  var seen = {};
+  var dates = [];
+  if (!headerRow || !headerRow.length) return dates;
+  for (var c = 0; c < headerRow.length; c++) {
+    if (c === 0) continue;
+    var parsed = parseStockDateHeader_(headerRow[c], c + 1);
+    if (!parsed) continue;
+    if (seen[parsed.id]) continue;
+    seen[parsed.id] = true;
+    dates.push(parsed);
+  }
+  dates.sort(function (a, b) {
+    if (a.id < b.id) return -1;
+    if (a.id > b.id) return 1;
+    if (a.closesAt < b.closesAt) return -1;
+    if (a.closesAt > b.closesAt) return 1;
+    return a.col - b.col;
+  });
+  return dates;
+}
+
+/**
+ * Pure remaining map: cap minus ordered tally. Blank / missing / non-numeric
+ * caps are 0, never unlimited.
+ */
+function computeRemainingFromTables_(stockValues, orderedByDate, menuNames) {
+  orderedByDate = orderedByDate || {};
+  menuNames = menuNames || [];
+  var dates = getStockDatesFromHeaderRow_((stockValues && stockValues[0]) || []);
+  var remaining = {};
+  dates.forEach(function (d) {
+    remaining[d.id] = {};
+    menuNames.forEach(function (name) { remaining[d.id][name] = 0; });
+  });
+  if (!stockValues || stockValues.length < 2) {
+    return { ok: true, dates: publicStockDates_(dates), remaining: remaining };
+  }
+  // Only the FIRST column for each date counts. If the same date appears in
+  // more than one header (e.g. setupSheets run with an older version added a
+  // duplicate column), a later blank duplicate must not zero out the real one.
+  var firstColForDate = {};
+  for (var hc = 1; hc < ((stockValues && stockValues[0]) || []).length; hc++) {
+    var hd = parseStockDateHeader_(stockValues[0][hc], hc + 1);
+    if (hd && typeof firstColForDate[hd.id] === 'undefined') firstColForDate[hd.id] = hc;
+  }
+  for (var r = 1; r < stockValues.length; r++) {
+    var itemName = String(stockValues[r][0] || '').trim();
+    if (!itemName || itemName.toUpperCase() === 'TOTAL') continue;
+    dates.forEach(function (d) {
+      if (typeof remaining[d.id][itemName] === 'undefined') remaining[d.id][itemName] = 0;
+    });
+    for (var c = 1; c < stockValues[r].length; c++) {
+      var date = parseStockDateHeader_(stockValues[0][c], c + 1);
+      if (!date) continue;
+      if (firstColForDate[date.id] !== c) continue; // ignore duplicate date columns
+      if (typeof remaining[date.id] === 'undefined') remaining[date.id] = {};
+      var cell = stockValues[r][c];
+      if (cell === '' || cell === null || typeof cell === 'undefined') {
+        remaining[date.id][itemName] = 0;
+        continue;
+      }
+      var cap = Number(cell);
+      if (isNaN(cap)) {
+        remaining[date.id][itemName] = 0;
+        continue;
+      }
+      var used = (orderedByDate[date.id] && orderedByDate[date.id][itemName]) ? orderedByDate[date.id][itemName] : 0;
+      remaining[date.id][itemName] = Math.max(0, cap - used);
+    }
+  }
+  return { ok: true, dates: publicStockDates_(dates), remaining: remaining };
+}
+
+function incrementTallyMap_(orderedByDate, dateId, items) {
+  var out = {};
+  var k, name;
+  for (k in (orderedByDate || {})) {
+    if (!Object.prototype.hasOwnProperty.call(orderedByDate, k)) continue;
+    out[k] = {};
+    for (name in orderedByDate[k]) {
+      if (Object.prototype.hasOwnProperty.call(orderedByDate[k], name)) {
+        out[k][name] = orderedByDate[k][name];
+      }
+    }
+  }
+  if (!dateId) return out;
+  if (!out[dateId]) out[dateId] = {};
+  items = items || [];
+  for (var i = 0; i < items.length; i++) {
+    var line = items[i];
+    if (!line || !line.name) continue;
+    var qty = Number(line.qty || 0);
+    if (!qty) continue;
+    out[dateId][line.name] = (out[dateId][line.name] || 0) + qty;
+  }
+  return out;
+}
+
+function subtractOrderFromRemaining_(payload, dateId, items) {
+  var remaining = {};
+  var src = (payload && payload.remaining) || {};
+  var id, name;
+  for (id in src) {
+    if (!Object.prototype.hasOwnProperty.call(src, id)) continue;
+    remaining[id] = {};
+    for (name in src[id]) {
+      if (Object.prototype.hasOwnProperty.call(src[id], name)) remaining[id][name] = src[id][name];
+    }
+  }
+  items = items || [];
+  if (dateId && !remaining[dateId]) remaining[dateId] = {};
+  for (var i = 0; i < items.length; i++) {
+    var line = items[i];
+    if (!line || !line.name) continue;
+    var qty = Number(line.qty || 0);
+    if (!qty) continue;
+    var cur = remaining[dateId][line.name];
+    if (cur === null || typeof cur === 'undefined' || cur === '') cur = 0;
+    remaining[dateId][line.name] = Math.max(0, Number(cur) - qty);
+  }
+  return { ok: true, dates: (payload && payload.dates) || [], remaining: remaining };
+}
+
+function stockCacheIsFresh_(cachedJson, gen) {
+  if (!cachedJson || gen === '' || gen === null || typeof gen === 'undefined') return false;
+  try {
+    var obj = JSON.parse(cachedJson);
+    return !!(obj && obj._gen != null && String(obj._gen) === String(gen) && obj.remaining);
+  } catch (err) {
+    return false;
+  }
+}
+
+function publicStockPayload_(payload) {
+  return {
+    ok: !!(payload && payload.ok),
+    dates: (payload && payload.dates) || [],
+    remaining: (payload && payload.remaining) || {}
+  };
+}
+
+/* ---- end stock compute ---- */
+
+function getScriptCacheSafe_() {
+  try {
+    return CacheService.getScriptCache();
+  } catch (err) {
+    return null;
+  }
+}
+
+function readStockCache_() {
+  var cache = getScriptCacheSafe_();
+  if (!cache) return null;
+  try {
+    var got = cache.getAll([STOCK_CACHE_KEY, STOCK_CACHE_GEN_KEY]);
+    if (!stockCacheIsFresh_(got[STOCK_CACHE_KEY], got[STOCK_CACHE_GEN_KEY])) return null;
+    var obj = JSON.parse(got[STOCK_CACHE_KEY]);
+    return publicStockPayload_(obj);
+  } catch (err) {
+    return null;
+  }
+}
+
+function putStockCache_(payload) {
+  var cache = getScriptCacheSafe_();
+  if (!cache || !payload) return;
+  try {
+    var gen = String(Date.now());
+    var body = JSON.stringify({
+      ok: payload.ok,
+      dates: payload.dates || [],
+      remaining: payload.remaining || {},
+      _gen: gen
+    });
+    cache.put(STOCK_CACHE_GEN_KEY, gen, STOCK_CACHE_TTL);
+    cache.put(STOCK_CACHE_KEY, body, STOCK_CACHE_TTL);
+  } catch (err) {}
+}
+
+function invalidateStockCache_() {
+  var cache = getScriptCacheSafe_();
+  if (!cache) return;
+  try {
+    cache.removeAll([STOCK_CACHE_KEY, STOCK_CACHE_GEN_KEY]);
+  } catch (err) {
+    try {
+      cache.remove(STOCK_CACHE_KEY);
+      cache.remove(STOCK_CACHE_GEN_KEY);
+    } catch (err2) {}
+  }
+}
+
+/** Invalidate, then write a fresh 25s payload so the next doGet is warm. */
+function bumpStockCache_(payload) {
+  invalidateStockCache_();
+  putStockCache_(payload);
+}
+
+function tallyDatesKey_(dates) {
+  return (dates || []).map(function (d) { return d.id; }).join(',');
+}
+
+function readTallyMap_(values, dates) {
+  var ordered = {};
+  if (!values || values.length < 2) return null;
+  var meta = values[0];
+  if (String(meta[0] || '') !== '#tally') return null;
+  var expectedKey = tallyDatesKey_(dates);
+  if (String(meta[3] || '') !== expectedKey) return null;
+  var header = values[1];
+  var dateAt = {};
+  var c, parsed, r, name, id;
+  for (c = 1; c < header.length; c++) {
+    parsed = parseStockDateHeader_(header[c], c + 1);
+    if (parsed) dateAt[c] = parsed.id;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(String(header[c] || '').trim())) {
+      dateAt[c] = String(header[c]).trim();
+    }
+  }
+  for (r = 2; r < values.length; r++) {
+    name = String(values[r][0] || '').trim();
+    if (!name || name.toUpperCase() === 'TOTAL') continue;
+    for (c = 1; c < values[r].length; c++) {
+      id = dateAt[c];
+      if (!id) continue;
+      if (!ordered[id]) ordered[id] = {};
+      var n = Number(values[r][c] || 0);
+      if (n) ordered[id][name] = n;
+    }
+  }
+  return { ordered: ordered, lastRow: Number(meta[1] || 0), lastOrderId: String(meta[2] || '') };
+}
+
+function writeTallySheet_(sheet, dates, ordered, lastRow, lastOrderId) {
+  var itemNames = uniqueNames_(MENU_ITEM_COLUMNS.concat(tallyItemNames_(ordered)));
+  var headers = ['Item'].concat((dates || []).map(function (d) { return d.id; }));
+  var values = [
+    ['#tally', lastRow || 0, lastOrderId || '', tallyDatesKey_(dates)],
+    headers
+  ];
+  var r, c, id, name;
+  for (r = 0; r < itemNames.length; r++) {
+    name = itemNames[r];
+    var row = [name];
+    for (c = 0; c < (dates || []).length; c++) {
+      id = dates[c].id;
+      row.push((ordered[id] && ordered[id][name]) ? ordered[id][name] : 0);
+    }
+    values.push(row);
+  }
+  // Pad every row to the same width: setValues needs a rectangular array
+  // (the meta row has 4 cells, the date rows have 1 + number of dates).
+  var width = 0;
+  for (r = 0; r < values.length; r++) width = Math.max(width, values[r].length);
+  for (r = 0; r < values.length; r++) {
+    while (values[r].length < width) values[r].push('');
+  }
+  sheet.clearContents();
+  sheet.getRange(1, 1, values.length, width).setValues(values);
+}
+
+function tallyItemNames_(ordered) {
+  var names = [];
+  var id, name;
+  for (id in (ordered || {})) {
+    if (!Object.prototype.hasOwnProperty.call(ordered, id)) continue;
+    for (name in ordered[id]) {
+      if (Object.prototype.hasOwnProperty.call(ordered[id], name)) names.push(name);
+    }
+  }
+  return names;
+}
+
+function rebuildTallySheet_(ss, orders, dates, stockValues) {
+  ss = ss || getSpreadsheet_();
+  orders = orders || ss.getSheetByName(ORDERS_SHEET_NAME);
+  var stock = ss.getSheetByName(STOCK_SHEET_NAME);
+  if (!dates) {
+    var sv = stockValues || (stock && stock.getLastRow() > 0 ? stock.getDataRange().getValues() : []);
+    dates = getStockDatesFromHeaderRow_(sv[0] || []);
+  }
+  var sheet = getOrCreateSheet_(ss, TALLY_SHEET_NAME);
+  try { sheet.hideSheet(); } catch (err) {}
+  var values = (orders && orders.getLastRow() >= 2) ? orders.getDataRange().getValues() : [];
+  var ordered = getOrderedQtysFromValues_(values, dates);
+  var lastRow = orders ? orders.getLastRow() : 0;
+  var lastOrderId = '';
+  if (values.length >= 2) {
+    var headers = values[0].map(function (v) { return String(v || '').trim(); });
+    var idIdx = headers.indexOf('Order ID');
+    if (idIdx >= 0) lastOrderId = String(values[values.length - 1][idIdx] || '').trim();
+  }
+  writeTallySheet_(sheet, dates, ordered, lastRow, lastOrderId);
+  return ordered;
+}
+
+function getTallyOrRebuild_(ss, orders, dates, stockValues) {
+  var tally = ss.getSheetByName(TALLY_SHEET_NAME);
+  var ordersLast = orders ? orders.getLastRow() : 0;
+  if (tally && tally.getLastRow() >= 2) {
+    var parsed = readTallyMap_(tally.getDataRange().getValues(), dates);
+    if (parsed && parsed.lastRow === ordersLast) return parsed.ordered;
+  }
+  return rebuildTallySheet_(ss, orders, dates, stockValues);
+}
+
+function incrementTallyForOrder_(ss, dateId, items, ordersSheet) {
+  var stock = ss.getSheetByName(STOCK_SHEET_NAME);
+  var stockValues = (stock && stock.getLastRow() > 0) ? stock.getDataRange().getValues() : [];
+  var dates = getStockDatesFromHeaderRow_(stockValues[0] || []);
+  var tally = ss.getSheetByName(TALLY_SHEET_NAME);
+  var ordersLast = ordersSheet ? ordersSheet.getLastRow() : 0;
+  var lastOrderId = '';
+  if (ordersSheet && ordersLast >= 2) {
+    var headers = getHeaders_(ordersSheet);
+    var idCol = headers.indexOf('Order ID') + 1;
+    if (idCol > 0) lastOrderId = String(ordersSheet.getRange(ordersLast, idCol).getValue() || '').trim();
+  }
+  var ordered;
+  if (tally && tally.getLastRow() >= 2) {
+    var parsed = readTallyMap_(tally.getDataRange().getValues(), dates);
+    if (parsed && (parsed.lastRow === ordersLast - 1 || parsed.lastRow === ordersLast)) {
+      ordered = incrementTallyMap_(parsed.ordered, dateId, items);
+      writeTallySheet_(tally, dates, ordered, ordersLast, lastOrderId);
+      return ordered;
+    }
+  }
+  return rebuildTallySheet_(ss, ordersSheet, dates, stockValues);
+}
+
+function remainingMapForDate_(pickupLabel) {
+  var payload = getStockRemaining_();
+  var date = findStockDate_(pickupLabel, payload.dates);
+  if (!date) return {};
+  return payload.remaining[date.id] || {};
+}
+
+function stockStatusForOrder_(pickupLabel, items) {
+  if (!pickupLabel) return 'OK';
+  var remaining = remainingMapForDate_(pickupLabel);
+  return orderExceedsRemaining_(items, remaining) ? 'OVERSOLD - CHECK' : 'OK';
+}
+
+function normalizeOrdersPickupDates_(ordersSheet, dates) {
+  if (!ordersSheet || ordersSheet.getLastRow() < 2 || !dates || !dates.length) return;
+  var lastCol = ordersSheet.getLastColumn();
+  var lastRow = ordersSheet.getLastRow();
+  var values = ordersSheet.getRange(1, 1, lastRow, lastCol).getValues();
+  var headers = values[0].map(function (v) { return String(v || '').trim(); });
+  var pickupIdx = headers.indexOf('Pickup Date');
+  if (pickupIdx === -1) return;
+  for (var r = 1; r < values.length; r++) {
+    var raw = values[r][pickupIdx];
+    var date = findStockDate_(raw, dates);
+    if (!date && Object.prototype.toString.call(raw) === '[object Date]' && !isNaN(raw.getTime())) {
+      var parsed = parseStockDateHeader_(raw);
+      if (parsed) date = findStockDate_(parsed.id, dates);
+    }
+    if (date && String(raw) !== date.id) {
+      ordersSheet.getRange(r + 1, pickupIdx + 1).setValue(date.id);
+    }
+  }
+}
+
+/* ---------- Weekly Summary (live formulas over Orders) ---------- */
+
+function refreshWeeklySummaryIfNeeded_(ss, ordersSheet) {
+  var stock = ss.getSheetByName(STOCK_SHEET_NAME);
+  var dates = stock ? getStockDatesFromSheet_(stock) : [];
+  var tab = ss.getSheetByName(SUMMARY_SHEET_NAME);
+  if (!tab || tab.getLastRow() < 4) {
+    refreshWeeklySummary_(ss, ordersSheet);
+    return;
+  }
+  var expected = dates.length * MASS_TIMES.length;
+  var labels = tab.getRange(4, 1, Math.max(tab.getLastRow() - 3, 1), 1).getValues();
+  var found = {};
+  var n = 0;
+  for (var i = 0; i < labels.length; i++) {
+    var v = String(labels[i][0] || '').trim();
+    if (!v || v.toUpperCase() === 'TOTAL') continue;
+    found[v] = true;
+    n += 1;
+  }
+  if (n !== expected) {
+    refreshWeeklySummary_(ss, ordersSheet);
+    return;
+  }
+  for (var d = 0; d < dates.length; d++) {
+    if (!found[dates[d].label]) {
+      refreshWeeklySummary_(ss, ordersSheet);
+      return;
+    }
+  }
+}
+
+function refreshWeeklySummary_(ss, ordersSheet) {
+  var tab = getOrCreateSheet_(ss, SUMMARY_SHEET_NAME);
+  var itemNames = getItemColumnNames_(ordersSheet);
+  if (!itemNames.length) itemNames = MENU_ITEM_COLUMNS.slice();
+
+  var stock = ss.getSheetByName(STOCK_SHEET_NAME);
+  var dates = stock ? getStockDatesFromSheet_(stock) : [];
+  normalizeOrdersPickupDates_(ordersSheet, dates);
+
+  tab.clear();
+  tab.getRange(1, 1).setValue('Weekly Summary — Vailankanni Parish Youth Cake Sale');
+  tab.getRange(1, 1).setFontWeight('bold');
+  tab.getRange(1, 1).setFontSize(14);
+  tab.getRange(2, 1).setValue(
+    'Live totals from the Orders tab (formulas). Pickup dates come from the Stock tab headers — add a date column there and use Cake Sale → Refresh Weekly Summary, or just place an order.'
+  );
+
+  var headers = ['Pickup Date', 'Mass', 'Orders'].concat(itemNames).concat(['Total Cakes', 'Total ₹']);
+  tab.getRange(3, 1, 1, headers.length).setValues([headers]);
+  var headerRange = tab.getRange(3, 1, 1, headers.length);
+  headerRange.setFontWeight('bold');
+  headerRange.setBackground('#b91c1c');
+  headerRange.setFontColor('#ffffff');
+  tab.setFrozenRows(3);
+
+  var firstData = 4;
+  var i, m, j, row, n;
+  n = 0;
+  for (i = 0; i < dates.length; i++) {
+    for (m = 0; m < MASS_TIMES.length; m++) {
+      row = firstData + n;
+      n += 1;
+      tab.getRange(row, 1).setValue(dates[i].label);
+      tab.getRange(row, 2).setValue(MASS_TIMES[m].label);
+      var pickupLit = quoteSheetString_(dates[i].id);
+      tab.getRange(row, 3).setFormula(countIfPickupMassFormula_(pickupLit, 'B' + row));
+      for (j = 0; j < itemNames.length; j++) {
+        tab.getRange(row, 4 + j).setFormula(sumIfPickupMassFormula_(pickupLit, 'B' + row, itemNames[j]));
+      }
+      var firstItemCol = 4;
+      var lastItemCol = 3 + itemNames.length;
+      var totalCakesCol = lastItemCol + 1;
+      var totalRsCol = lastItemCol + 2;
+      tab.getRange(row, totalCakesCol).setFormula(
+        '=SUM(' + colLetter_(firstItemCol) + row + ':' + colLetter_(lastItemCol) + row + ')'
+      );
+      tab.getRange(row, totalRsCol).setFormula(sumIfPickupMassFormula_(pickupLit, 'B' + row, 'Total Amount (₹)'));
+    }
+  }
+
+  var totalRow;
+  if (n > 0) {
+    var lastData = firstData + n - 1;
+    totalRow = lastData + 1;
+    tab.getRange(totalRow, 1).setValue('TOTAL');
+    tab.getRange(totalRow, 1, totalRow, headers.length).setFontWeight('bold');
+    for (j = 3; j <= headers.length; j++) {
+      tab.getRange(totalRow, j).setFormula(
+        '=SUM(' + colLetter_(j) + firstData + ':' + colLetter_(j) + lastData + ')'
+      );
+    }
+  } else {
+    totalRow = firstData;
+    tab.getRange(totalRow, 1).setValue('TOTAL');
+    tab.getRange(totalRow, 1, totalRow, headers.length).setFontWeight('bold');
+  }
+
+  tab.setColumnWidth(1, 180);
+  tab.setColumnWidth(2, 140);
+  tab.setColumnWidth(headers.length, 120);
+}
+
+function formatHeaderWithTime_(parsed) {
+  var parts = parsed.id.split('-');
+  var y = +parts[0], m = +parts[1], d = +parts[2];
+  var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var t = String(parsed.closesAt || '').match(/T(\d{2}):(\d{2})/);
+  var h = t ? +t[1] : 8;
+  var min = t ? +t[2] : 30;
+  var ap = 'AM';
+  var h12 = h;
+  if (h === 0) { h12 = 12; ap = 'AM'; }
+  else if (h === 12) { h12 = 12; ap = 'PM'; }
+  else if (h > 12) { h12 = h - 12; ap = 'PM'; }
+  return d + ' ' + months[m - 1] + ' ' + y + ' ' + h12 + ':' + pad2_(min) + ' ' + ap;
+}
+
+function addPickupDateColumn_(parsed) {
+  var ss = getSpreadsheet_();
+  var stock = ensureStockSheet_(ss, MENU_ITEM_COLUMNS);
+  var existing = getStockDatesFromSheet_(stock);
+  if (findStockDate_(parsed.id, existing)) return 'exists';
+  ensureTotalColumnIsLast_(stock);
+  var totalCol = findStockTotalCol_(stock);
+  var insertAt;
+  if (totalCol) {
+    stock.insertColumnBefore(totalCol);
+    insertAt = totalCol;
+  } else {
+    insertAt = stock.getLastColumn() + 1;
+  }
+  var cell = stock.getRange(1, insertAt);
+  var parts = parsed.id.split('-');
+  var y = +parts[0], m = +parts[1], d = +parts[2];
+  var defaultClose = closesAtIso_(y, m, d, 8, 30);
+  if (parsed.closesAt && parsed.closesAt !== defaultClose) {
+    cell.setValue(formatHeaderWithTime_(parsed));
+  } else {
+    cell.setValue(new Date(y, m - 1, d));
+    cell.setNumberFormat('d mmm yyyy');
+  }
+  refreshStockTotals_(stock);
+  styleStockHeader_(stock);
+  var orders = getOrCreateSheet_(ss, ORDERS_SHEET_NAME);
+  rebuildTallySheet_(ss, orders, getStockDatesFromSheet_(stock));
+  refreshWeeklySummary_(ss, orders);
+  invalidateStockCache_();
+  return 'added';
+}
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Cake Sale')
+    .addItem('Refresh Weekly Summary', 'refreshSummary')
+    .addItem('Add pickup date…', 'promptAddPickupDate')
+    .addToUi();
+}
+
+function refreshSummary() {
+  var ss = getSpreadsheet_();
+  var orders = getOrCreateSheet_(ss, ORDERS_SHEET_NAME);
+  ensureOrdersSchema_(orders, MENU_ITEM_COLUMNS);
+  ensureStockSheet_(ss, MENU_ITEM_COLUMNS);
+  rebuildTallySheet_(ss, orders);
+  refreshWeeklySummary_(ss, orders);
+  invalidateStockCache_();
+}
+
+function promptAddPickupDate() {
+  var ui = SpreadsheetApp.getUi();
+  var res = ui.prompt(
+    'Add pickup date',
+    'Enter a pickup date (e.g. 27 Dec 2026). Optional cutoff time: 27 Dec 2026 10:00 AM. Default cutoff is 8:30 AM IST.',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (res.getSelectedButton() !== ui.Button.OK) return;
+  var text = String(res.getResponseText() || '').trim();
+  var parsed = parseStockDateHeader_(text);
+  if (!parsed) {
+    ui.alert('Could not read that as a date. Try e.g. 27 Dec 2026.');
+    return;
+  }
+  var result = addPickupDateColumn_(parsed);
+  if (result === 'exists') {
+    ui.alert('That date is already on the Stock tab (' + parsed.label + ').');
+    return;
+  }
+  ui.alert('Added ' + parsed.label + '. Fill quantities in the new column. Blank = sold out.');
+}
+
+function quoteSheetString_(value) {
+  return '"' + String(value).replace(/"/g, '""') + '"';
+}
+
+function matchHeaderFormula_(headerName) {
+  return 'MATCH(' + quoteSheetString_(headerName) + ', Orders!$1:$1, 0)';
+}
+
+function countIfPickupMassFormula_(pickupCell, massCell) {
+  return '=COUNTIFS(INDEX(Orders!$1:$1048576, 0, ' + matchHeaderFormula_('Pickup Date') + '), ' + pickupCell +
+    ', INDEX(Orders!$1:$1048576, 0, ' + matchHeaderFormula_('Mass') + '), ' + massCell + ')';
+}
+
+function sumIfPickupMassFormula_(pickupCell, massCell, headerName) {
+  return '=SUMIFS(INDEX(Orders!$1:$1048576, 0, ' + matchHeaderFormula_(headerName) + '), ' +
+    'INDEX(Orders!$1:$1048576, 0, ' + matchHeaderFormula_('Pickup Date') + '), ' + pickupCell +
+    ', INDEX(Orders!$1:$1048576, 0, ' + matchHeaderFormula_('Mass') + '), ' + massCell + ')';
+}
+
+function colLetter_(n) {
+  var s = '';
+  var num = n;
+  while (num > 0) {
+    var m = (num - 1) % 26;
+    s = String.fromCharCode(65 + m) + s;
+    num = Math.floor((num - 1) / 26);
+  }
+  return s;
+}
+
+function uniqueNames_(arr) {
+  var seen = {};
+  var out = [];
+  for (var i = 0; i < arr.length; i++) {
+    var n = arr[i];
+    if (n && !seen[n]) {
+      seen[n] = true;
+      out.push(n);
+    }
+  }
+  return out;
+}
+
+/* ---------- Shared ---------- */
+
+function formatItems_(items) {
+  if (!items || !items.length) return '';
+  var lines = [];
+  for (var i = 0; i < items.length; i++) {
+    var line = items[i];
+    var qty = line.qty || 0;
+    var name = line.name || '';
+    var total = line.lineTotal != null ? line.lineTotal : (qty * (line.price || 0));
+    lines.push(qty + ' x ' + name + ' – ₹' + total);
+  }
+  return lines.join('\n');
+}
+
+function jsonResponse(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function jsonpOrJson_(obj, callback) {
+  var body = JSON.stringify(obj);
+  if (callback && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(callback))) {
+    return ContentService
+      .createTextOutput(callback + '(' + body + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService
+    .createTextOutput(body)
+    .setMimeType(ContentService.MimeType.JSON);
+}

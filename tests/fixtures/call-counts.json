@@ -1,0 +1,96 @@
+{
+  "before": {
+    "saved": {
+      "spreadsheet": 170,
+      "reads": 32,
+      "writes": 3,
+      "style": 7,
+      "flush": 2,
+      "getDataRange": 4,
+      "clearContents": 1,
+      "getLastRow": 36,
+      "getLastColumn": 46,
+      "getRange": 32,
+      "getValues": 27,
+      "setValues": 2,
+      "setValue": 0
+    },
+    "warm": {
+      "spreadsheet": 170,
+      "reads": 32,
+      "writes": 3,
+      "style": 7,
+      "flush": 2,
+      "getDataRange": 4,
+      "clearContents": 1,
+      "getLastRow": 36,
+      "getLastColumn": 46,
+      "getRange": 32,
+      "getValues": 27,
+      "setValues": 2,
+      "setValue": 0
+    },
+    "insuff": {
+      "spreadsheet": 128,
+      "reads": 23,
+      "writes": 0,
+      "style": 7,
+      "flush": 1,
+      "getDataRange": 2,
+      "clearContents": 0,
+      "getLastRow": 26,
+      "getLastColumn": 40,
+      "getRange": 23,
+      "getValues": 21,
+      "setValues": 0,
+      "setValue": 0
+    }
+  },
+  "after": {
+    "saved": {
+      "spreadsheet": 21,
+      "reads": 2,
+      "writes": 1,
+      "style": 0,
+      "flush": 1,
+      "getDataRange": 0,
+      "clearContents": 0,
+      "getLastRow": 2,
+      "getLastColumn": 3,
+      "getRange": 7,
+      "getValues": 2,
+      "setValues": 1,
+      "setValue": 0
+    },
+    "warm": {
+      "spreadsheet": 14,
+      "reads": 1,
+      "writes": 1,
+      "style": 0,
+      "flush": 1,
+      "getDataRange": 0,
+      "clearContents": 0,
+      "getLastRow": 1,
+      "getLastColumn": 1,
+      "getRange": 6,
+      "getValues": 1,
+      "setValues": 1,
+      "setValue": 0
+    },
+    "insuff": {
+      "spreadsheet": 21,
+      "reads": 2,
+      "writes": 1,
+      "style": 0,
+      "flush": 1,
+      "getDataRange": 0,
+      "clearContents": 0,
+      "getLastRow": 2,
+      "getLastColumn": 3,
+      "getRange": 7,
+      "getValues": 2,
+      "setValues": 1,
+      "setValue": 0
+    }
+  }
+}

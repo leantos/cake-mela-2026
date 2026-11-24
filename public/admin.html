@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#7a0a10">
+  <meta name="description" content="Private order totals for the Vailankanni Parish Youth Christmas cake sale.">
+  <title>Cake orders — Vailankanni Parish Youth</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="preconnect" href="https://script.google.com">
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+  <style>
+    /* Palette matches index.html (from poster.png and logo.png). */
+    :root {
+      --maroon: #7a0a10;
+      --maroon-dark: #520505;
+      --maroon-soft: #ead6d0;
+      --gold: #c27b13;
+      --gold-dark: #904108;
+      --cream: #f7ede5;
+      --cream-light: #fbf9f7;
+      --cream-deep: #eadace;
+      --ink: #2a2306;
+      --muted: #5d563e;
+      --pine: #435718;
+      --blue: #0544b3;
+      --blue-dark: #0c3c98;
+      --line: #eadace;
+      --card: var(--cream-light);
+      --bg: var(--cream);
+      --shadow: 0 8px 24px rgba(42, 35, 6, 0.1);
+      --radius: 16px;
+      --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+      --serif: Georgia, "Palatino Linotype", Palatino, "Times New Roman", serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--cream-deep);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg);
+      box-shadow: 0 0 40px rgba(42, 35, 6, 0.12);
+      padding-bottom: 2.5rem;
+    }
+
+    header.hero-head {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      background: var(--card);
+      color: var(--blue);
+      padding: 0.7rem 0.9rem;
+      border-bottom: 3px solid var(--maroon);
+    }
+    header.hero-head .logo {
+      display: block;
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+    header.hero-head .brand { min-width: 0; text-align: left; flex: 1; }
+    .staff-link {
+      margin-left: auto;
+      flex-shrink: 0;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--maroon);
+      text-decoration: none;
+      padding: 0.4rem 0.75rem;
+      border: 1.5px solid var(--maroon);
+      border-radius: 999px;
+      white-space: nowrap;
+      align-self: center;
+    }
+    .staff-link:hover, .staff-link:focus-visible {
+      background: var(--maroon);
+      color: #fff;
+      outline: none;
+    }
+    header.hero-head h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 1.12rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+      color: var(--blue);
+    }
+    header.hero-head .tagline {
+      margin: 0.2rem 0 0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--muted);
+    }
+
+    .example-banner {
+      display: none;
+      margin: 0;
+      padding: 0.4rem 0.9rem;
+      background: var(--gold);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .example-banner.visible { display: block; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem 0.6rem;
+      padding: 0.85rem 0.9rem 0.4rem;
+    }
+    .updated {
+      flex: 1 1 12rem;
+      margin: 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .toolbar-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .btn {
+      appearance: none;
+      border: 1.5px solid var(--maroon);
+      background: var(--card);
+      color: var(--maroon);
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 0.4rem 0.8rem;
+      min-height: 40px;
+      cursor: pointer;
+    }
+    .btn:hover { background: var(--maroon-soft); }
+    .btn:focus { outline: none; }
+    .btn:focus-visible {
+      outline: 3px solid rgba(122, 10, 16, 0.45);
+      outline-offset: 2px;
+    }
+    .btn-primary {
+      background: var(--maroon);
+      color: var(--cream-light);
+    }
+    .btn-primary:hover { background: var(--maroon-dark); }
+
+    .status {
+      min-height: 1.2rem;
+      margin: 0 0.9rem 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .status.is-error { color: var(--maroon-dark); }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      padding: 0 0.9rem 0.85rem;
+    }
+    .sales-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      padding-top: 0;
+    }
+    @media (min-width: 600px) {
+      .sales-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .progress {
+      margin: 0.85rem 0 1rem;
+      background: var(--cream-deep);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+      min-height: 1.6rem;
+    }
+    .progress-fill {
+      display: block;
+      height: 1.6rem;
+      background: var(--pine);
+      width: 0;
+      max-width: 100%;
+    }
+    .progress-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .sold-table { margin-top: 0.85rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 0.7rem 0.55rem 0.65rem;
+      text-align: center;
+    }
+    .card .label {
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card .value {
+      margin: 0.2rem 0 0;
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--maroon);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+    }
+
+    .date-picker {
+      padding: 0 0.9rem 0.85rem;
+    }
+    .date-picker h2 {
+      margin: 0 0 0.45rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .date-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .date-chip {
+      appearance: none;
+      border: 1.5px solid var(--line);
+      background: var(--card);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 0.45rem 0.8rem;
+      min-height: 40px;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .date-chip[aria-pressed="true"] {
+      background: var(--maroon-soft);
+      border-color: var(--maroon);
+      color: var(--maroon-dark);
+    }
+    .date-chip:focus { outline: none; }
+    .date-chip:focus-visible {
+      box-shadow: 0 0 0 3px rgba(122, 10, 16, 0.45);
+    }
+
+    .panels { padding: 0 0.9rem 1rem; }
+
+    details.date-panel,
+    details.past-group,
+    details.matrix-panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin: 0 0 0.65rem;
+      overflow: hidden;
+    }
+    details.past-group { background: #f3ece4; }
+    details > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.8rem 0.9rem;
+      font-weight: 700;
+    }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::marker { content: ""; }
+    .chevron {
+      width: 0.65rem;
+      height: 0.65rem;
+      flex-shrink: 0;
+      border-right: 2px solid var(--maroon);
+      border-bottom: 2px solid var(--maroon);
+      transform: rotate(-45deg);
+      transition: transform 0.2s ease;
+      margin: 0 0.15rem 0 0.1rem;
+    }
+    details[open] > summary .chevron { transform: rotate(45deg); }
+    .summary-text { flex: 1 1 auto; min-width: 0; }
+    .summary-title { display: block; font-size: 1rem; }
+    .summary-meta {
+      display: block;
+      margin-top: 0.15rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .panel-body {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.22s ease;
+    }
+    details[open] > .panel-body { grid-template-rows: 1fr; }
+    .panel-inner {
+      overflow: hidden;
+      padding: 0 0.85rem 0.9rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    caption {
+      text-align: left;
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin: 0 0 0.5rem;
+      color: var(--ink);
+    }
+    th, td {
+      padding: 0.4rem 0.35rem;
+      text-align: right;
+      border-bottom: 1px solid var(--line);
+      font-variant-numeric: tabular-nums;
+    }
+    th:first-child, td:first-child { text-align: left; }
+    thead th {
+      font-size: 0.72rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    tfoot th, tfoot td {
+      font-weight: 800;
+      border-bottom: 0;
+      color: var(--maroon-dark);
+    }
+    .table-actions { margin-top: 0.7rem; }
+
+    .matrix-wrap { overflow-x: auto; }
+    .matrix-panel { display: none; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 1.25rem;
+      transform: translateX(-50%) translateY(8px);
+      max-width: calc(100vw - 2rem);
+      background: var(--ink);
+      color: var(--cream-light);
+      padding: 0.6rem 0.9rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 40;
+    }
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .chevron, .panel-body, .toast { transition: none; }
+    }
+
+    @media (min-width: 768px) {
+      .app { max-width: 720px; }
+      .card .value { font-size: 1.4rem; }
+    }
+
+    /* Desktop: full-width fluid shell, larger type, readable tables. */
+    @media (min-width: 1024px) {
+      .app {
+        width: 100%;
+        max-width: 1600px;
+        margin: 0 auto;
+        box-shadow: none;
+        background: transparent;
+        padding: clamp(16px, 3vw, 48px);
+        padding-bottom: clamp(16px, 3vw, 48px);
+      }
+      header.hero-head {
+        border-radius: 14px 14px 0 0;
+        border-bottom: 3px solid var(--maroon);
+        padding: 0.85rem 1.35rem;
+      }
+      header.hero-head .logo { width: 64px; height: 64px; }
+      header.hero-head h1 { font-size: 1.45rem; }
+      header.hero-head .tagline { font-size: 0.9rem; }
+      .page-body {
+        background: var(--bg);
+        border-radius: 0 0 14px 14px;
+        box-shadow: var(--shadow);
+        padding-bottom: 1.75rem;
+      }
+      .toolbar, .cards, .date-picker, .panels { padding-left: 1.35rem; padding-right: 1.35rem; }
+      .status { margin-left: 1.35rem; margin-right: 1.35rem; font-size: 0.95rem; }
+      .updated { font-size: 0.92rem; }
+      .btn, .date-chip { font-size: 0.92rem; padding: 0.45rem 0.95rem; }
+      .date-picker h2 { font-size: 0.9rem; }
+      .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; padding-bottom: 0.7rem; }
+      .sales-cards { grid-template-columns: repeat(5, minmax(0, 1fr)); padding-bottom: 0.85rem; }
+      .card { padding: 0.95rem 1rem; }
+      .card .label { font-size: 0.78rem; }
+      .card .value { font-size: 2rem; }
+      .date-picker { padding-bottom: 0.7rem; }
+      .summary-title { font-size: 1.18rem; }
+      .summary-meta { font-size: 0.92rem; }
+      details > summary { padding: 0.85rem 1.15rem; }
+      table { font-size: 1.05rem; }
+      caption { font-size: 1.12rem; margin-bottom: 0.5rem; }
+      th, td { padding: 0.48rem 0.6rem; }
+      thead th { font-size: 0.8rem; }
+      .matrix-panel { display: block; }
+    }
+
+    /* Wide desktop: date panels left, all-dates matrix right. */
+    @media (min-width: 1100px) {
+      .dashboard {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(520px, 1.15fr);
+        column-gap: 1.25rem;
+        align-items: start;
+        padding: 0 1.35rem 0.5rem;
+      }
+      .dashboard > .panels { padding: 0; }
+      .dashboard:has(#matrix-wrap:empty) {
+        display: block;
+        padding: 0 1.35rem 0.5rem;
+      }
+      details.matrix-panel {
+        position: sticky;
+        top: 1rem;
+        margin-bottom: 0;
+      }
+    }
+
+    @media print {
+      body, .app { background: #fff; box-shadow: none; max-width: none; }
+      .toolbar-actions, .date-picker, .toast, .example-banner, .copy-btn { display: none !important; }
+      .dashboard { display: block; padding: 0; }
+      details, details[open] > .panel-body {
+        display: block;
+        box-shadow: none;
+        break-inside: avoid;
+      }
+      .panel-body, .panel-inner { display: block !important; overflow: visible; }
+      .matrix-panel { display: block !important; position: static; }
+      header.hero-head { border-bottom: 2px solid #7a0a10; }
+      .staff-link { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero-head">
+      <img class="logo" src="logo.png" width="56" height="56" alt="Vailankanni Parish Youth logo">
+      <div class="brand">
+        <h1>Vailankanni Parish Youth</h1>
+        <p class="tagline">Order dashboard • Christmas Cake Sale</p>
+      </div>
+      <a class="staff-link" href="staff.html">Staff mode</a>
+    </header>
+    <div class="page-body">
+      <p class="example-banner" id="example-banner">Example data — not live orders</p>
+      <div class="toolbar">
+        <p class="updated" id="updated">Loading totals…</p>
+        <div class="toolbar-actions">
+          <button type="button" class="btn" id="expand-all">Expand all</button>
+          <button type="button" class="btn" id="collapse-all">Collapse all</button>
+          <button type="button" class="btn btn-primary" id="copy-selected">Copy for Poppins</button>
+          <button type="button" class="btn btn-primary" id="refresh-btn">Refresh</button>
+        </div>
+      </div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <section class="cards" aria-label="Orders">
+        <article class="card">
+          <p class="label">Ordered cakes</p>
+          <p class="value" id="card-cakes">—</p>
+        </article>
+        <article class="card">
+          <p class="label">Ordered ₹</p>
+          <p class="value" id="card-amount">—</p>
+        </article>
+        <article class="card">
+          <p class="label">Orders</p>
+          <p class="value" id="card-orders">—</p>
+        </article>
+      </section>
+      <section class="cards sales-cards" aria-label="Sales">
+        <article class="card">
+          <p class="label">Ordered</p>
+          <p class="value" id="card-ordered">—</p>
+        </article>
+        <article class="card">
+          <p class="label">Picked up</p>
+          <p class="value" id="card-pickedup">—</p>
+        </article>
+        <article class="card">
+          <p class="label">Walk-in</p>
+          <p class="value" id="card-walkin">—</p>
+        </article>
+        <article class="card">
+          <p class="label">Total sold</p>
+          <p class="value" id="card-sold">—</p>
+        </article>
+        <article class="card">
+          <p class="label">Collected ₹</p>
+          <p class="value" id="card-collected">—</p>
+        </article>
+      </section>
+      <div class="date-picker">
+        <h2 id="date-picker-label">Pickup date</h2>
+        <div class="date-chips" id="date-chips" role="group" aria-labelledby="date-picker-label"></div>
+      </div>
+      <div class="dashboard">
+        <div class="panels" id="date-panels"></div>
+        <div class="panels" id="matrix-wrap"></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="site-config.js"></script>
+  <script>
+    const SHEETS_WEBAPP_URL = (window.SITE_CONFIG && window.SITE_CONFIG.appsScriptUrl) || 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec';
+    const REFRESH_MS = 60000;
+    const PANEL_STATE_KEY = 'poppinsAdminPanels';
+    const MENU_ITEMS = [
+      'Dates & Carrot Pudding (700g)',
+      'Dates & Carrot Pudding (350g)',
+      'Butterscotch Pudding (700g)',
+      'Butterscotch Pudding (350g)',
+      'Rich Plum Cake (800g)',
+      'Rich Plum Cake (400g)'
+    ];
+    const MASS_IDS = ['06:30', '08:30'];
+    const MASS_LABELS = { '06:30': '6:30 AM', '08:30': '8:30 AM' };
+
+    const MOCK_SUMMARY = {
+      ok: true,
+      version: '2026-11-23.10',
+      lastUpdated: '23/11/2026, 04:30:00 pm IST',
+      latestOrderAt: '23/11/2026, 04:12:00 pm IST',
+      dates: [
+        {
+          id: '2026-11-16',
+          label: 'Sun, 16 Nov',
+          closesAt: '2026-11-16T08:30:00+05:30',
+          items: {
+            'Dates & Carrot Pudding (700g)': { '06:30': 2, '08:30': 1, total: 3 },
+            'Dates & Carrot Pudding (350g)': { '06:30': 1, '08:30': 2, total: 3 },
+            'Butterscotch Pudding (700g)': { '06:30': 1, '08:30': 0, total: 1 },
+            'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 2, total: 2 },
+            'Rich Plum Cake (800g)': { '06:30': 1, '08:30': 1, total: 2 },
+            'Rich Plum Cake (400g)': { '06:30': 4, '08:30': 3, total: 7 }
+          },
+          totals: { cakes: 18, amount: 7450, orders: 6 }
+        },
+        {
+          id: '2026-11-29',
+          label: 'Sun, 29 Nov',
+          closesAt: '2026-11-29T08:30:00+05:30',
+          items: {
+            'Dates & Carrot Pudding (700g)': { '06:30': 5, '08:30': 3, total: 8 },
+            'Dates & Carrot Pudding (350g)': { '06:30': 4, '08:30': 6, total: 10 },
+            'Butterscotch Pudding (700g)': { '06:30': 2, '08:30': 2, total: 4 },
+            'Butterscotch Pudding (350g)': { '06:30': 3, '08:30': 1, total: 4 },
+            'Rich Plum Cake (800g)': { '06:30': 3, '08:30': 2, total: 5 },
+            'Rich Plum Cake (400g)': { '06:30': 8, '08:30': 7, total: 15 }
+          },
+          totals: { cakes: 46, amount: 19250, orders: 14 }
+        },
+        {
+          id: '2026-12-06',
+          label: 'Sun, 6 Dec',
+          closesAt: '2026-12-06T08:30:00+05:30',
+          items: {
+            'Dates & Carrot Pudding (700g)': { '06:30': 2, '08:30': 2, total: 4 },
+            'Dates & Carrot Pudding (350g)': { '06:30': 3, '08:30': 1, total: 4 },
+            'Butterscotch Pudding (700g)': { '06:30': 1, '08:30': 1, total: 2 },
+            'Butterscotch Pudding (350g)': { '06:30': 2, '08:30': 2, total: 4 },
+            'Rich Plum Cake (800g)': { '06:30': 1, '08:30': 0, total: 1 },
+            'Rich Plum Cake (400g)': { '06:30': 5, '08:30': 4, total: 9 }
+          },
+          totals: { cakes: 24, amount: 9900, orders: 9 }
+        },
+        {
+          id: '2026-12-13',
+          label: 'Sun, 13 Dec',
+          closesAt: '2026-12-13T08:30:00+05:30',
+          items: {
+            'Dates & Carrot Pudding (700g)': { '06:30': 1, '08:30': 0, total: 1 },
+            'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 2, total: 2 },
+            'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 1, total: 1 },
+            'Butterscotch Pudding (350g)': { '06:30': 1, '08:30': 0, total: 1 },
+            'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 1, total: 1 },
+            'Rich Plum Cake (400g)': { '06:30': 2, '08:30': 3, total: 5 }
+          },
+          totals: { cakes: 11, amount: 4550, orders: 5 }
+        },
+        {
+          id: '2026-12-20',
+          label: 'Sun, 20 Dec',
+          closesAt: '2026-12-20T08:30:00+05:30',
+          items: {
+            'Dates & Carrot Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
+            'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
+            'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
+            'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
+            'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0 },
+            'Rich Plum Cake (400g)': { '06:30': 0, '08:30': 1, total: 1 }
+          },
+          totals: { cakes: 1, amount: 350, orders: 1 }
+        }
+      ],
+      grand: {
+        cakes: 100,
+        amount: 41500,
+        orders: 35,
+        items: {
+          'Dates & Carrot Pudding (700g)': { '06:30': 10, '08:30': 6, total: 16 },
+          'Dates & Carrot Pudding (350g)': { '06:30': 8, '08:30': 11, total: 19 },
+          'Butterscotch Pudding (700g)': { '06:30': 4, '08:30': 4, total: 8 },
+          'Butterscotch Pudding (350g)': { '06:30': 6, '08:30': 5, total: 11 },
+          'Rich Plum Cake (800g)': { '06:30': 5, '08:30': 4, total: 9 },
+          'Rich Plum Cake (400g)': { '06:30': 19, '08:30': 18, total: 37 }
+        }
+      }
+    };
+
+    function enrichDemoSales(summary) {
+      var grandSales = {
+        ordered: { cakes: 0, amount: 0, orders: 0 },
+        cancelled: { orders: 0 },
+        paid: { cakes: 0, amount: 0 },
+        pickedUp: { cakes: 0 },
+        pendingPickup: { cakes: 0 },
+        walkIn: { cakes: 0, amount: 0, cash: 0, upi: 0 },
+        totalSold: { cakes: 0 },
+        collected: { amount: 0 }
+      };
+      (summary.dates || []).forEach(function (date, index) {
+        MENU_ITEMS.forEach(function (name) {
+          var row = date.items[name] || (date.items[name] = { '06:30': 0, '08:30': 0, total: 0 });
+          row.ordered = row.total;
+          row.pickedUp = Math.floor(row.total * (index === 4 ? 0 : 0.45));
+          row.walkIn = index === 4 ? 0 : Math.max(0, Math.round(row.total * 0.15));
+        });
+        var picked = MENU_ITEMS.reduce(function (n, name) { return n + (date.items[name].pickedUp || 0); }, 0);
+        var walk = MENU_ITEMS.reduce(function (n, name) { return n + (date.items[name].walkIn || 0); }, 0);
+        var walkAmt = walk * 350;
+        date.sales = {
+          ordered: { cakes: date.totals.cakes, amount: date.totals.amount, orders: date.totals.orders },
+          cancelled: { orders: index === 1 ? 2 : (index === 0 ? 1 : 0) },
+          paid: { cakes: Math.min(date.totals.cakes, picked + Math.floor((date.totals.cakes - picked) * 0.3)), amount: Math.round(date.totals.amount * 0.65) },
+          pickedUp: { cakes: picked },
+          pendingPickup: { cakes: Math.max(0, date.totals.cakes - picked) },
+          walkIn: { cakes: walk, amount: walkAmt, cash: Math.round(walkAmt / 2), upi: walkAmt - Math.round(walkAmt / 2) },
+          totalSold: { cakes: picked + walk },
+          collected: { amount: 0 }
+        };
+        date.sales.collected.amount = date.sales.paid.amount + date.sales.walkIn.amount;
+        grandSales.ordered.cakes += date.sales.ordered.cakes;
+        grandSales.ordered.amount += date.sales.ordered.amount;
+        grandSales.ordered.orders += date.sales.ordered.orders;
+        grandSales.cancelled.orders += date.sales.cancelled.orders;
+        grandSales.paid.cakes += date.sales.paid.cakes;
+        grandSales.paid.amount += date.sales.paid.amount;
+        grandSales.pickedUp.cakes += date.sales.pickedUp.cakes;
+        grandSales.walkIn.cakes += date.sales.walkIn.cakes;
+        grandSales.walkIn.amount += date.sales.walkIn.amount;
+        grandSales.walkIn.cash += date.sales.walkIn.cash;
+        grandSales.walkIn.upi += date.sales.walkIn.upi;
+        MENU_ITEMS.forEach(function (name) {
+          var grow = summary.grand.items[name];
+          var drow = date.items[name];
+          grow.ordered = (grow.ordered || 0) + drow.ordered;
+          grow.pickedUp = (grow.pickedUp || 0) + drow.pickedUp;
+          grow.walkIn = (grow.walkIn || 0) + drow.walkIn;
+        });
+      });
+      grandSales.pendingPickup.cakes = Math.max(0, grandSales.ordered.cakes - grandSales.pickedUp.cakes);
+      grandSales.totalSold.cakes = grandSales.pickedUp.cakes + grandSales.walkIn.cakes;
+      grandSales.collected.amount = grandSales.paid.amount + grandSales.walkIn.amount;
+      summary.grand.sales = grandSales;
+    }
+    enrichDemoSales(MOCK_SUMMARY);
+
+    const els = {
+      banner: document.getElementById('example-banner'),
+      updated: document.getElementById('updated'),
+      status: document.getElementById('status'),
+      cakes: document.getElementById('card-cakes'),
+      amount: document.getElementById('card-amount'),
+      orders: document.getElementById('card-orders'),
+      ordered: document.getElementById('card-ordered'),
+      pickedup: document.getElementById('card-pickedup'),
+      walkin: document.getElementById('card-walkin'),
+      sold: document.getElementById('card-sold'),
+      collected: document.getElementById('card-collected'),
+      chips: document.getElementById('date-chips'),
+      panels: document.getElementById('date-panels'),
+      matrixWrap: document.getElementById('matrix-wrap'),
+      toast: document.getElementById('toast'),
+      refresh: document.getElementById('refresh-btn'),
+      copySelected: document.getElementById('copy-selected'),
+      expandAll: document.getElementById('expand-all'),
+      collapseAll: document.getElementById('collapse-all')
+    };
+
+    var summaryState = null;
+    var selectedId = 'all';
+    var usingMock = false;
+    var refreshTimer = null;
+
+    function nowRef() {
+      if (window.__TEST_NOW && typeof window.__TEST_NOW.getTime === 'function') return window.__TEST_NOW;
+      return new Date();
+    }
+
+    function isPreviewMode() {
+      return /(?:\?|&)preview=1(?:&|$)/.test(location.search || '');
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatINR(amount) {
+      return '₹' + Number(amount || 0).toLocaleString('en-IN');
+    }
+
+    function isPastDate(date, now) {
+      now = now || nowRef();
+      if (!date) return false;
+      var close = date.closesAt ? new Date(date.closesAt) : new Date(date.id + 'T08:30:00+05:30');
+      return !isNaN(close.getTime()) && now.getTime() >= close.getTime();
+    }
+
+    function nextUpcomingId(dates, now) {
+      dates = dates || [];
+      now = now || nowRef();
+      var i;
+      for (i = 0; i < dates.length; i++) {
+        if (!isPastDate(dates[i], now)) return dates[i].id;
+      }
+      return dates.length ? dates[dates.length - 1].id : 'all';
+    }
+
+    function readPanelState() {
+      try {
+        var raw = localStorage.getItem(PANEL_STATE_KEY);
+        var parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function writePanelState(state) {
+      try { localStorage.setItem(PANEL_STATE_KEY, JSON.stringify(state || {})); } catch (err) {}
+    }
+
+    function panelShouldOpen(id, defaults) {
+      var saved = readPanelState();
+      if (Object.prototype.hasOwnProperty.call(saved, id)) return !!saved[id];
+      return !!defaults[id];
+    }
+
+    function persistOpenFromDom() {
+      var state = readPanelState();
+      document.querySelectorAll('details[data-panel-id]').forEach(function (el) {
+        state[el.getAttribute('data-panel-id')] = el.open;
+      });
+      writePanelState(state);
+    }
+
+    function setStatus(message, isError) {
+      els.status.textContent = message || '';
+      els.status.classList.toggle('is-error', !!isError);
+    }
+
+    function emptySales() {
+      return {
+        ordered: { cakes: 0, amount: 0, orders: 0 },
+        cancelled: { orders: 0 },
+        paid: { cakes: 0, amount: 0 },
+        pickedUp: { cakes: 0 },
+        pendingPickup: { cakes: 0 },
+        walkIn: { cakes: 0, amount: 0, cash: 0, upi: 0 },
+        totalSold: { cakes: 0 },
+        collected: { amount: 0 }
+      };
+    }
+
+    function salesOf(obj) {
+      if (obj && obj.sales) return obj.sales;
+      if (obj && obj.totals) {
+        return {
+          ordered: { cakes: obj.totals.cakes || 0, amount: obj.totals.amount || 0, orders: obj.totals.orders || 0 },
+          cancelled: { orders: 0 },
+          paid: { cakes: 0, amount: 0 },
+          pickedUp: { cakes: 0 },
+          pendingPickup: { cakes: obj.totals.cakes || 0 },
+          walkIn: { cakes: 0, amount: 0, cash: 0, upi: 0 },
+          totalSold: { cakes: 0 },
+          collected: { amount: 0 }
+        };
+      }
+      return emptySales();
+    }
+
+    function selectedScope(data) {
+      if (!data) return { cakes: 0, amount: 0, orders: 0, items: {}, sales: emptySales(), label: 'All dates', dates: [] };
+      if (selectedId !== 'all') {
+        var date = (data.dates || []).find(function (d) { return d.id === selectedId; });
+        if (date) {
+          return {
+            cakes: date.totals.cakes,
+            amount: date.totals.amount,
+            orders: date.totals.orders,
+            items: date.items,
+            sales: salesOf(date),
+            label: date.label,
+            dates: [date]
+          };
+        }
+      }
+      return {
+        cakes: data.grand.cakes,
+        amount: data.grand.amount,
+        orders: data.grand.orders,
+        items: data.grand.items,
+        sales: salesOf(data.grand),
+        label: 'All dates',
+        dates: data.dates
+      };
+    }
+
+    function renderCards(scope) {
+      els.cakes.textContent = String(scope.cakes);
+      els.amount.textContent = formatINR(scope.amount);
+      els.orders.textContent = String(scope.orders);
+      var sales = scope.sales || emptySales();
+      if (els.ordered) els.ordered.textContent = String(sales.ordered.cakes);
+      if (els.pickedup) els.pickedup.textContent = String(sales.pickedUp.cakes);
+      if (els.walkin) els.walkin.textContent = String(sales.walkIn.cakes);
+      if (els.sold) els.sold.textContent = String(sales.totalSold.cakes);
+      if (els.collected) els.collected.textContent = formatINR(sales.collected.amount);
+    }
+
+    function renderChips(data) {
+      var dates = (data && data.dates) || [];
+      var html = '<button type="button" class="date-chip" data-id="all" aria-pressed="' + (selectedId === 'all' ? 'true' : 'false') + '">All dates</button>';
+      dates.forEach(function (date) {
+        html += '<button type="button" class="date-chip" data-id="' + escapeHtml(date.id) + '" aria-pressed="' +
+          (selectedId === date.id ? 'true' : 'false') + '">' + escapeHtml(date.label) + '</button>';
+      });
+      els.chips.innerHTML = html;
+    }
+
+    function itemSplit(items, name) {
+      var row = (items && items[name]) || {};
+      return {
+        m630: Number(row['06:30'] || 0),
+        m830: Number(row['08:30'] || 0),
+        total: Number(row.total || 0)
+      };
+    }
+
+    function cakesTable(items, caption, tableId) {
+      var foot = { m630: 0, m830: 0, total: 0 };
+      var rows = MENU_ITEMS.map(function (name) {
+        var q = itemSplit(items, name);
+        foot.m630 += q.m630;
+        foot.m830 += q.m830;
+        foot.total += q.total;
+        return '<tr><th scope="row">' + escapeHtml(name) + '</th><td>' + q.m630 + '</td><td>' + q.m830 + '</td><td>' + q.total + '</td></tr>';
+      }).join('');
+      return '<table id="' + escapeHtml(tableId) + '">' +
+        '<caption>' + escapeHtml(caption) + '</caption>' +
+        '<thead><tr><th scope="col">Item</th><th scope="col">6:30 AM</th><th scope="col">8:30 AM</th><th scope="col">Total</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+        '<tfoot><tr><th scope="row">Total</th><td>' + foot.m630 + '</td><td>' + foot.m830 + '</td><td>' + foot.total + '</td></tr></tfoot>' +
+        '</table>';
+    }
+
+    function pickupProgress(date) {
+      var sales = salesOf(date);
+      var ordered = sales.ordered.cakes;
+      var picked = sales.pickedUp.cakes;
+      var pct = ordered > 0 ? Math.min(100, Math.round((picked / ordered) * 100)) : 0;
+      var label = ordered > 0 ? (picked + ' of ' + ordered + ' picked up') : 'No orders yet';
+      return '<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="' + ordered +
+        '" aria-valuenow="' + picked + '" aria-label="' + escapeHtml(label) + '">' +
+        '<span class="progress-fill" style="width:' + pct + '%"></span>' +
+        '<span class="progress-label">' + escapeHtml(label) + '</span></div>';
+    }
+
+    function soldTable(date, tableId) {
+      var foot = { ordered: 0, pickedUp: 0, walkIn: 0, sold: 0 };
+      var rows = MENU_ITEMS.map(function (name) {
+        var row = (date.items && date.items[name]) || {};
+        var ordered = Number(row.ordered != null ? row.ordered : row.total || 0);
+        var picked = Number(row.pickedUp || 0);
+        var walk = Number(row.walkIn || 0);
+        var sold = picked + walk;
+        foot.ordered += ordered;
+        foot.pickedUp += picked;
+        foot.walkIn += walk;
+        foot.sold += sold;
+        return '<tr><th scope="row">' + escapeHtml(name) + '</th><td>' + ordered + '</td><td>' + picked +
+          '</td><td>' + walk + '</td><td>' + sold + '</td></tr>';
+      }).join('');
+      return '<table class="sold-table" id="' + escapeHtml(tableId) + '">' +
+        '<caption>Ordered vs sold — ' + escapeHtml(date.label) + '</caption>' +
+        '<thead><tr><th scope="col">Item</th><th scope="col">Ordered</th><th scope="col">Picked up</th>' +
+        '<th scope="col">Walk-in</th><th scope="col">Total sold</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+        '<tfoot><tr><th scope="row">Total</th><td>' + foot.ordered + '</td><td>' + foot.pickedUp +
+        '</td><td>' + foot.walkIn + '</td><td>' + foot.sold + '</td></tr></tfoot></table>';
+    }
+
+    function datePanelHtml(date, open) {
+      var meta = date.totals.cakes + (date.totals.cakes === 1 ? ' cake' : ' cakes') + ' · ' + formatINR(date.totals.amount) + ' · ' +
+        date.totals.orders + (date.totals.orders === 1 ? ' order' : ' orders');
+      return '<details class="date-panel" data-panel-id="' + escapeHtml(date.id) + '"' + (open ? ' open' : '') + '>' +
+        '<summary>' +
+          '<span class="chevron" aria-hidden="true"></span>' +
+          '<span class="summary-text">' +
+            '<span class="summary-title">' + escapeHtml(date.label) + '</span>' +
+            '<span class="summary-meta">' + escapeHtml(meta) + '</span>' +
+          '</span>' +
+        '</summary>' +
+        '<div class="panel-body"><div class="panel-inner">' +
+          cakesTable(date.items, 'Cakes to order — ' + date.label, 'table-' + date.id) +
+          pickupProgress(date) +
+          soldTable(date, 'sold-' + date.id) +
+          '<div class="table-actions">' +
+            '<button type="button" class="btn btn-primary copy-btn" data-copy-id="' + escapeHtml(date.id) + '">Copy for Poppins</button>' +
+          '</div>' +
+        '</div></div>' +
+      '</details>';
+    }
+
+    function renderPanels(data) {
+      var dates = (data && data.dates) || [];
+      var upcomingId = nextUpcomingId(dates);
+      var visible = selectedId === 'all' ? dates : dates.filter(function (d) { return d.id === selectedId; });
+      var upcoming = visible.filter(function (d) { return !isPastDate(d); });
+      var past = visible.filter(function (d) { return isPastDate(d); });
+      var defaults = {};
+      defaults[upcomingId] = true;
+      defaults.past = false;
+      defaults.matrix = true;
+
+      var html = '';
+      upcoming.forEach(function (date) {
+        html += datePanelHtml(date, panelShouldOpen(date.id, defaults));
+      });
+      if (selectedId === 'all' && past.length) {
+        var pastOpen = panelShouldOpen('past', defaults);
+        html += '<details class="past-group" data-panel-id="past"' + (pastOpen ? ' open' : '') + '>' +
+          '<summary><span class="chevron" aria-hidden="true"></span><span class="summary-text">' +
+          '<span class="summary-title">Past dates</span>' +
+          '<span class="summary-meta">' + past.length + (past.length === 1 ? ' date' : ' dates') + '</span>' +
+          '</span></summary><div class="panel-body"><div class="panel-inner" id="past-inner"></div></div></details>';
+      } else if (selectedId !== 'all') {
+        past.forEach(function (date) {
+          html += datePanelHtml(date, true);
+        });
+      }
+      els.panels.innerHTML = html;
+      if (selectedId === 'all' && past.length) {
+        var inner = document.getElementById('past-inner');
+        if (inner) {
+          inner.innerHTML = past.map(function (date) {
+            return datePanelHtml(date, panelShouldOpen(date.id, defaults));
+          }).join('');
+        }
+      }
+    }
+
+    function renderMatrix(data) {
+      if (!els.matrixWrap) return;
+      var dates = (data && data.dates) || [];
+      if (selectedId !== 'all' || !dates.length) { els.matrixWrap.innerHTML = ''; return; }
+      var open = panelShouldOpen('matrix', { matrix: true });
+      var head = '<th scope="col">Item</th>' + dates.map(function (d) {
+        return '<th scope="col">' + escapeHtml(d.label) + '</th>';
+      }).join('') + '<th scope="col">Total</th>';
+      var body = MENU_ITEMS.map(function (name) {
+        var total = 0;
+        var cells = dates.map(function (d) {
+          var q = itemSplit(d.items, name).total;
+          total += q;
+          return '<td>' + q + '</td>';
+        }).join('');
+        return '<tr><th scope="row">' + escapeHtml(name) + '</th>' + cells + '<td>' + total + '</td></tr>';
+      }).join('');
+      var footCells = '';
+      var footTotal = 0;
+      dates.forEach(function (d) {
+        footCells += '<td>' + d.totals.cakes + '</td>';
+        footTotal += d.totals.cakes;
+      });
+      els.matrixWrap.innerHTML = '<details class="matrix-panel" data-panel-id="matrix"' + (open ? ' open' : '') + '>' +
+        '<summary><span class="chevron" aria-hidden="true"></span><span class="summary-text">' +
+        '<span class="summary-title">All dates at a glance</span>' +
+        '<span class="summary-meta">Cakes by item and pickup date</span></span></summary>' +
+        '<div class="panel-body"><div class="panel-inner matrix-wrap">' +
+        '<table id="matrix-table"><caption>Cakes to order across all pickup dates</caption>' +
+        '<thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody>' +
+        '<tfoot><tr><th scope="row">Total</th>' + footCells + '<td>' + footTotal + '</td></tr></tfoot>' +
+        '</table></div></div></details>';
+    }
+
+    function renderAll(data) {
+      var scope = selectedScope(data);
+      renderCards(scope);
+      renderChips(data);
+      renderPanels(data);
+      renderMatrix(data);
+      var latest = data && data.latestOrderAt ? ' Latest order ' + data.latestOrderAt + '.' : '';
+      els.updated.textContent = data && data.lastUpdated
+        ? ('Last updated ' + data.lastUpdated + '.' + latest)
+        : 'Last updated —';
+    }
+
+    function poppinsTextForDate(date) {
+      var lines = [
+        'Vailankanni Parish Youth — cakes to order from Poppins Bakers',
+        'Pickup: ' + date.label,
+        ''
+      ];
+      MENU_ITEMS.forEach(function (name) {
+        var q = itemSplit(date.items, name);
+        lines.push(name + ': ' + q.total + '  (6:30 AM ' + q.m630 + ', 8:30 AM ' + q.m830 + ')');
+      });
+      lines.push('');
+      lines.push('Total cakes: ' + date.totals.cakes);
+      lines.push('Total amount: ' + formatINR(date.totals.amount));
+      lines.push('Orders: ' + date.totals.orders);
+      return lines.join('\n');
+    }
+
+    function poppinsTextForAll(data) {
+      var blocks = ['Vailankanni Parish Youth — cakes to order from Poppins Bakers', ''];
+      (data.dates || []).forEach(function (date) {
+        blocks.push(poppinsTextForDate(date), '');
+      });
+      blocks.push('GRAND TOTAL: ' + data.grand.cakes + ' cakes, ' + formatINR(data.grand.amount) + ', ' + data.grand.orders + ' orders');
+      return blocks.join('\n');
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add('visible');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(function () { els.toast.classList.remove('visible'); }, 2800);
+    }
+
+    async function copyForPoppins(dateId) {
+      if (!summaryState) return;
+      var text;
+      if (!dateId || dateId === 'all') {
+        if (selectedId !== 'all') {
+          var one = summaryState.dates.find(function (d) { return d.id === selectedId; });
+          text = one ? poppinsTextForDate(one) : poppinsTextForAll(summaryState);
+        } else {
+          text = poppinsTextForAll(summaryState);
+        }
+      } else {
+        var date = summaryState.dates.find(function (d) { return d.id === dateId; });
+        if (!date) return;
+        text = poppinsTextForDate(date);
+      }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          throw new Error('no clipboard');
+        }
+        showToast('Copied the Poppins summary.');
+      } catch (err) {
+        showToast('Could not copy automatically — the text is in the console.');
+        try { console.log(text); } catch (err2) {}
+      }
+    }
+
+    function setSelected(id) {
+      selectedId = id || 'all';
+      if (summaryState) renderAll(summaryState);
+    }
+
+    function setAllPanels(open) {
+      document.querySelectorAll('details[data-panel-id]').forEach(function (el) { el.open = open; });
+      persistOpenFromDom();
+    }
+
+    function getSheetsUrl() {
+      return (window.__SHEETS_URL || SHEETS_WEBAPP_URL || '').trim();
+    }
+
+    async function fetchSummary() {
+      if (isPreviewMode() || window.__USE_MOCK_SUMMARY) {
+        usingMock = true;
+        return JSON.parse(JSON.stringify(window.__MOCK_SUMMARY || MOCK_SUMMARY));
+      }
+      const base = getSheetsUrl();
+      const url = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'action=summary';
+      const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data || data.ok === false) throw new Error((data && data.error) || 'No totals returned');
+      return data;
+    }
+
+    async function loadSummary(opts) {
+      opts = opts || {};
+      if (!opts.silent) setStatus('Loading totals…', false);
+      try {
+        const data = await fetchSummary();
+        summaryState = data;
+        if (!opts.keepSelection) {
+          if (selectedId !== 'all' && !(data.dates || []).some(function (d) { return d.id === selectedId; })) {
+            selectedId = nextUpcomingId(data.dates);
+          }
+          if (!opts.keepSelection && !opts.hasPicked && selectedId === 'all' && !window.__KEEP_SELECTION) {
+            /* first load defaults to the next upcoming date */
+          }
+        }
+        if (opts.initial) {
+          if (/(?:\?|&)view=all(?:&|$)/.test(location.search || '') || window.__START_ALL) {
+            selectedId = 'all';
+          } else {
+            selectedId = nextUpcomingId(data.dates);
+          }
+        }
+        renderAll(data);
+        els.banner.classList.toggle('visible', usingMock || isPreviewMode());
+        setStatus(usingMock || isPreviewMode() ? 'Showing example data.' : '', false);
+      } catch (err) {
+        setStatus("Couldn't load totals. Check the Sheets connection and try Refresh.", true);
+        if (!summaryState) {
+          els.updated.textContent = 'Last updated —';
+        }
+      }
+    }
+
+    els.chips.addEventListener('click', function (event) {
+      var btn = event.target.closest('.date-chip');
+      if (!btn) return;
+      setSelected(btn.getAttribute('data-id'));
+    });
+    els.panels.addEventListener('click', function (event) {
+      var copy = event.target.closest('[data-copy-id]');
+      if (copy) copyForPoppins(copy.getAttribute('data-copy-id'));
+    });
+    els.panels.addEventListener('toggle', function (event) {
+      if (event.target && event.target.matches && event.target.matches('details[data-panel-id]')) persistOpenFromDom();
+    }, true);
+    els.matrixWrap.addEventListener('toggle', function (event) {
+      if (event.target && event.target.matches && event.target.matches('details[data-panel-id]')) persistOpenFromDom();
+    }, true);
+    els.expandAll.addEventListener('click', function () { setAllPanels(true); });
+    els.collapseAll.addEventListener('click', function () { setAllPanels(false); });
+    els.refresh.addEventListener('click', function () { loadSummary({ keepSelection: true, silent: false }); });
+    if (els.copySelected) {
+      els.copySelected.addEventListener('click', function () { copyForPoppins(selectedId); });
+    }
+
+    window.addEventListener('beforeprint', function () {
+      document.querySelectorAll('details').forEach(function (el) {
+        el.setAttribute('data-print-open', el.open ? '1' : '0');
+        el.open = true;
+      });
+    });
+    window.addEventListener('afterprint', function () {
+      document.querySelectorAll('details').forEach(function (el) {
+        el.open = el.getAttribute('data-print-open') === '1';
+        el.removeAttribute('data-print-open');
+      });
+    });
+
+    loadSummary({ initial: true });
+    refreshTimer = setInterval(function () { loadSummary({ keepSelection: true, silent: true }); }, REFRESH_MS);
+
+    window.__admin = {
+      MOCK_SUMMARY: MOCK_SUMMARY,
+      loadSummary: loadSummary,
+      setSelected: setSelected,
+      copyForPoppins: copyForPoppins,
+      poppinsTextForDate: poppinsTextForDate,
+      nextUpcomingId: nextUpcomingId,
+      isPastDate: isPastDate,
+      formatINR: formatINR,
+      getState: function () { return { selectedId: selectedId, summary: summaryState, usingMock: usingMock }; },
+      stop: function () {
+        if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+      }
+    };
+  </script>
+</body>
+</html>

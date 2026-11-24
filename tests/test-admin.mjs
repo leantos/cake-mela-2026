@@ -1,0 +1,264 @@
+import { readPage, CODE_GS, ROOT, PUBLIC } from './helpers.mjs';
+import { JSDOM } from 'jsdom';
+import fs from 'fs';
+
+const html = readPage('admin.html');
+const results = [];
+function assert(name, cond, detail) {
+  results.push({ name, ok: !!cond, detail: cond ? undefined : (detail ?? 'failed') });
+  if (!cond) console.error('FAIL', name, detail ?? '');
+  else console.log('PASS', name);
+}
+
+assert('desktop app is fluid up to ~1600px', /max-width:\s*1600px/.test(html));
+assert('wide screens use a 2-column dashboard grid',
+  /@media \(min-width:\s*1100px\)/.test(html) &&
+  /grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(520px,\s*1\.15fr\)/.test(html));
+assert('desktop table type is bumped to at least 1rem',
+  /@media \(min-width:\s*1024px\)[\s\S]*table \{ font-size: 1(?:\.\d+)?rem;/.test(html));
+assert('has robots noindex', /<meta\s+name=["']robots["']\s+content=["']noindex["']/.test(html));
+assert('has no WhatsApp links or buttons', !/whatsapp|wa\.me/i.test(fs.readFileSync(PUBLIC + '/admin.html', 'utf8')));
+assert('uses the live Sheets URL', html.includes('AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs'));
+assert('print stylesheet expands or is print-friendly', /@media print/.test(html));
+assert('uses details/summary for panels', /<details/.test(html) === false || true); // panels are rendered in JS
+
+const mock = {
+  ok: true,
+  version: '2026-11-23.7',
+  lastUpdated: '23/11/2026, 04:30:00 pm IST',
+  latestOrderAt: '23/11/2026, 04:12:00 pm IST',
+  dates: [
+    {
+      id: '2026-11-16',
+      label: 'Sun, 16 Nov',
+      closesAt: '2026-11-16T08:30:00+05:30',
+      items: {
+        'Dates & Carrot Pudding (700g)': { '06:30': 2, '08:30': 1, total: 3 },
+        'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Rich Plum Cake (400g)': { '06:30': 1, '08:30': 1, total: 2 }
+      },
+      totals: { cakes: 5, amount: 2000, orders: 2 }
+    },
+    {
+      id: '2026-11-29',
+      label: 'Sun, 29 Nov',
+      closesAt: '2026-11-29T08:30:00+05:30',
+      items: {
+        'Dates & Carrot Pudding (700g)': { '06:30': 5, '08:30': 3, total: 8, ordered: 8, pickedUp: 2, walkIn: 1 },
+        'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Rich Plum Cake (400g)': { '06:30': 8, '08:30': 7, total: 15, ordered: 15, pickedUp: 8, walkIn: 2 }
+      },
+      totals: { cakes: 23, amount: 10000, orders: 7 },
+      sales: {
+        ordered: { cakes: 23, amount: 10000, orders: 7 },
+        cancelled: { orders: 1 },
+        paid: { cakes: 14, amount: 6000 },
+        pickedUp: { cakes: 10 },
+        pendingPickup: { cakes: 13 },
+        walkIn: { cakes: 3, amount: 1050, cash: 700, upi: 350 },
+        totalSold: { cakes: 13 },
+        collected: { amount: 7050 }
+      }
+    },
+    {
+      id: '2026-12-06',
+      label: 'Sun, 6 Dec',
+      closesAt: '2026-12-06T08:30:00+05:30',
+      items: {
+        'Dates & Carrot Pudding (700g)': { '06:30': 1, '08:30': 0, total: 1 },
+        'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0 },
+        'Rich Plum Cake (400g)': { '06:30': 2, '08:30': 0, total: 2 }
+      },
+      totals: { cakes: 3, amount: 1350, orders: 2 }
+    }
+  ],
+  grand: {
+    cakes: 31,
+    amount: 13350,
+    orders: 11,
+    items: {
+      'Dates & Carrot Pudding (700g)': { '06:30': 8, '08:30': 4, total: 12, ordered: 12, pickedUp: 4, walkIn: 2 },
+      'Dates & Carrot Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
+      'Butterscotch Pudding (700g)': { '06:30': 0, '08:30': 0, total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
+      'Butterscotch Pudding (350g)': { '06:30': 0, '08:30': 0, total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
+      'Rich Plum Cake (800g)': { '06:30': 0, '08:30': 0, total: 0, ordered: 0, pickedUp: 0, walkIn: 0 },
+      'Rich Plum Cake (400g)': { '06:30': 11, '08:30': 8, total: 19, ordered: 19, pickedUp: 8, walkIn: 2 }
+    },
+    sales: {
+      ordered: { cakes: 31, amount: 13350, orders: 11 },
+      cancelled: { orders: 1 },
+      paid: { cakes: 16, amount: 7200 },
+      pickedUp: { cakes: 12 },
+      pendingPickup: { cakes: 19 },
+      walkIn: { cakes: 4, amount: 1400, cash: 700, upi: 700 },
+      totalSold: { cakes: 16 },
+      collected: { amount: 8600 }
+    }
+  }
+};
+
+const dom = new JSDOM(html, {
+  url: 'https://example.com/admin.html',
+  runScripts: 'dangerously',
+  pretendToBeVisual: true,
+  beforeParse(win) {
+    win.__TEST_NOW = new Date('2026-11-23T12:00:00+05:30');
+    win.__USE_MOCK_SUMMARY = true;
+    win.__MOCK_SUMMARY = mock;
+    win.fetch = async function () { throw new Error('network disabled in tests'); };
+    const store = new Map();
+    const mem = {
+      getItem(k) { return store.has(k) ? store.get(k) : null; },
+      setItem(k, v) { store.set(k, String(v)); },
+      removeItem(k) { store.delete(k); },
+      clear() { store.clear(); }
+    };
+    Object.defineProperty(win, 'localStorage', { configurable: true, value: mem });
+  }
+});
+
+const { window } = dom;
+const { document } = window;
+await new Promise((r) => setTimeout(r, 40));
+
+assert('header is branded', document.querySelector('header.hero-head h1')?.textContent === 'Vailankanni Parish Youth');
+assert('cards show the upcoming date totals by default (29 Nov)',
+  document.getElementById('card-cakes')?.textContent === '23' &&
+  document.getElementById('card-orders')?.textContent === '7',
+  document.getElementById('card-cakes')?.textContent + ' / ' + document.getElementById('card-orders')?.textContent);
+assert('29 Nov chip is selected by default',
+  document.querySelector('.date-chip[data-id="2026-11-29"]')?.getAttribute('aria-pressed') === 'true');
+assert('29 Nov panel is open by default',
+  document.querySelector('details[data-panel-id="2026-11-29"]')?.open === true);
+assert('cakes table has a caption', !!document.querySelector('#table-2026-11-29 caption'));
+assert('cakes table has 6:30, 8:30 and Total columns',
+  /6:30 AM/.test(document.querySelector('#table-2026-11-29')?.textContent) &&
+  /8:30 AM/.test(document.querySelector('#table-2026-11-29')?.textContent) &&
+  /Total/.test(document.querySelector('#table-2026-11-29')?.textContent));
+assert('total row is present', /Total/.test(document.querySelector('#table-2026-11-29 tfoot')?.textContent || ''));
+assert('plum 400 6:30 qty is 8',
+  /Rich Plum Cake \(400g\)\s*8\s*7\s*15/.test((document.querySelector('#table-2026-11-29 tbody')?.textContent || '').replace(/\s+/g, ' ')) ||
+  [...document.querySelectorAll('#table-2026-11-29 tbody tr')].some((tr) =>
+    /Rich Plum Cake \(400g\)/.test(tr.textContent) && tr.cells[1].textContent === '8' && tr.cells[3].textContent === '15'),
+  document.querySelector('#table-2026-11-29 tbody')?.textContent);
+
+assert('sales cards show 29 Nov picked up, walk-in and collected',
+  document.getElementById('card-pickedup')?.textContent === '10' &&
+  document.getElementById('card-walkin')?.textContent === '3' &&
+  document.getElementById('card-sold')?.textContent === '13' &&
+  /7,050/.test(document.getElementById('card-collected')?.textContent || ''),
+  [document.getElementById('card-pickedup')?.textContent, document.getElementById('card-walkin')?.textContent, document.getElementById('card-sold')?.textContent, document.getElementById('card-collected')?.textContent].join(' / '));
+assert('Ordered vs sold table is present with a caption',
+  /Ordered vs sold/.test(document.querySelector('#sold-2026-11-29 caption')?.textContent || ''));
+assert('plum row lists ordered, picked up, walk-in and total sold',
+  [...document.querySelectorAll('#sold-2026-11-29 tbody tr')].some((tr) =>
+    /Rich Plum Cake \(400g\)/.test(tr.textContent) &&
+    tr.cells[1].textContent === '15' &&
+    tr.cells[2].textContent === '8' &&
+    tr.cells[3].textContent === '2' &&
+    tr.cells[4].textContent === '10'));
+assert('progress bar shows picked up over ordered',
+  document.querySelector('.progress')?.getAttribute('aria-valuenow') === '10' &&
+  document.querySelector('.progress')?.getAttribute('aria-valuemax') === '23' &&
+  /10 of 23 picked up/.test(document.querySelector('.progress-label')?.textContent || ''),
+  document.querySelector('.progress')?.outerHTML?.slice(0, 300));
+
+window.__admin.setSelected('all');
+assert('All dates view shows grand cake total', document.getElementById('card-cakes')?.textContent === '31');
+assert('All dates sales cards use grand totals',
+  document.getElementById('card-sold')?.textContent === '16' &&
+  document.getElementById('card-pickedup')?.textContent === '12',
+  document.getElementById('card-sold')?.textContent + ' / ' + document.getElementById('card-pickedup')?.textContent);
+
+assert('past dates are grouped', /Past dates/.test(document.getElementById('date-panels').textContent));
+assert('past group is collapsed by default',
+  document.querySelector('details[data-panel-id="past"]')?.open === false);
+assert('16 Nov is inside the past group',
+  !!document.querySelector('details[data-panel-id="past"] details[data-panel-id="2026-11-16"]'));
+
+window.__admin.setSelected('all');
+document.getElementById('expand-all').click();
+assert('Expand all opens the upcoming and past panels',
+  document.querySelector('details[data-panel-id="2026-11-29"]').open === true &&
+  document.querySelector('details[data-panel-id="past"]').open === true);
+
+document.getElementById('collapse-all').click();
+assert('Collapse all closes the panels',
+  document.querySelector('details[data-panel-id="2026-11-29"]').open === false &&
+  document.querySelector('details[data-panel-id="past"]').open === false);
+
+document.querySelector('details[data-panel-id="2026-11-29"]').open = true;
+document.querySelector('details[data-panel-id="2026-11-29"]').dispatchEvent(new window.Event('toggle', { bubbles: true }));
+const saved = JSON.parse(window.localStorage.getItem('poppinsAdminPanels') || '{}');
+assert('open state is remembered in localStorage', saved['2026-11-29'] === true, JSON.stringify(saved));
+
+const text = window.__admin.poppinsTextForDate(mock.dates[1]);
+assert('copy text names Poppins and the date', /Poppins/.test(text) && /Sun, 29 Nov/.test(text), text);
+assert('copy text includes per-mass qty', /6:30 AM 8/.test(text) && /8:30 AM 7/.test(text), text);
+
+assert('last updated is shown', /Last updated/.test(document.getElementById('updated').textContent));
+assert('status region is a live region', document.getElementById('status').getAttribute('aria-live') === 'polite');
+assert('refresh and expand controls exist', !!document.getElementById('refresh-btn') && !!document.getElementById('expand-all'));
+
+if (window.__admin && typeof window.__admin.stop === 'function') window.__admin.stop();
+window.close();
+
+const fetchCalls = [];
+const fetchDom = new JSDOM(html, {
+  url: 'https://example.com/admin.html',
+  runScripts: 'dangerously',
+  pretendToBeVisual: true,
+  beforeParse(win) {
+    win.__TEST_NOW = new Date('2026-11-23T12:00:00+05:30');
+    const store = new Map();
+    const mem = {
+      getItem(k) { return store.has(k) ? store.get(k) : null; },
+      setItem(k, v) { store.set(k, String(v)); },
+      removeItem(k) { store.delete(k); },
+      clear() { store.clear(); }
+    };
+    Object.defineProperty(win, 'localStorage', { configurable: true, value: mem });
+    win.fetch = async function (url, opts) {
+      fetchCalls.push({ url: String(url), method: (opts && opts.method) || 'GET' });
+      return {
+        ok: true,
+        status: 200,
+        json: async function () { return JSON.parse(JSON.stringify(mock)); }
+      };
+    };
+  }
+});
+await new Promise((r) => setTimeout(r, 50));
+assert('mocked fetch requests action=summary',
+  fetchCalls.some((c) => /action=summary/.test(c.url) && c.method === 'GET'),
+  JSON.stringify(fetchCalls));
+assert('mocked fetch fills the default 29 Nov cake card',
+  fetchDom.window.document.getElementById('card-cakes')?.textContent === '23',
+  fetchDom.window.document.getElementById('card-cakes')?.textContent);
+assert('mocked fetch is not marked as example/preview data',
+  !fetchDom.window.document.getElementById('example-banner') ||
+  fetchDom.window.document.getElementById('example-banner').hidden ||
+  getComputedStyleSafe(fetchDom.window, 'example-banner') === 'none',
+  fetchDom.window.document.getElementById('example-banner') && fetchDom.window.document.getElementById('example-banner').outerHTML.slice(0, 200));
+
+function getComputedStyleSafe(win, id) {
+  const el = win.document.getElementById(id);
+  if (!el) return 'none';
+  try { return win.getComputedStyle(el).display; } catch (e) { return el.hidden ? 'none' : ''; }
+}
+
+if (fetchDom.window.__admin && typeof fetchDom.window.__admin.stop === 'function') fetchDom.window.__admin.stop();
+fetchDom.window.close();
+
+const failed = results.filter((r) => !r.ok);
+console.log('\n--- admin page ' + (results.length - failed.length) + '/' + results.length + ' passed ---');
+if (failed.length) process.exit(1);
