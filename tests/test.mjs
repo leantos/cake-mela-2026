@@ -845,6 +845,33 @@ assert('default cutoff stays 8:30 AM IST when header has no time',
 const payloadFri = w.buildOrderPayload();
 w.showOrderConfirmation(payloadFri);
 assert('confirmation uses the Friday short label', document.getElementById('confirm-pickup').textContent.includes('Fri, 25 Dec') && !/Mass/.test(document.getElementById('confirm-pickup').textContent), document.getElementById('confirm-pickup').textContent);
+// ---- confirmation screen: side-by-side panels in the site's palette ----
+{
+  const view = document.getElementById('order-confirmation');
+  const panels = view.querySelector('.confirm-panels');
+  const orderPanel = document.getElementById('confirm-order-panel');
+  const payPanel = document.getElementById('confirm-payment-panel');
+  const actions = view.querySelector('.confirm-actions');
+  const follows = (a, b) => !!(a.compareDocumentPosition(b) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+  assert('confirmation: two panels side by side from md (grid, 2 columns, equal height), stacked on phones',
+    !!panels && /(^|\s)grid-cols-1(\s|$)/.test(panels.className) && /md:grid-cols-2/.test(panels.className) && /items-stretch/.test(panels.className) &&
+    panels.contains(orderPanel) && panels.contains(payPanel) && follows(orderPanel, payPanel), panels && panels.className);
+  assert('confirmation: the order panel has the id, date, cakes and total',
+    !!orderPanel && orderPanel.contains(document.getElementById('order-confirmation-title')) && orderPanel.contains(document.getElementById('confirm-order-id')) &&
+    orderPanel.contains(document.getElementById('confirm-pickup')) && orderPanel.contains(document.getElementById('confirm-lines')) && orderPanel.contains(document.getElementById('confirm-total')));
+  assert('confirmation: the payment panel has the pickup/QR line, QR and screenshot button and no UPI wording or numbers',
+    !!payPanel && !!payPanel.querySelector('img.upi-qr') && !!payPanel.querySelector('a.upi-screenshot') &&
+    /Pay at pickup, or scan the QR code to pay now\./.test(payPanel.textContent) && !/UPI/i.test(payPanel.textContent) && !/\+91/.test(payPanel.textContent), payPanel && payPanel.textContent);
+  assert('confirmation: the actions row sits below both panels with the call links and Place another order',
+    !!actions && follows(panels, actions) && actions.contains(document.getElementById('confirm-call')) && actions.contains(document.getElementById('place-another')) &&
+    document.querySelectorAll('#confirm-call a[href^="tel:"]').length === 2 && !payPanel.contains(document.getElementById('confirm-call')));
+  const classes = Array.from(view.querySelectorAll('[class]')).map((el) => el.getAttribute('class')).join(' ') + ' ' + view.className;
+  assert('confirmation: uses the site palette only (no tertiary container, no hard-coded colours)',
+    !/tertiary-container/.test(classes) && !/(bg|text|border)-\[#/.test(classes) && /bg-page/.test(view.className) && /bg-m3-surface-container-low/.test(classes) && /text-m3-primary/.test(classes), classes.slice(0, 400));
+  assert('confirmation: full width with padding, no max-width or auto margins',
+    !/max-w-/.test(view.className + ' ' + view.firstElementChild.className) && !/mx-auto/.test(classes) && /px-3/.test(view.className));
+  assert('confirmation: starts under the top bar so the same bar stays visible', /top-\[var\(--topbar-h\)\]/.test(view.className));
+}
 w.hideOrderConfirmation();
 
 // fetch fail restores the fallback catalog, not the live Friday date
