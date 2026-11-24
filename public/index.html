@@ -120,7 +120,7 @@
     </form>
     <details class="pay-upi-card rounded-m3-lg bg-m3-surface-container-low shadow-m3-1" id="pay-upi-card">
       <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between rounded-m3-lg px-4 text-[1rem] font-medium text-m3-on-surface focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary [&::-webkit-details-marker]:hidden">
-        <span>Pay by UPI</span>
+        <span>Payment</span>
         <span class="text-m3-on-surface-variant transition-transform [details[open]_&]:rotate-180" aria-hidden="true">▾</span>
       </summary>
       <div class="flex flex-col items-center gap-3 px-4 pb-4 text-center" id="pay-upi-body"></div>
@@ -139,7 +139,6 @@
         <span class="count text-[0.875rem] font-medium text-m3-on-surface-variant" id="summary-count">0 items</span>
         <span class="total text-[1.375rem] font-medium tabular-nums text-m3-on-surface" id="summary-total">₹0</span>
       </div>
-      <p class="payment-note mb-2 text-[0.75rem] font-medium leading-4 tracking-[0.4px] text-m3-on-surface-variant" id="payment-note">Payment: Pay at pickup, or UPI</p>
       <div class="checkout-alert mb-2 hidden rounded-m3-sm bg-m3-primary-container px-3 pb-2 pt-2 text-[0.8125rem] font-medium leading-[1.4] text-m3-on-primary-container [&.visible]:block" id="checkout-alert" role="alert" aria-live="assertive" hidden></div>
       <div class="cta-wrap w-full" id="place-order-wrap">
         <button type="button" class="cta inline-flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-m3-lg border-0 bg-m3-primary px-6 py-4 text-[1rem] font-medium tracking-[0.1px] text-m3-on-primary shadow-m3-3 [-webkit-tap-highlight-color:transparent] hover:enabled:bg-[linear-gradient(#ffffff14,#ffffff14)] enabled:active:bg-[linear-gradient(#ffffff1f,#ffffff1f)] disabled:cursor-wait disabled:opacity-75 [&.closed:disabled]:cursor-not-allowed [&.closed:disabled]:bg-pine [&.closed:disabled]:opacity-100 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" id="place-order-btn">Place order</button>
@@ -159,7 +158,6 @@
         <ul id="confirm-lines"></ul>
         <p class="mt-3 flex items-baseline justify-between text-[1.125rem] font-medium text-m3-on-surface"><span>Total</span><span class="tabular-nums" id="confirm-total"></span></p>
       </div>
-      <p class="w-full rounded-m3-md bg-m3-tertiary-container px-4 py-3 text-left text-[0.875rem] font-medium text-m3-on-tertiary-container" id="confirm-payment"></p>
       <div class="flex w-full flex-col items-center gap-3 rounded-m3-lg bg-m3-surface-container-low p-4 text-center shadow-m3-1" id="confirm-upi"></div>
       <div class="flex w-full flex-col items-stretch gap-2 md:flex-row md:justify-center" id="confirm-call"></div>
       <button type="button" class="inline-flex min-h-14 w-full cursor-pointer items-center justify-center rounded-m3-lg border-0 bg-m3-primary px-6 text-[1rem] font-medium tracking-[0.1px] text-m3-on-primary shadow-m3-3 hover:bg-[linear-gradient(#ffffff14,#ffffff14)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary md:w-auto md:min-w-72" id="place-another">Place another order</button>
@@ -203,10 +201,6 @@
       { id: 'cyril', name: 'Cyril Martin', number: '917204017793', display: '+91 72040 17793' },
       { id: 'aashwin', name: 'Aashwin Alfy', number: '918050764341', display: '+91 80507 64341' }
     ];
-    const DEFAULT_PAYMENT_LINE = 'Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin) or +91 80507 64341 (Aashwin Alfy)';
-    // A plain sentence. Old configs with {number}/{name} placeholders fall back to the default.
-    const PAYMENT_LINE = (SITE_CONFIG.paymentLine && !/\{(number|name)\}/.test(SITE_CONFIG.paymentLine))
-      ? SITE_CONFIG.paymentLine : DEFAULT_PAYMENT_LINE;
     const ORDER_API_URL = SITE_CONFIG.orderApiPath || '/api/order';
     const ORDER_API_TIMEOUT_MS = 5000;
 
@@ -635,15 +629,16 @@
       const orderId = opts.orderId || '';
       if (!root.querySelector('.upi-qr')) {
         root.innerHTML =
-          '<img class="upi-qr block h-auto w-full max-w-[280px] rounded-m3-lg shadow-m3-1" src="' + UPI_QR_SRC + '" alt="UPI QR code to pay ' + escapeHtml(cyrilContact().name) + '" width="720" height="1109" loading="lazy">' +
+          '<p class="pay-choice text-[0.875rem] font-medium leading-5 text-m3-on-surface">Pay at pickup, or scan the QR code to pay now.</p>' +
+          '<img class="upi-qr block h-auto w-full max-w-[280px] rounded-m3-lg shadow-m3-1" src="' + UPI_QR_SRC + '" alt="QR code to pay ' + escapeHtml(cyrilContact().name) + '" width="720" height="1109" loading="lazy">' +
           '<p class="upi-amount text-[1.25rem] font-medium tabular-nums text-m3-on-surface"></p>' +
           '<p class="upi-note text-[0.8125rem] leading-5 text-m3-on-surface-variant"></p>' +
           '<a class="' + UPI_BTN_CLASS + '" href="#" target="_blank" rel="noopener">Send screenshot to ' + escapeHtml(cyrilContact().name.split(' ')[0]) + '</a>';
       }
       root.querySelector('.upi-amount').textContent = total > 0 ? 'Pay ' + formatINR(total) : 'Pick your cakes to see the amount';
       root.querySelector('.upi-note').textContent = orderId
-        ? 'Put order ' + orderId + ' in the UPI note'
-        : 'Scan with any UPI app. Your order ID appears once you place the order.';
+        ? 'Put order ' + orderId + ' in the payment note'
+        : 'Scan with any payments app. Your order ID appears once you place the order.';
       root.querySelector('.upi-screenshot').setAttribute('href', screenshotUrl(total, orderId));
     }
 
@@ -757,7 +752,6 @@
           '<span class="font-medium tabular-nums">' + formatINR(line.lineTotal) + '</span></li>';
       }).join('');
       document.getElementById('confirm-total').textContent = formatINR(order.totalAmount);
-      document.getElementById('confirm-payment').textContent = PAYMENT_LINE;
       renderUpiPay(document.getElementById('confirm-upi'), { total: order.totalAmount, orderId: order.orderId });
       fillConfirmationCalls();
       view.hidden = false;
@@ -2138,8 +2132,6 @@
     applyPosterConfig();
     renderEnquiries();
     initContactMenu();
-    const payNoteEl = document.getElementById('payment-note');
-    if (payNoteEl) payNoteEl.textContent = 'Payment: ' + PAYMENT_LINE;
     renderMenu();
     renderPickupDates();
     selectFirstDateWithStock({ silent: true, skipReload: true });

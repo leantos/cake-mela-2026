@@ -83,13 +83,7 @@ assert('helper showOrderConfirmation is global', typeof w.showOrderConfirmation 
 assert('WhatsApp is gone: no message builder, opener or url helper', typeof w.buildWhatsAppMessage === 'undefined' && typeof w.openWhatsApp === 'undefined' && typeof w.whatsAppUrl === 'undefined');
 assert('WhatsApp is gone: no WhatsApp text, and exactly one wa.me link in the page (the UPI screenshot button)', !/whatsapp/i.test(rawIndexHtml) && (rawIndexHtml.match(/wa\.me/g) || []).length === 1, String((rawIndexHtml.match(/wa\.me/g) || []).length));
 assert('contact assignment is gone: no random contact or assignment helpers', typeof w.pickRandomContact === 'undefined' && typeof w.applyContactToOrder === 'undefined' && typeof w.resolveContact === 'undefined');
-const payNote = document.querySelector('.sticky-bar .payment-note');
-assert('payment note sits in the sticky summary and names both UPI numbers',
-  !!(payNote && /^Payment: Pay at pickup, or UPI to /.test(payNote.textContent) &&
-    payNote.textContent.includes('+91 72040 17793 (Cyril Martin)') && payNote.textContent.includes('+91 80507 64341 (Aashwin Alfy)') &&
-    !/[{}]/.test(payNote.textContent)), payNote && payNote.textContent);
-assert('payment line is the same plain sentence in code',
-  w.eval('PAYMENT_LINE') === payNote.textContent.replace(/^Payment: /, ''), w.eval('PAYMENT_LINE'));
+assert('there is no payment line: no payment note and no PAYMENT_LINE in the page', !document.querySelector('.payment-note') && !document.getElementById('payment-note') && !document.getElementById('confirm-payment') && !/PAYMENT_LINE|Pay at pickup, or UPI to/.test(rawIndexHtml));
 const enquire = document.getElementById('enquire');
 assert('enquiries list both contacts', !!(enquire &&
   enquire.textContent.includes('Cyril Martin • +91 72040 17793') &&
@@ -135,9 +129,6 @@ assert('site-config.js loaded two contacts', w.eval('CONTACTS.length') === 2 && 
   assert('Choosing a contact closes the menu', menu.hidden === true);
 }
 
-assert('payment note sits above the place-order button in the sticky bar',
-  !!(payNote && payNote.closest('.sticky-bar') && document.getElementById('place-order-btn') &&
-    (payNote.compareDocumentPosition(document.getElementById('place-order-btn')) & window.Node.DOCUMENT_POSITION_FOLLOWING)));
 
 assert('helper isSheetsUrlConfigured is global', typeof w.isSheetsUrlConfigured === 'function');
 assert('helper isValidIndianMobile is global', typeof w.isValidIndianMobile === 'function');
@@ -235,7 +226,6 @@ assert('closed banner hidden while dates remain', !document.getElementById('preo
   const cl = document.getElementById('confirm-lines').textContent.replace(/\s+/g, ' ');
   assert('confirmation: lists the cakes with quantities and line totals', cl.includes('2 × Rich Plum Cake (400g)') && cl.includes('₹700') && cl.includes('1 × Dates & Carrot Pudding (700g)') && cl.includes('₹650'), cl);
   assert('confirmation: shows the total', document.getElementById('confirm-total').textContent === '₹1,350', document.getElementById('confirm-total').textContent);
-  assert('confirmation: shows the payment line', document.getElementById('confirm-payment').textContent === w.eval('PAYMENT_LINE'), document.getElementById('confirm-payment').textContent);
   const calls = Array.from(document.querySelectorAll('#confirm-call a'));
   assert('confirmation: two tonal tel: Call us links from SITE_CONFIG.contacts',
     calls.length === 2 && calls[0].getAttribute('href') === 'tel:+917204017793' && calls[1].getAttribute('href') === 'tel:+918050764341' &&
@@ -260,7 +250,7 @@ assert('closed banner hidden while dates remain', !document.getElementById('preo
   const box = document.getElementById('confirm-upi');
   const img = box.querySelector('img.upi-qr');
   assert('upi: the confirmation screen shows the QR image with its alt text',
-    !!img && img.getAttribute('src') === 'cyril-upi-qr.jpg' && img.getAttribute('alt') === 'UPI QR code to pay Cyril Martin' && img.getAttribute('loading') === 'lazy',
+    !!img && img.getAttribute('src') === 'cyril-upi-qr.jpg' && img.getAttribute('alt') === 'QR code to pay Cyril Martin' && img.getAttribute('loading') === 'lazy',
     img && img.outerHTML);
   assert('upi: the QR is width-limited (~280px), centred and rounded',
     img.className.includes('max-w-[280px]') && img.className.includes('w-full') && img.className.includes('rounded-m3-lg') && box.className.includes('items-center'), img.className);
@@ -276,16 +266,17 @@ assert('closed banner hidden while dates remain', !document.getElementById('preo
   assert('upi: the message carries the total and order ID and is BMP-only',
     shotMsg === 'Hi Cyril, I have paid ₹1,350 for order PB-251123-K7MQ. Screenshot attached.' && !/[\uD800-\uDFFF]/.test(shotMsg), shotMsg);
   assert('upi: nothing in the Place order button or the confirmation title mentions WhatsApp',
-    !/whatsapp/i.test(document.getElementById('place-order-btn').textContent) && !/whatsapp/i.test(confirmTitle()) && !/whatsapp/i.test(document.getElementById('confirm-payment').textContent));
+    !/whatsapp/i.test(document.getElementById('place-order-btn').textContent) && !/whatsapp/i.test(confirmTitle()));
   w.hideOrderConfirmation();
 
   // the same QR lives in a collapsible card in the Your details step
   const card = document.getElementById('pay-upi-card');
   assert('upi: a collapsible Pay by UPI card sits in the Your details step',
-    !!card && card.tagName === 'DETAILS' && document.getElementById('panel-details').contains(card) && /Pay by UPI/.test(card.querySelector('summary').textContent));
+    !!card && card.tagName === 'DETAILS' && document.getElementById('panel-details').contains(card) && /Payment/.test(card.querySelector('summary').textContent));
+  assert('payment: offers pay at pickup or the QR code and never says UPI or a number', /Pay at pickup, or scan the QR code to pay now\./.test(card.textContent) && !/UPI/i.test(card.textContent) && !/\+91/.test(card.textContent), card.textContent);
   const cimg = card.querySelector('img.upi-qr');
   assert('upi: the details step shows the same QR with the same alt text',
-    !!cimg && cimg.getAttribute('src') === 'cyril-upi-qr.jpg' && cimg.getAttribute('alt') === 'UPI QR code to pay Cyril Martin' && cimg.getAttribute('loading') === 'lazy' && cimg.className.includes('max-w-[280px]'));
+    !!cimg && cimg.getAttribute('src') === 'cyril-upi-qr.jpg' && cimg.getAttribute('alt') === 'QR code to pay Cyril Martin' && cimg.getAttribute('loading') === 'lazy' && cimg.className.includes('max-w-[280px]'));
   zeroCart();
   assert('upi: with an empty cart the card asks you to pick cakes', card.querySelector('.upi-amount').textContent === 'Pick your cakes to see the amount', card.querySelector('.upi-amount').textContent);
   cards[0].querySelector('.plus').click();
@@ -512,7 +503,6 @@ assert('confirmation shows the pickup date', document.getElementById('confirm-pi
 assert('confirmation lists the cakes ordered',
   document.getElementById('confirm-lines').textContent.includes('Dates & Carrot Pudding (700g)') && document.getElementById('confirm-lines').textContent.includes('Rich Plum Cake (400g)'),
   document.getElementById('confirm-lines').textContent);
-assert('confirmation shows the payment line', document.getElementById('confirm-payment').textContent === w.eval('PAYMENT_LINE'));
 
 // "Place another order" resets the form and goes back to step 1
 {
@@ -737,8 +727,6 @@ w.__setSheetsUrlForTest('');
   assert('api: the order has no contact assignment, no mass and no WhatsApp fields',
     !('assignedContactId' in apiCalls[0]) && !('assignedTo' in apiCalls[0]) && !('assignedNumber' in apiCalls[0]) && !('contact' in apiCalls[0]) && !('mass' in apiCalls[0]) && !('massLabel' in apiCalls[0]),
     JSON.stringify(Object.keys(apiCalls[0])));
-  assert('api: the page payment line is the same plain sentence for everyone',
-    document.getElementById('payment-note').textContent === 'Payment: ' + w.eval('PAYMENT_LINE'), document.getElementById('payment-note').textContent);
   assert('api: the confirmation screen is shown with the order id',
     confirmShown() && confirmTitle() === 'Order placed' && document.getElementById('confirm-order-id').textContent === apiCalls[0].orderId, confirmTitle());
   assert('api: no WhatsApp or other window was opened', opened.length === 0, opened.join(','));
@@ -857,7 +845,6 @@ assert('default cutoff stays 8:30 AM IST when header has no time',
 const payloadFri = w.buildOrderPayload();
 w.showOrderConfirmation(payloadFri);
 assert('confirmation uses the Friday short label', document.getElementById('confirm-pickup').textContent.includes('Fri, 25 Dec') && !/Mass/.test(document.getElementById('confirm-pickup').textContent), document.getElementById('confirm-pickup').textContent);
-assert('Friday confirmation has the payment line', document.getElementById('confirm-payment').textContent.includes('Pay at pickup, or UPI to +91 72040 17793 (Cyril Martin)'), document.getElementById('confirm-payment').textContent);
 w.hideOrderConfirmation();
 
 // fetch fail restores the fallback catalog, not the live Friday date
