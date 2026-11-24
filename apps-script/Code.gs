@@ -182,7 +182,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-24.7';
+var SCRIPT_VERSION = '2026-11-24.8';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -1943,11 +1943,29 @@ function amountFromRaw_(raw) {
   return amount;
 }
 
+/**
+ * The order page stamps orders as text like '24/11/2026, 04:12:00 pm IST'
+ * (day first, 12-hour clock, IST = UTC+5:30). Date() can't read that, so parse
+ * it by hand. Returns 0 when the text isn't in that shape.
+ */
+function parseIstTimestampText_(text) {
+  var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([ap]m)?\s*(?:IST)?$/i.exec(String(text).trim());
+  if (!m) return 0;
+  var hour = Number(m[4]);
+  var ampm = (m[7] || '').toLowerCase();
+  if (ampm === 'pm' && hour < 12) hour += 12;
+  if (ampm === 'am' && hour === 12) hour = 0;
+  var ms = Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1]), hour, Number(m[5]), Number(m[6] || 0)) - (5.5 * 60 * 60 * 1000);
+  return isNaN(ms) ? 0 : ms;
+}
+
 function timestampMs_(value) {
   if (value === '' || value === null || typeof value === 'undefined') return 0;
   if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
     return value.getTime();
   }
+  var ist = parseIstTimestampText_(value);
+  if (ist) return ist;
   var d = new Date(value);
   if (!isNaN(d.getTime())) return d.getTime();
   return 0;
@@ -1957,7 +1975,8 @@ function formatSummaryTime_(value) {
   if (value === '' || value === null || typeof value === 'undefined') return '';
   var d = value;
   if (Object.prototype.toString.call(value) !== '[object Date]') {
-    d = new Date(value);
+    var istMs = parseIstTimestampText_(value);
+    d = istMs ? new Date(istMs) : new Date(value);
   }
   if (Object.prototype.toString.call(d) !== '[object Date]' || isNaN(d.getTime())) {
     return String(value);

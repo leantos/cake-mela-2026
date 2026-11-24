@@ -393,6 +393,23 @@ assert('pending: aggregates only (no names, phones or order IDs in the payload)'
 assert('pending: ordered totals and existing fields are unchanged',
   pNov.totals.orders === 5 && pNov.sales.ordered.orders === 5 && typeof pNov.sales.paid.cakes === 'number');
 
+// ---- the order page's own timestamp text: 'dd/mm/yyyy, hh:mm:ss am/pm IST' ----
+assert('timestamp text: 4:12 pm IST is 10:42 UTC', context.timestampMs_('23/11/2026, 04:12:00 pm IST') === Date.UTC(2026, 10, 23, 10, 42, 0), String(context.timestampMs_('23/11/2026, 04:12:00 pm IST')));
+assert('timestamp text: 12:05 am is just after midnight, 12:05 pm just after noon',
+  context.timestampMs_('24/11/2026, 12:05:00 am IST') === Date.UTC(2026, 10, 23, 18, 35, 0) && context.timestampMs_('24/11/2026, 12:05:00 pm IST') === Date.UTC(2026, 10, 24, 6, 35, 0));
+assert('timestamp text: a 24-hour clock without am/pm works, and rubbish returns 0',
+  context.timestampMs_('24/11/2026, 16:12:30') === Date.UTC(2026, 10, 24, 10, 42, 30) && context.timestampMs_('not a date') === 0);
+{
+  const textRows = [
+    headers,
+    row({ orderId: 'PB-TXT-1', pickupDate: '2026-11-29', amount: 350, totalItems: 1, name: 'Maria', timestamp: '23/11/2026, 04:12:00 pm IST' }, { 'Rich Plum Cake (400g)': 1 }),
+    row({ orderId: 'PB-TXT-2', pickupDate: '2026-11-29', amount: 650, totalItems: 1, name: 'Joseph', timestamp: '24/11/2026, 09:30:00 am IST' }, { 'Dates & Carrot Pudding (700g)': 1 })
+  ];
+  const textSummary = context.computeOrderSummaryFromValues_(textRows, DATES, MENU, now);
+  assert('latestOrderAt is filled from the page text timestamps and picks the later order',
+    /24\/11\/2026/.test(textSummary.latestOrderAt) && /09:30/.test(textSummary.latestOrderAt) && /IST/.test(textSummary.latestOrderAt),
+    String(textSummary.latestOrderAt));
+}
 const failed = results.filter((r) => !r.ok);
 console.log('\n--- summary aggregate ' + (results.length - failed.length) + '/' + results.length + ' passed ---');
 if (failed.length) process.exit(1);
