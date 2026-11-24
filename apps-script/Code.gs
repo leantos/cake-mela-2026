@@ -181,7 +181,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-24.4';
+var SCRIPT_VERSION = '2026-11-24.5';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -1859,6 +1859,7 @@ function emptyItemsMap_(itemNames) {
     row.ordered = 0;
     row.pickedUp = 0;
     row.walkIn = 0;
+    row.pending = 0; // cakes on orders still in Pending status
     out[itemNames[i]] = row;
   }
   return out;
@@ -2029,6 +2030,7 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, now, walkInVal
       closesAt: meta.closesAt || '',
       items: emptyItemsMap_(itemNames),
       totals: { cakes: 0, amount: 0, orders: 0 },
+      pending: { orders: 0, cakes: 0, amount: 0 },
       sales: emptySalesBlock_()
     };
     byId[rec.id] = rec;
@@ -2078,6 +2080,7 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, now, walkInVal
       bucket.items[itemName].total += q;
       bucket.items[itemName].ordered += q;
       if (status === 'Picked up') bucket.items[itemName].pickedUp += q;
+      if (status === 'Pending') bucket.items[itemName].pending += q;
       cakes += q;
     }
 
@@ -2086,6 +2089,13 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, now, walkInVal
     bucket.totals.cakes += cakes;
     bucket.totals.amount += amount;
     bucket.totals.orders += 1;
+    if (status === 'Pending') {
+      // Aggregates only (the Orders page has no PIN): exactly Pending, not
+      // Paid / Picked up / Cancelled / OVERSOLD.
+      bucket.pending.orders += 1;
+      bucket.pending.cakes += cakes;
+      bucket.pending.amount += amount;
+    }
     bucket.sales.ordered.cakes += cakes;
     bucket.sales.ordered.amount += amount;
     bucket.sales.ordered.orders += 1;
@@ -2118,6 +2128,7 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, now, walkInVal
     cakes: 0,
     amount: 0,
     orders: 0,
+    pending: { orders: 0, cakes: 0, amount: 0 },
     items: emptyItemsMap_(itemNames),
     sales: emptySalesBlock_()
   };
@@ -2130,6 +2141,9 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, now, walkInVal
     grand.cakes += b.totals.cakes;
     grand.amount += b.totals.amount;
     grand.orders += b.totals.orders;
+    grand.pending.orders += b.pending.orders;
+    grand.pending.cakes += b.pending.cakes;
+    grand.pending.amount += b.pending.amount;
     addSalesInto_(grand.sales, b.sales);
     for (i = 0; i < itemNames.length; i++) {
       itemName = itemNames[i];
@@ -2137,6 +2151,7 @@ function computeOrderSummaryFromValues_(values, dates, itemNames, now, walkInVal
       grand.items[itemName].ordered += b.items[itemName].ordered;
       grand.items[itemName].pickedUp += b.items[itemName].pickedUp;
       grand.items[itemName].walkIn += b.items[itemName].walkIn;
+      grand.items[itemName].pending += b.items[itemName].pending;
     }
   }
   for (d = 0; d < dates.length; d++) pushBucket(byId[dates[d].id]);

@@ -771,6 +771,30 @@ async function loadPreview() {
   window.close();
 }
 
+// ---- Recent walk-ins: picking another date swaps the list and the message ----
+{
+  const page = await loadPreview();
+  const { document, window } = page;
+  const S = window.__staff;
+  await S.setTab('recent');
+  await waitFor(() => document.querySelectorAll('#walkin-list article').length >= 1);
+  const list = () => document.getElementById('walkin-list');
+  const startDate = S.getState().pickupDate;
+  const other = Array.from(document.querySelectorAll('#recent-date-chips [data-date]')).find((b) => b.getAttribute('data-date') !== startDate);
+  const otherLabel = other.textContent.trim();
+  other.click();
+  assert('recent date change: the old date cards are gone at once and a loading line shows',
+    list().querySelectorAll('article').length === 0 && /Loading walk-ins for/.test(list().textContent), list().textContent);
+  await waitFor(() => /No walk-in sales for/.test(list().textContent));
+  assert('recent date change: the empty message names the newly selected date',
+    list().textContent.indexOf('No walk-in sales for') >= 0 && S.getState().pickupDate === other.getAttribute('data-date') && list().textContent.indexOf(otherLabel.split(/\s+/).slice(-2).join(' ')) >= 0,
+    list().textContent + ' | ' + otherLabel);
+  document.querySelector('#recent-date-chips [data-date="' + startDate + '"]').click();
+  await waitFor(() => list().querySelectorAll('article').length >= 1);
+  assert('recent date change: going back shows that date walk-ins again', list().querySelectorAll('article').length >= 1);
+  window.close();
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log('\n' + results.filter((r) => r.ok).length + '/' + results.length + ' passed');
 if (failed.length) process.exit(1);

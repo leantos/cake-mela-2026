@@ -231,7 +231,10 @@
           row.ordered = row.total;
           row.pickedUp = Math.floor(row.total * (index === 4 ? 0 : 0.45));
           row.walkIn = index === 4 ? 0 : Math.max(0, Math.round(row.total * 0.15));
+          row.pending = Math.round((row.total - row.pickedUp) * 0.5);
         });
+        var pendCakes = MENU_ITEMS.reduce(function (n, name) { return n + (date.items[name].pending || 0); }, 0);
+        date.pending = { orders: Math.min(date.totals.orders, Math.max(0, Math.ceil(pendCakes / 2))), cakes: pendCakes, amount: pendCakes * 350 };
         var picked = MENU_ITEMS.reduce(function (n, name) { return n + (date.items[name].pickedUp || 0); }, 0);
         var walk = MENU_ITEMS.reduce(function (n, name) { return n + (date.items[name].walkIn || 0); }, 0);
         var walkAmt = walk * 350;
@@ -481,6 +484,33 @@
         '<span class="progress-label absolute inset-0 flex items-center justify-center text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface">' + escapeHtml(label) + '</span></div>';
     }
 
+    /* Pending orders for a date: aggregates only (this page has no PIN, so
+       never names, phones or order IDs). Hidden when the backend is older and
+       sends no `pending` block. */
+    function pendingSection(date) {
+      var p = date && date.pending;
+      if (!p || typeof p !== 'object') return '';
+      var orders = Number(p.orders || 0);
+      var cakes = Number(p.cakes || 0);
+      var amount = Number(p.amount || 0);
+      var id = escapeHtml(date.id);
+      var head = '<h3 class="text-[1rem] leading-6 font-medium tracking-[0.15px]">Pending orders</h3>';
+      var body;
+      if (orders <= 0 && cakes <= 0) {
+        body = '<p class="pending-empty mt-1 text-[0.875rem] leading-5">No pending orders</p>';
+      } else {
+        var list = MENU_ITEMS.map(function (name) {
+          var n = Number(((date.items || {})[name] || {}).pending || 0);
+          return n > 0 ? '<li class="flex justify-between gap-3"><span>' + escapeHtml(name) + '</span><strong class="font-medium">' + n + '</strong></li>' : '';
+        }).join('');
+        body = '<p class="pending-headline mt-1 text-[1.125rem] leading-6 font-medium">' + orders + (orders === 1 ? ' pending order' : ' pending orders') +
+          ' · ' + cakes + (cakes === 1 ? ' cake' : ' cakes') + ' · ' + formatINR(amount) + '</p>' +
+          (list ? '<ul class="pending-items mt-2 flex flex-col gap-1 text-[0.875rem] leading-5">' + list + '</ul>' : '');
+      }
+      return '<section class="pending-section mt-4 rounded-m3-md bg-m3-secondary-container p-4 text-m3-on-secondary-container" id="pending-' + id +
+        '" aria-label="Pending orders — ' + escapeHtml(date.label) + '">' + head + body + '</section>';
+    }
+
     function soldTable(date, tableId) {
       var foot = { ordered: 0, pickedUp: 0, walkIn: 0, sold: 0 };
       var rows = MENU_ITEMS.map(function (name) {
@@ -519,6 +549,7 @@
         '<div class="panel-body ' + C_PANEL_BODY + '"><div class="panel-inner ' + C_PANEL_INNER + '">' +
           cakesTable(date.items, 'Cakes to order — ' + date.label, 'table-' + date.id) +
           pickupProgress(date) +
+          pendingSection(date) +
           soldTable(date, 'sold-' + date.id) +
           '<div class="table-actions mt-4">' +
             '<button type="button" class="btn btn-primary copy-btn ' + C_BTN_PRIMARY + '" data-copy-id="' + escapeHtml(date.id) + '">Copy for Poppins</button>' +

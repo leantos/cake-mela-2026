@@ -112,8 +112,8 @@ assert('summary items have no per-Mass keys (legacy Mass column is ignored)',
   !('06:30' in nov.items['Rich Plum Cake (400g)']) && !('08:30' in nov.items['Rich Plum Cake (400g)']) &&
   !('06:30' in summary.grand.items['Rich Plum Cake (400g)']),
   JSON.stringify(nov.items['Rich Plum Cake (400g)']));
-assert('item shape per date is total/ordered/pickedUp/walkIn only',
-  JSON.stringify(Object.keys(nov.items['Rich Plum Cake (400g)']).sort()) === JSON.stringify(['ordered', 'pickedUp', 'total', 'walkIn']),
+assert('item shape per date is total/ordered/pickedUp/walkIn/pending only',
+  JSON.stringify(Object.keys(nov.items['Rich Plum Cake (400g)']).sort()) === JSON.stringify(['ordered', 'pending', 'pickedUp', 'total', 'walkIn']),
   JSON.stringify(Object.keys(nov.items['Rich Plum Cake (400g)'])));
 assert('plum on 29 Nov totals 3 across both legacy Mass labels', nov.items['Rich Plum Cake (400g)'].total === 3);
 assert('29 Nov has 2 orders and 4 cakes', nov.totals.orders === 2 && nov.totals.cakes === 4,
@@ -358,6 +358,40 @@ assert('walk-ins on a date not in the Stock list are appended',
   JSON.stringify(extra && { id: extra.id, label: extra.label, sales: extra.sales.walkIn }));
 assert('weekly formulas exclude cancelled and keep IFERROR around summed cells',
   /notCancelledExpr_/.test(src) && /IFERROR\(1\*/.test(src) && /Walk-in/.test(src));
+
+// ---- pending orders: exactly Pending, per date and per item ----
+const pendGrid = [
+  headers,
+  row({ orderId: 'PB-P1', pickupDate: '2026-11-29', amount: 700, totalItems: 2, name: 'Ann', status: 'Pending' }, { 'Rich Plum Cake (400g)': 2 }),
+  row({ orderId: 'PB-P2', pickupDate: '2026-11-29', amount: 1000, totalItems: 2, name: 'Bala', status: 'OK' },
+    { 'Rich Plum Cake (400g)': 1, 'Dates & Carrot Pudding (700g)': 1 }),
+  row({ orderId: 'PB-P3', pickupDate: '2026-11-29', amount: 350, totalItems: 1, name: 'Cyril', status: 'Paid' }, { 'Rich Plum Cake (400g)': 1 }),
+  row({ orderId: 'PB-P4', pickupDate: '2026-11-29', amount: 700, totalItems: 2, name: 'Dee', status: 'Picked up' }, { 'Rich Plum Cake (400g)': 2 }),
+  row({ orderId: 'PB-P5', pickupDate: '2026-11-29', amount: 650, totalItems: 1, name: 'Evan', status: 'Cancelled' }, { 'Dates & Carrot Pudding (700g)': 1 }),
+  row({ orderId: 'PB-P6', pickupDate: '2026-11-29', amount: 350, totalItems: 1, name: 'Fay', status: 'OVERSOLD' }, { 'Rich Plum Cake (400g)': 1 }),
+  row({ orderId: 'PB-P7', pickupDate: '2026-11-29', amount: 350, totalItems: 1, name: 'TEST ORDER - delete me', status: 'Pending' }, { 'Rich Plum Cake (400g)': 1 }),
+  row({ orderId: 'PB-P8', pickupDate: '2026-12-06', amount: 350, totalItems: 1, name: 'Gus', status: 'Pending' }, { 'Rich Plum Cake (400g)': 1 })
+];
+const pendSummary = context.computeOrderSummaryFromValues_(pendGrid, DATES, MENU, now);
+const pNov = pendSummary.dates[0];
+const pDec = pendSummary.dates[1];
+assert('pending: 29 Nov counts only Pending/OK rows (2 orders, 4 cakes, Rs 1700)',
+  JSON.stringify(pNov.pending) === JSON.stringify({ orders: 2, cakes: 4, amount: 1700 }), JSON.stringify(pNov.pending));
+assert('pending: per-item pending cakes exclude Paid, Picked up, Cancelled, OVERSOLD and test rows',
+  pNov.items['Rich Plum Cake (400g)'].pending === 3 && pNov.items['Dates & Carrot Pudding (700g)'].pending === 1 &&
+  pNov.items['Butterscotch Pudding (700g)'].pending === 0,
+  JSON.stringify(pNov.items['Rich Plum Cake (400g)']));
+assert('pending: OVERSOLD stays in its own block, not in pending',
+  pNov.sales.oversold.orders === 1 && pNov.pending.orders === 2);
+assert('pending: 6 Dec is counted separately', JSON.stringify(pDec.pending) === JSON.stringify({ orders: 1, cakes: 1, amount: 350 }), JSON.stringify(pDec.pending));
+assert('pending: grand total sums the dates and items',
+  JSON.stringify(pendSummary.grand.pending) === JSON.stringify({ orders: 3, cakes: 5, amount: 2050 }) &&
+  pendSummary.grand.items['Rich Plum Cake (400g)'].pending === 4,
+  JSON.stringify(pendSummary.grand.pending));
+assert('pending: aggregates only (no names, phones or order IDs in the payload)',
+  !/PB-P|Ann|Bala|Gus|9876/.test(JSON.stringify(pendSummary)));
+assert('pending: ordered totals and existing fields are unchanged',
+  pNov.totals.orders === 5 && pNov.sales.ordered.orders === 5 && typeof pNov.sales.paid.cakes === 'number');
 
 const failed = results.filter((r) => !r.ok);
 console.log('\n--- summary aggregate ' + (results.length - failed.length) + '/' + results.length + ' passed ---');

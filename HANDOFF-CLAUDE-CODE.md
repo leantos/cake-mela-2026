@@ -30,7 +30,7 @@ You are picking up an existing, working project. Read this fully, then `README.m
   - **Fallback.** If `/api/order` can't be reached (offline, or a Netlify Drop deploy returning 404), the page uses its localStorage outbox, picks a random contact and posts straight to Apps Script (text/plain POST, sendBeacon/keepalive). Later retries try `/api/order` first and pass along the chosen contact.
 - Async Workloads were deliberately **not** used, because they need a team extension and an API key on Starter. The scheduled sweep is used instead.
 
-## Apps Script (`apps-script/Code.gs`, SCRIPT_VERSION `2026-11-24.4`)
+## Apps Script (`apps-script/Code.gs`, SCRIPT_VERSION `2026-11-24.5`)
 - **Live deployment URL (keep this one):** `https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec` (the "QyGs" deployment). Check `?action=debug` for the version it currently serves; redeploy after any Code.gs change.
   - **Redeploy without changing the URL:** paste the code → Save → Deploy → Manage deployments → pencil on the existing deployment → Version: New version → Deploy. Choosing "New deployment" creates a new URL, so avoid that.
   - Old unused deployments ending `...RstCz` and `...67X5n` can be deleted.
@@ -94,7 +94,7 @@ You are picking up an existing, working project. Read this fully, then `README.m
 2. In Netlify, import from Git, or link the repo to the existing site. No env vars are needed; `APPS_SCRIPT_URL` can optionally override the Apps Script URL.
 3. In Apps Script, paste `apps-script/Code.gs`, Save, and run `setupSheets`. Then publish a New version on the existing QyGs deployment.
 4. Verify:
-   - `?action=debug` reports `2026-11-24.4`.
+   - `?action=debug` reports `2026-11-24.5`.
    - `https://<site>/api/order` returns `{"ok":true,"pending":0}`.
    - One real test order lands in the Sheet with Assigned To filled in. Delete it afterwards.
 5. Optional polish: on mobile, the confirmation line wraps to two lines, which makes the sticky bar taller after ordering.
@@ -104,9 +104,9 @@ You are picking up an existing, working project. Read this fully, then `README.m
 - **No Mass time.** Pickup is by date only; the Mass choice is gone from the order page, the order payload, the Sheet, the summary and the staff/walk-in flows. The poster still says pickup is after the 6:30 / 8:30 AM Mass.
   - `/api/order` and `Code.gs` still ACCEPT a legacy `mass` / `massLabel` (old cached pages, outbox entries) and silently drop it.
   - New sheets get no Mass column. Existing sheets keep theirs, ignored, until you run **Cake Sale → Remove Mass columns…** (confirms first, then permanently deletes the Mass column from Orders and Walk-in Sales and rebuilds the Weekly Summary). `setupSheets` never deletes data by itself.
-  - Weekly Summary is one row per pickup date (no per-Mass rows). `?action=summary` items per date are `{total, ordered, pickedUp, walkIn}` (no `06:30` / `08:30` keys). `computeOrderSummaryFromValues_(values, dates, itemNames, now, walkInValues)` lost its `massIds` argument.
+  - Weekly Summary is one row per pickup date (no per-Mass rows). `?action=summary` items per date are `{total, ordered, pickedUp, walkIn, pending}`; each date and `grand` also has `pending: {orders, cakes, amount}` (orders whose Status is exactly Pending; aggregates only, shown in the /orders page's "Pending orders" section) (no `06:30` / `08:30` keys). `computeOrderSummaryFromValues_(values, dates, itemNames, now, walkInValues)` lost its `massIds` argument.
   - Walk-in Sales formulas look columns up by header name, so both the old layout (with Mass) and the new one work.
 - **Order page:** 3 tabs / steps — 1 pickup date, 2 cakes, 3 contact details — with consistent nav buttons (see `public/index.html`).
 - **Stock rules unchanged:** a typed number on the Stock tab = limited batch (+ leftovers carried forward), blank = unlimited, OVERSOLD flags simultaneous last-cake orders.
 - **Walk-in recorded time:** Walk-in Sales gets a `Recorded At` text column (ISO 8601, added automatically like `Customer`). `staff_add_walkin` accepts an optional `recordedAt` from the client (offline-queued sales keep their real time); it must be a real date within the last 14 days and at most 5 minutes ahead, otherwise the server time is used. `staff_walkins` rows return `recordedAt` (`''` for legacy rows). A duplicate `walkinId` never overwrites the time.
-- **Apps Script:** SCRIPT_VERSION `2026-11-24.4`; redeploy as a New version of the existing deployment and run `setupSheets`.
+- **Apps Script:** SCRIPT_VERSION `2026-11-24.5`; redeploy as a New version of the existing deployment and run `setupSheets`.

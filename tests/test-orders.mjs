@@ -210,6 +210,61 @@ assert('refresh and expand controls exist', !!document.getElementById('refresh-b
 if (window.__orders && typeof window.__orders.stop === 'function') window.__orders.stop();
 window.close();
 
+// ---- Pending orders section (aggregates only; tolerates an older backend) ----
+{
+  const pm = JSON.parse(JSON.stringify(mock));
+  const d29 = pm.dates.find((d) => d.id === '2026-11-29');
+  const d06 = pm.dates.find((d) => d.id === '2026-12-06');
+  d29.pending = { orders: 3, cakes: 5, amount: 1750 };
+  d29.items['Rich Plum Cake (400g)'].pending = 4;
+  d29.items['Dates & Carrot Pudding (700g)'].pending = 1;
+  d06.pending = { orders: 0, cakes: 0, amount: 0 };
+  const pdom = new JSDOM(html, {
+    url: 'https://example.com/orders.html',
+    runScripts: 'dangerously',
+    pretendToBeVisual: true,
+    beforeParse(win) {
+      win.__TEST_NOW = new Date('2026-11-23T12:00:00+05:30');
+      win.__USE_MOCK_SUMMARY = true;
+      win.__MOCK_SUMMARY = pm;
+      win.fetch = async function () { throw new Error('network disabled in tests'); };
+      const store = new Map();
+      Object.defineProperty(win, 'localStorage', { configurable: true, value: {
+        getItem(k) { return store.has(k) ? store.get(k) : null; },
+        setItem(k, v) { store.set(k, String(v)); },
+        removeItem(k) { store.delete(k); },
+        clear() { store.clear(); }
+      } });
+    }
+  });
+  await new Promise((r) => setTimeout(r, 40));
+  const pd = pdom.window.document;
+  const sec = pd.getElementById('pending-2026-11-29');
+  assert('pending: section renders inside the date panel with the headline',
+    !!sec && pd.querySelector('details[data-panel-id="2026-11-29"]').contains(sec) &&
+    /3 pending orders · 5 cakes · ₹1,750/.test(sec.querySelector('.pending-headline')?.textContent || ''),
+    sec && sec.textContent);
+  assert('pending: per-cake list shows only items above zero',
+    [...sec.querySelectorAll('.pending-items li')].map((li) => li.textContent.trim()).join('|') ===
+      'Dates & Carrot Pudding (700g)1|Rich Plum Cake (400g)4',
+    [...sec.querySelectorAll('.pending-items li')].map((li) => li.textContent).join('|'));
+  pdom.window.__orders.setSelected('all');
+  await new Promise((r) => setTimeout(r, 40));
+  assert('pending: all-dates view renders the 6 Dec and 16 Nov panels',
+    !!pd.querySelector('details[data-panel-id="2026-12-06"]') && !!pd.querySelector('details[data-panel-id="2026-11-16"]'));
+  const empty = pd.getElementById('pending-2026-12-06');
+  assert('pending: a date with zero pending shows the friendly empty state',
+    !!empty && /No pending orders/.test(empty.textContent) && !empty.querySelector('.pending-items'));
+  assert('pending: a date from an older backend (no pending field) shows no section',
+    !pd.getElementById('pending-2026-11-16'));
+  assert('pending: shows only aggregates (no names, phones or order IDs)',
+    !/PB-|\+91|\d{10}/.test(sec.textContent));
+  assert('pending: Copy for Poppins text is unchanged by the section',
+    !/pending/i.test(pdom.window.__orders.poppinsTextForDate(pm.dates.find((d) => d.id === '2026-11-29'))));
+  if (pdom.window.__orders && typeof pdom.window.__orders.stop === 'function') pdom.window.__orders.stop();
+  pdom.window.close();
+}
+
 const fetchCalls = [];
 const fetchDom = new JSDOM(html, {
   url: 'https://example.com/orders.html',
