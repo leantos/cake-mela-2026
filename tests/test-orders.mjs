@@ -252,6 +252,35 @@ window.close();
   dom.window.close();
 }
 
+// ---- Copy for Poppins per Sunday: a Copy button in each date header ----
+{
+  const dom = new JSDOM(fs.readFileSync(new URL('../public/orders.html', import.meta.url), 'utf8'), { url: 'https://example.com/orders?preview=1', runScripts: 'dangerously', pretendToBeVisual: true, beforeParse(w) { w.__TEST_DISABLE_NETWORK = true; } });
+  await new Promise((r) => setTimeout(r, 150));
+  const window = dom.window;
+  const document = window.document;
+  const copied = [];
+  Object.defineProperty(window.navigator, 'clipboard', { value: { writeText: async (t) => { copied.push(t); } }, configurable: true });
+  document.querySelector('[data-id="all"]').click();
+  await new Promise((r) => setTimeout(r, 40));
+  const buttons = Array.from(document.querySelectorAll('summary .summary-copy'));
+  assert('copy per date: every date header has its own Copy button tied to that date',
+    buttons.length >= 2 && buttons.every((b) => b.closest('details') && b.getAttribute('data-copy-id') === b.closest('details').getAttribute('data-panel-id') && /Copy the Poppins order for/.test(b.getAttribute('aria-label'))),
+    String(buttons.length));
+  const first = buttons[0];
+  const second = buttons[1];
+  const firstPanel = first.closest('details');
+  const wasOpen = firstPanel.open;
+  first.click();
+  await new Promise((r) => setTimeout(r, 40));
+  const firstTitle = firstPanel.querySelector('.summary-title').textContent.trim();
+  const secondTitle = second.closest('details').querySelector('.summary-title').textContent.trim();
+  assert('copy per date: the button copies only that Sunday', copied.length === 1 && copied[0].indexOf(firstTitle) >= 0 && copied[0].indexOf(secondTitle) < 0, copied[0]);
+  assert('copy per date: clicking Copy does not open or close the panel', firstPanel.open === wasOpen);
+  assert('copy per date: the message names the date that was copied', document.getElementById('toast').textContent === 'Copied the Poppins order for ' + firstTitle + '.', document.getElementById('toast').textContent);
+  if (window.__orders && typeof window.__orders.stop === 'function') window.__orders.stop();
+  dom.window.close();
+}
+
 // ---- Pending orders section (aggregates only; tolerates an older backend) ----
 {
   const pm = JSON.parse(JSON.stringify(mock));
