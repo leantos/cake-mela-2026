@@ -371,7 +371,7 @@ async function loadPreview() {
 {
   const html = (await import('node:fs')).readFileSync(new URL('../public/staff.html', import.meta.url), 'utf8');
   assert('uses Tailwind (stylesheet linked, no big inline <style>)', html.includes('href="/tailwind.css"') && !/\.order-card\s*\{/.test(html));
-  assert('desktop layout: wide container at 720px+', html.includes('min-[720px]:max-w-[1100px]'));
+  assert('desktop layout: full-width container (no max-width cap)', !html.includes('min-[720px]:max-w-[1100px]') && /<div class="flex min-h-dvh w-full flex-col/.test(html));
   assert('desktop layout: order cards grid 2 then 3 columns',
     /id="order-list"/.test(html) && html.includes('min-[720px]:grid-cols-2') && html.includes('min-[1000px]:grid-cols-3'));
   assert('desktop layout: cake grid on the left, sticky preview + recent list on the right',
