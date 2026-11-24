@@ -18,7 +18,7 @@
   --color-brand-blue-dark: #0c3c98;
   --color-line: #eadace;
   --color-wa: #25D366;
-  --color-page: #dff3fa;
+  --color-page: #fbf9f5;
   --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-serif: Georgia, "Palatino Linotype", Palatino, "Times New Roman", serif;
   --radius-card: 16px;
@@ -34,7 +34,7 @@
   --color-m3-tertiary-container: #dce8c8;
   --color-m3-on-tertiary-container: #1f2b08;
   --color-m3-surface: #fbf9f7;
-  --color-m3-surface-container-low: #f6f1ec;
+  --color-m3-surface-container-low: #fbf9f5;
   --color-m3-surface-container: #f1e9e2;
   --color-m3-surface-container-high: #ebe1d9;
   --color-m3-on-surface: #2a2306;

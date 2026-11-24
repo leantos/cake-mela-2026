@@ -863,7 +863,7 @@ assert('Tailwind theme defines extracted palette tokens',
   /--color-pine:\s*#435718/.test(themeCss),
   'missing token in @theme');
 assert('old festive red #b91c1c is gone', !/#b91c1c/i.test(rootCss + document.documentElement.outerHTML));
-assert('page background is light cyan', /--color-page:\s*#dff3fa/.test(themeCss) && document.body.className.includes('bg-page'));
+assert('page background is #fbf9f5', /--color-page:\s*#fbf9f5/.test(themeCss) && document.body.className.includes('bg-page'));
 assert('desktop padding is fluid clamp', appCls.includes('lg:p-[clamp(16px,3vw,48px)]'), appCls);
 assert('desktop left column is minmax(340px, 32%)', appCls.includes('lg:grid-cols-[minmax(340px,32%)_minmax(0,1fr)]'), appCls);
 assert('wide desktop summary is minmax(300px, 22%)', appCls.includes('xl:grid-cols-[minmax(340px,32%)_minmax(0,1fr)_minmax(300px,22%)]'), appCls);
