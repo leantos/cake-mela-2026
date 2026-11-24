@@ -667,30 +667,106 @@
         : 'Last updated —';
     }
 
-    function poppinsTextForDate(date) {
-      var lines = [
-        'Vailankanni Matha Youth — cakes to order from Poppins Bakers',
-        'Pickup: ' + date.label,
-        ''
-      ];
+    // "Rich Plum Cake (400g)" -> { product: "Rich Plum Cake", grams: 400, size: "400 g" }
+    function splitItem(name) {
+      var m = /^(.*?)\s*\((\d+)\s*g\)\s*$/i.exec(String(name));
+      if (!m) return { product: String(name), grams: 0, size: '' };
+      return { product: m[1], grams: Number(m[2]), size: m[2] + ' g' };
+    }
+
+    function poppinsDateLabel(date) {
+      var year = /^(\d{4})-/.exec(date.id || '');
+      return (date.label || date.id || '') + (year ? ' ' + year[1] : '');
+    }
+
+    function cakeCount(n) {
+      return n + (n === 1 ? ' cake' : ' cakes');
+    }
+
+    // Quantities to bake, grouped by cake with one line per size. Zero lines are
+    // left out. These are PRE-ORDERS only: cancelled orders are not counted and
+    // walk-in sales are separate.
+    function poppinsBlock(items) {
+      var groups = [];
+      var byProduct = {};
+      var cakes = 0;
+      var grams = 0;
       MENU_ITEMS.forEach(function (name) {
-        var q = itemSplit(date.items, name);
-        lines.push(name + ': ' + q.total);
+        var q = itemSplit(items, name).total;
+        if (!q) return;
+        var p = splitItem(name);
+        var g = byProduct[p.product];
+        if (!g) {
+          g = byProduct[p.product] = { product: p.product, rows: [] };
+          groups.push(g);
+        }
+        g.rows.push('- ' + (p.size ? p.size + ' × ' : '') + q);
+        cakes += q;
+        grams += q * p.grams;
       });
+      var lines = [];
+      groups.forEach(function (g) {
+        lines.push('*' + g.product + '*');
+        g.rows.forEach(function (row) { lines.push(row); });
+      });
+      var total = 'Total: ' + cakeCount(cakes);
+      if (grams) total += ' (about ' + String(Math.round(grams / 100) / 10) + ' kg)';
+      return { lines: lines, cakes: cakes, total: total };
+    }
+
+    function oversoldNote(date) {
+      var ov = date && date.sales && date.sales.oversold;
+      if (!ov || !ov.orders) return '';
+      return 'Includes ' + cakeCount(Number(ov.cakes) || 0) + ' from ' + ov.orders +
+        (ov.orders === 1 ? ' oversold order' : ' oversold orders') + ' (beyond the planned stock).';
+    }
+
+    function poppinsHeader(title, meta) {
+      var lines = ['*' + title + '*', 'Vailankanni Matha Youth × Poppins Bakers'];
+      if (meta && meta.lastUpdated) lines.push('Orders as of ' + meta.lastUpdated);
+      return lines;
+    }
+
+    var POPPINS_FOOTNOTE = 'Pre-orders only. Cancelled orders are not counted.';
+
+    function poppinsTextForDate(date, meta) {
+      var lines = poppinsHeader('Cake order — ' + poppinsDateLabel(date), meta);
       lines.push('');
-      lines.push('Total cakes: ' + date.totals.cakes);
-      lines.push('Total amount: ' + formatINR(date.totals.amount));
-      lines.push('Orders: ' + date.totals.orders);
+      var block = poppinsBlock(date.items);
+      if (!block.cakes) {
+        lines.push('No pre-orders yet for this date.');
+        return lines.join('\n');
+      }
+      block.lines.forEach(function (l) { lines.push(l); });
+      lines.push('', block.total);
+      var note = oversoldNote(date);
+      if (note) lines.push(note);
+      lines.push('', POPPINS_FOOTNOTE);
       return lines.join('\n');
     }
 
     function poppinsTextForAll(data) {
-      var blocks = ['Vailankanni Matha Youth — cakes to order from Poppins Bakers', ''];
+      var lines = poppinsHeader('Cake orders — all pickup dates', data);
+      var any = false;
       (data.dates || []).forEach(function (date) {
-        blocks.push(poppinsTextForDate(date), '');
+        var block = poppinsBlock(date.items);
+        if (!block.cakes) return;
+        any = true;
+        lines.push('', '—— ' + poppinsDateLabel(date) + ' ——');
+        block.lines.forEach(function (l) { lines.push(l); });
+        lines.push(block.total);
+        var note = oversoldNote(date);
+        if (note) lines.push(note);
       });
-      blocks.push('GRAND TOTAL: ' + data.grand.cakes + ' cakes, ' + formatINR(data.grand.amount) + ', ' + data.grand.orders + ' orders');
-      return blocks.join('\n');
+      if (!any) {
+        lines.push('', 'No pre-orders yet.');
+        return lines.join('\n');
+      }
+      var all = poppinsBlock((data.grand && data.grand.items) || {});
+      lines.push('', '—— All dates together ——');
+      all.lines.forEach(function (l) { lines.push(l); });
+      lines.push(all.total, '', POPPINS_FOOTNOTE);
+      return lines.join('\n');
     }
 
     function showToast(message) {
@@ -706,14 +782,14 @@
       if (!dateId || dateId === 'all') {
         if (selectedId !== 'all') {
           var one = summaryState.dates.find(function (d) { return d.id === selectedId; });
-          text = one ? poppinsTextForDate(one) : poppinsTextForAll(summaryState);
+          text = one ? poppinsTextForDate(one, summaryState) : poppinsTextForAll(summaryState);
         } else {
           text = poppinsTextForAll(summaryState);
         }
       } else {
         var date = summaryState.dates.find(function (d) { return d.id === dateId; });
         if (!date) return;
-        text = poppinsTextForDate(date);
+        text = poppinsTextForDate(date, summaryState);
       }
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1100,6 +1176,7 @@
       setSelected: setSelected,
       copyForPoppins: copyForPoppins,
       poppinsTextForDate: poppinsTextForDate,
+      poppinsTextForAll: poppinsTextForAll,
       nextUpcomingId: nextUpcomingId,
       isPastDate: isPastDate,
       formatINR: formatINR,

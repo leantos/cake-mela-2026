@@ -199,9 +199,12 @@ document.querySelector('details[data-panel-id="2026-11-29"]').dispatchEvent(new 
 const saved = JSON.parse(window.localStorage.getItem('poppinsAdminPanels') || '{}');
 assert('open state is remembered in localStorage', saved['2026-11-29'] === true, JSON.stringify(saved));
 
-const text = window.__orders.poppinsTextForDate(mock.dates[1]);
-assert('copy text names Poppins and the date', /Poppins/.test(text) && /Sun, 29 Nov/.test(text), text);
-assert('copy text has per-item totals and no per-Mass split', /Rich Plum Cake \(400g\): 15/.test(text) && !/6:30|8:30/.test(text), text);
+const text = window.__orders.poppinsTextForDate(mock.dates[1], { lastUpdated: '24/11/2026, 04:36:34 PM IST' });
+assert('copy text names Poppins and the full date with the year', /Poppins/.test(text) && /Sun, 29 Nov 2026/.test(text), text);
+assert('copy text groups sizes under each cake and shows the quantity', /\*Rich Plum Cake\*/.test(text) && /- 400 g × 15/.test(text) && !/6:30|8:30/.test(text), text);
+assert('copy text says when the numbers are from and what they cover',
+  /Orders as of 24\/11\/2026, 04:36:34 PM IST/.test(text) && /Pre-orders only\. Cancelled orders are not counted\./.test(text), text);
+assert('copy text has no customer prices, no order count and no zero lines', !/₹|Rs|Total amount|Orders:/.test(text) && !/× 0/.test(text), text);
 
 assert('last updated is shown', /Last updated/.test(document.getElementById('updated').textContent));
 assert('status region is a live region', document.getElementById('status').getAttribute('aria-live') === 'polite');
@@ -209,6 +212,45 @@ assert('refresh and expand controls exist', !!document.getElementById('refresh-b
 
 if (window.__orders && typeof window.__orders.stop === 'function') window.__orders.stop();
 window.close();
+
+// ---- Copy for Poppins: exact text for hand-built data ----
+{
+  const dom = new JSDOM(fs.readFileSync(new URL('../public/orders.html', import.meta.url), 'utf8'), { url: 'https://example.com/orders?preview=1', runScripts: 'dangerously', pretendToBeVisual: true, beforeParse(w) { w.__TEST_DISABLE_NETWORK = true; } });
+  await new Promise((r) => setTimeout(r, 60));
+  const o = dom.window.__orders;
+  const item = (total) => ({ total });
+  const date = {
+    id: '2026-11-29', label: 'Sun, 29 Nov',
+    items: {
+      'Dates & Carrot Pudding (700g)': item(2), 'Dates & Carrot Pudding (350g)': item(1),
+      'Butterscotch Pudding (700g)': item(0), 'Butterscotch Pudding (350g)': item(0),
+      'Rich Plum Cake (800g)': item(4), 'Rich Plum Cake (400g)': item(0)
+    },
+    sales: { oversold: { cakes: 1, orders: 1 } }
+  };
+  const t = o.poppinsTextForDate(date, { lastUpdated: '24/11/2026, 04:36:34 PM IST' });
+  const lines = t.split('\n');
+  assert('poppins: exact layout, grouped by cake, zero lines left out',
+    lines.slice(0, 12).join('|') === [
+      '*Cake order — Sun, 29 Nov 2026*', 'Vailankanni Matha Youth × Poppins Bakers', 'Orders as of 24/11/2026, 04:36:34 PM IST', '',
+      '*Dates & Carrot Pudding*', '- 700 g × 2', '- 350 g × 1', '*Rich Plum Cake*', '- 800 g × 4', '', 'Total: 7 cakes (about 5 kg)', 'Includes 1 cake from 1 oversold order (beyond the planned stock).'
+    ].join('|'), JSON.stringify(lines));
+  assert('poppins: a cake with no orders is not listed at all', !/Butterscotch/.test(t), t);
+  assert('poppins: single cake uses the singular', /Total: 1 cake \(about 0\.4 kg\)/.test(o.poppinsTextForDate({ id: '2026-12-06', label: 'Sun, 6 Dec', items: { 'Rich Plum Cake (400g)': item(1) } })));
+  assert('poppins: an empty date says so instead of listing zeros',
+    /No pre-orders yet for this date\./.test(o.poppinsTextForDate({ id: '2026-12-13', label: 'Sun, 13 Dec', items: {} })) && !/Total/.test(o.poppinsTextForDate({ id: '2026-12-13', label: 'Sun, 13 Dec', items: {} })));
+  const all = o.poppinsTextForAll({
+    lastUpdated: '24/11/2026, 04:36:34 PM IST',
+    dates: [date, { id: '2026-12-06', label: 'Sun, 6 Dec', items: { 'Rich Plum Cake (800g)': item(1) } }, { id: '2026-12-13', label: 'Sun, 13 Dec', items: {} }],
+    grand: { items: { 'Dates & Carrot Pudding (700g)': item(2), 'Dates & Carrot Pudding (350g)': item(1), 'Rich Plum Cake (800g)': item(5) } }
+  });
+  assert('poppins all dates: only dates with cakes get a section, then an all-dates total',
+    /—— Sun, 29 Nov 2026 ——/.test(all) && /—— Sun, 6 Dec 2026 ——/.test(all) && !/13 Dec/.test(all) && /—— All dates together ——[\s\S]*- 800 g × 5[\s\S]*Total: 8 cakes \(about 5\.8 kg\)/.test(all), all);
+  assert('poppins all dates: no prices, no order counts', !/₹|Total amount|GRAND TOTAL|Orders:/.test(all), all);
+  assert('poppins all dates: nothing ordered says so', /No pre-orders yet\./.test(o.poppinsTextForAll({ dates: [], grand: { items: {} } })));
+  if (o && typeof o.stop === 'function') o.stop();
+  dom.window.close();
+}
 
 // ---- Pending orders section (aggregates only; tolerates an older backend) ----
 {
