@@ -62,7 +62,7 @@ async function waitFor(pred, ms = 1500) {
   return pred();
 }
 
-function load(search, fetchImpl) {
+function load(search, fetchImpl, now) {
   const errors = [];
   const virtualConsole = new JSDOM().virtualConsole.constructor
     ? undefined
@@ -74,6 +74,7 @@ function load(search, fetchImpl) {
     beforeParse(window) {
       if (fetchImpl) window.fetch = fetchImpl;
       window.alert = () => {};
+      window.__TEST_NOW = now || new Date(2026, 10, 24, 10, 0, 0);
     }
   });
   return { dom, window: dom.window, document: dom.window.document };
@@ -179,6 +180,43 @@ async function loadPreview() {
   await window.__staff.voidWalkin(newId);
   assert('undo voids the walk-in sale',
     !window.__staff.getState().walkins.filter((w) => !w.voided).some((w) => w.walkinId === newId));
+
+  // ---- Recent walk-ins lives in its own third tab ----
+  const tabEls = Array.from(document.querySelectorAll('[role="tablist"] [role="tab"]'));
+  assert('three tabs: Orders, Walk-in sale, Recent walk-ins',
+    tabEls.map((t) => t.id).join(',') === 'tab-orders,tab-walkin,tab-recent' && /Recent/.test(document.getElementById('tab-recent').textContent));
+  assert('tab bar has 3 equal columns', document.querySelector('[role="tablist"]').className.includes('grid-cols-3'));
+  assert('walk-in list lives in the Recent panel, not the Walk-in panel',
+    document.getElementById('panel-recent').contains(document.getElementById('walkin-list')) &&
+    !document.getElementById('panel-walkin').contains(document.getElementById('walkin-list')) &&
+    document.getElementById('panel-recent').contains(document.getElementById('walkin-updated')));
+  assert('Recent tab has its own date chips', document.querySelectorAll('#recent-date-chips [data-date]').length >= 1);
+  await window.__staff.setTab('recent');
+  assert('Recent tab shows its panel and hides the others',
+    document.getElementById('panel-recent').hidden === false &&
+    document.getElementById('panel-walkin').hidden === true &&
+    document.getElementById('panel-orders').hidden === true &&
+    document.getElementById('tab-recent').getAttribute('aria-selected') === 'true' &&
+    document.getElementById('tab-walkin').getAttribute('aria-selected') === 'false');
+  await window.__staff.setTab('walkin');
+  assert('Walk-in tab hides the Recent panel',
+    document.getElementById('panel-recent').hidden === true && document.getElementById('panel-walkin').hidden === false);
+  window.__staff.setItem('Rich Plum Cake (400g)'); window.__staff.setQty(1);
+  const recentBefore = window.__staff.getState().walkins.filter((w) => !w.voided).length;
+  await window.__staff.addWalkin();
+  await window.__staff.setTab('recent');
+  const recentRows = window.__staff.getState().walkins.filter((w) => !w.voided);
+  assert('a sale recorded on the Walk-in tab appears in the Recent panel list',
+    recentRows.length === recentBefore + 1 && document.querySelectorAll('#panel-recent #walkin-list [data-walkin]').length === recentRows.length);
+  const badge = document.getElementById('recent-count');
+  assert('Recent tab shows a count badge of walk-ins',
+    badge.textContent === String(recentRows.length) && !badge.classList.contains('hidden'), badge.textContent);
+  const lastId = recentRows[0].walkinId;
+  await window.__staff.voidWalkin(lastId);
+  assert('undo from the Recent list removes the card and updates the badge',
+    !document.querySelector('#walkin-list [data-walkin="' + lastId + '"]') &&
+    document.getElementById('recent-count').textContent === String(recentRows.length - 1));
+  await window.__staff.setTab('walkin');
 
   // ---- cart: per-pill steppers, many cakes in one sale ----
   const DATES = 'Dates & Carrot Pudding (700g)';
@@ -360,6 +398,73 @@ async function loadPreview() {
   const sent2 = store.walkins.filter((w) => w.customer === 'Offline Olga');
   assert('queued lines are each sent once when back online', sent2.length === 2 && new Set(sent2.map((w) => w.walkinId)).size === 2, JSON.stringify(sent2));
 
+
+  // ---- cash change calculator ----
+  window.__staff.setItem('Dates & Carrot Pudding (700g)'); // 650
+  window.__staff.setLineQty('Rich Plum Cake (400g)', 1);   // 350 -> total 1000
+  window.__staff.setPayment('Cash');
+  const cdoc = window.document;
+  const panelEl = () => cdoc.getElementById('cash-panel');
+  const resultEl = () => cdoc.getElementById('cash-result');
+  const digits = (t) => Number(String(t).replace(/[^0-9]/g, ''));
+  assert('cash panel is shown for Cash with items in the cart', panelEl().classList.contains('hidden') === false);
+  assert('cash panel has the numeric Amount received field',
+    cdoc.getElementById('cash-received').getAttribute('inputmode') === 'numeric' &&
+    cdoc.getElementById('cash-received').getAttribute('maxlength') === '6');
+  assert('no result shown while the amount is empty', resultEl().textContent === '' && resultEl().classList.contains('hidden'));
+  cdoc.querySelector('#cash-quick [data-cash="500"]').click();
+  assert('quick button fills the field', cdoc.getElementById('cash-received').value === '500');
+  assert('amount below the total shows "Short by" with the shortfall',
+    /Short by/.test(resultEl().textContent) && digits(resultEl().textContent) === 500, resultEl().textContent);
+  cdoc.querySelector('#cash-quick [data-cash="2000"]').click();
+  assert('amount above the total shows the change to give',
+    /Change to give/.test(resultEl().textContent) && digits(resultEl().textContent) === 1000, resultEl().textContent);
+  cdoc.querySelector('#cash-quick [data-cash="exact"]').click();
+  assert('Exact fills the sale total and shows change ₹0',
+    cdoc.getElementById('cash-received').value === '1000' && /Change to give/.test(resultEl().textContent) && digits(resultEl().textContent) === 0, resultEl().textContent);
+  const typed = cdoc.getElementById('cash-received');
+  typed.value = '12a3456789';
+  typed.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert('typed amount keeps digits only, max 6', window.__staff.getState().received === '123456', window.__staff.getState().received);
+  window.__staff.setPayment('UPI');
+  assert('cash panel is hidden for UPI and the amount is cleared',
+    panelEl().classList.contains('hidden') && window.__staff.getState().received === '');
+  window.__staff.setPayment('Cash');
+  assert('switching back to Cash starts with an empty amount', cdoc.getElementById('cash-received').value === '');
+
+  // note saved on the FIRST line only, when the amount covers the total (recorded offline -> outbox)
+  failNetwork = true;
+  window.__staff.setReceived(2000);
+  await window.__staff.addWalkin({ customer: 'Cash Carl' });
+  const cashQ = window.__staff.getState().outbox.filter((e) => e.type === 'walkin' && e.payload.customer === 'Cash Carl');
+  const withNote = cashQ.filter((e) => e.payload.notes);
+  assert('two-line cash sale queues two entries and only the first has the note',
+    cashQ.length === 2 && withNote.length === 1 && cashQ[0].payload.notes === withNote[0].payload.notes, JSON.stringify(cashQ.map((e) => e.payload.notes)));
+  assert('note records received, change and the sale total',
+    /Cash received ₹2,000, change ₹1,000 \(sale total ₹1,000\)/.test(withNote[0].payload.notes), withNote[0].payload.notes);
+  assert('note does not start with VOID', !/^\s*VOID/i.test(withNote[0].payload.notes));
+  assert('Recent walk-ins card shows the note', cdoc.querySelectorAll('#walkin-list .walkin-notes').length === 1 &&
+    /Cash received/.test(cdoc.querySelector('#walkin-list .walkin-notes').textContent));
+  assert('the amount field is reset after recording', window.__staff.getState().received === '' && cdoc.getElementById('cash-received').value === '');
+  assert('the cash panel hides once the cart is empty', panelEl().classList.contains('hidden'));
+  failNetwork = false;
+  await window.__staff.flushOutbox({ force: true });
+  await sleep(30);
+
+  // empty amount -> no note; short amount -> no note
+  failNetwork = true;
+  window.__staff.setItem('Rich Plum Cake (400g)');
+  await window.__staff.addWalkin({ customer: 'No Note Nina' });
+  window.__staff.setItem('Rich Plum Cake (400g)');
+  window.__staff.setReceived(100);
+  await window.__staff.addWalkin({ customer: 'Short Sam' });
+  const plain = window.__staff.getState().outbox.filter((e) => e.type === 'walkin' && ['No Note Nina', 'Short Sam'].includes(e.payload.customer));
+  assert('no note when no amount was entered or when the amount is short',
+    plain.length === 2 && plain.every((e) => !e.payload.notes), JSON.stringify(plain.map((e) => e.payload.notes)));
+  failNetwork = false;
+  await window.__staff.flushOutbox({ force: true });
+  await sleep(30);
+
   window.__staff.logout();
   assert('Lock clears the session PIN and shows the gate again',
     window.sessionStorage.getItem('poppinsStaffPin') == null &&
@@ -369,15 +474,86 @@ async function loadPreview() {
 }
 
 {
+  const page = load('?preview=1&tab=recent');
+  const ok = await waitFor(() => {
+    const api = page.window.__staff;
+    return api && api.getState().unlocked && api.getState().walkins.length > 0;
+  });
+  const d = page.document;
+  assert('?tab=recent opens the Recent walk-ins tab with the list loaded',
+    ok && page.window.__staff.getState().tab === 'recent' &&
+    d.getElementById('panel-recent').hidden === false && d.getElementById('panel-walkin').hidden === true &&
+    d.querySelectorAll('#walkin-list [data-walkin]').length >= 1);
+  page.window.close();
+}
+
+{
   const html = (await import('node:fs')).readFileSync(new URL('../public/staff.html', import.meta.url), 'utf8');
   assert('uses Tailwind (stylesheet linked, no big inline <style>)', html.includes('href="/tailwind.css"') && !/\.order-card\s*\{/.test(html));
   assert('desktop layout: full-width container (no max-width cap)', !html.includes('min-[720px]:max-w-[1100px]') && /<div class="flex min-h-dvh w-full flex-col/.test(html));
   assert('desktop layout: order cards grid 2 then 3 columns',
     /id="order-list"/.test(html) && html.includes('min-[720px]:grid-cols-2') && html.includes('min-[1000px]:grid-cols-3'));
-  assert('desktop layout: cake grid on the left, sticky preview + recent list on the right',
-    /walkin-form">[\s\S]*id="item-grid"[\s\S]*<div class="walkin-side [^"]*min-\[720px\]:sticky[^"]*">[\s\S]*id="live-summary"[\s\S]*id="record-sale"[\s\S]*id="walkin-list"/.test(html));
+  assert('desktop layout: cake grid on the left, sticky preview on the right',
+    /walkin-form">[\s\S]*id="item-grid"[\s\S]*<div class="walkin-side [^"]*min-\[720px\]:sticky[^"]*">[\s\S]*id="live-summary"[\s\S]*id="record-sale"/.test(html));
+  assert('Recent walk-ins is a separate third tab panel after the Walk-in panel',
+    /id="panel-walkin"[\s\S]*id="record-sale"[\s\S]*id="panel-recent"[\s\S]*id="walkin-list"/.test(html) &&
+    !/id="panel-walkin"[^]*?id="walkin-list"[^]*?id="panel-recent"/.test(html));
   assert('single global Quantity control is gone (steppers live on the cake pills)',
     !html.includes('id="qty"') && !html.includes('id="qty-plus"') && !html.includes('id="qty-minus"'));
+}
+
+
+// ---- auto date default from the browser clock (Mass select untouched) ----
+{
+  const D = (y, m, d, h = 10, mi = 0) => new Date(y, m - 1, d, h, mi, 0);
+  async function boot(search, now) {
+    const pg = load('?preview=1' + (search || ''), null, now);
+    await waitFor(() => pg.window.__staff && pg.window.__staff.getState().unlocked);
+    await sleep(40);
+    return pg;
+  }
+  const pressed = (pg, id) => Array.from(pg.document.querySelectorAll('#' + id + ' [aria-pressed="true"]')).map((b) => b.getAttribute('data-date'));
+
+  let pg = await boot('', D(2026, 12, 6));
+  assert('today is a pickup date -> it is selected',
+    pg.window.__staff.getState().pickupDate === '2026-12-06', pg.window.__staff.getState().pickupDate);
+  assert('all three date chip rows highlight the same selected date',
+    ['date-chips', 'walkin-date-chips', 'recent-date-chips'].every((id) => pressed(pg, id).join() === '2026-12-06'));
+  pg.window.close();
+
+  pg = await boot('', D(2026, 12, 2));
+  assert('between pickup dates -> the next upcoming date is selected', pg.window.__staff.getState().pickupDate === '2026-12-06');
+  pg.window.close();
+
+  pg = await boot('', D(2027, 1, 5));
+  assert('after the last pickup date -> the last one is selected', pg.window.__staff.getState().pickupDate === '2026-12-20');
+  pg.window.close();
+
+  pg = await boot('&date=2026-12-13', D(2026, 12, 6));
+  assert('an explicit ?date= wins over the clock', pg.window.__staff.getState().pickupDate === '2026-12-13');
+  pg.window.close();
+
+  pg = await boot('', D(2026, 12, 6, 6, 0));
+  assert('the Walk-in Mass select is NOT changed by the clock (stays as before)',
+    pg.window.__staff.getState().walkinMass === '8:30 AM Mass' && pg.document.getElementById('walkin-mass').value === '8:30 AM Mass');
+  pg.window.close();
+
+  // a manual date pick is not overridden when the tab becomes visible on a new day
+  pg = await boot('', D(2026, 11, 24, 6, 0));
+  assert('first load on 24 Nov picks the next upcoming date', pg.window.__staff.getState().pickupDate === '2026-11-29');
+  pg.document.querySelector('#date-chips [data-date="2026-12-13"]').click();
+  pg.window.__TEST_NOW = D(2026, 12, 6, 6, 0);
+  pg.window.__staff.onBecameVisible();
+  assert('a manually picked date is not overridden on a new day', pg.window.__staff.getState().pickupDate === '2026-12-13');
+  pg.window.close();
+
+  // untouched page re-evaluates when the local day changes
+  pg = await boot('', D(2026, 11, 24, 10, 0));
+  pg.window.__TEST_NOW = D(2026, 12, 6, 6, 30);
+  pg.window.__staff.onBecameVisible();
+  await sleep(40);
+  assert('an untouched page re-selects today when the day changes', pg.window.__staff.getState().pickupDate === '2026-12-06');
+  pg.window.close();
 }
 
 const failed = results.filter((r) => !r.ok);

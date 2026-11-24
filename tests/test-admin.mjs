@@ -11,7 +11,7 @@ function assert(name, cond, detail) {
 }
 
 assert('stylesheet is Tailwind (compiled tailwind.css)', /<link[^>]+href=["']tailwind\.css["']/.test(html));
-assert('desktop app is fluid up to ~1600px', /lg:max-w-\[1600px\]/.test(html));
+assert('desktop app is full width (no max-width cap)', !html.includes('lg:max-w-[1600px]') && /class="app min-h-screen w-full/.test(html));
 assert('wide screens use a 2-column dashboard grid',
   /min-\[1100px\]:grid-cols-\[minmax\(0,1fr\)_minmax\(520px,1\.15fr\)\]/.test(html));
 assert('desktop table type is bumped to at least 1rem', /lg:text-\[1\.05rem\]/.test(html));

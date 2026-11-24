@@ -33,11 +33,11 @@
 <body class="bg-page font-sans leading-normal text-ink antialiased [--sticky-h:11.25rem]">
   <div class="app min-h-screen w-full bg-page md:px-6 pb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+1rem)] lg:m-0 lg:grid lg:w-full lg:max-w-none lg:grid-cols-[minmax(340px,32%)_minmax(0,1fr)] lg:items-start lg:gap-x-[1.35rem] lg:gap-y-4 lg:p-[clamp(16px,3vw,48px)] xl:grid-cols-[minmax(340px,32%)_minmax(0,1fr)_minmax(300px,22%)]">
     <aside class="left-col lg:sticky lg:top-4 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100vh-2rem)] lg:overflow-auto lg:pb-2 xl:row-span-1">
-    <header class="hero-head flex items-center gap-[0.7rem] border-b-[3px] border-maroon bg-cream-light px-[0.9rem] py-[0.7rem] text-brand-blue lg:rounded-t-[14px]">
+    <header class="hero-head flex items-center gap-[0.7rem] bg-m3-surface px-4 py-[0.6rem] text-m3-on-surface shadow-m3-1 lg:rounded-m3-lg">
       <img class="logo block size-14 shrink-0" src="logo.png" alt="Vailankanni Matha Youth logo" width="192" height="192">
       <div class="brand min-w-0 text-left">
-        <h1 class="font-serif text-[1.12rem] font-bold leading-[1.2] tracking-[0.01em] text-brand-blue">Vailankanni Parish Youth</h1>
-        <p class="tagline mt-[0.2rem] text-[0.75rem] font-semibold leading-[1.3] tracking-[0.01em] text-muted">Christmas Cake Sale • with Poppins Bakers</p>
+        <h1 class="text-[1.25rem] font-medium leading-7 text-m3-primary">Vailankanni Parish Youth</h1>
+        <p class="tagline text-[0.75rem] font-medium leading-4 tracking-[0.5px] text-m3-on-surface-variant">Christmas Cake Sale • with Poppins Bakers</p>
       </div>
     </header>
 
@@ -46,7 +46,7 @@
       <picture>
         <source type="image/webp" srcset="poster.webp">
         <img
-          class="block h-auto w-full rounded-[14px] shadow-card"
+          class="block h-auto w-full rounded-m3-lg shadow-m3-1"
           src="poster.jpg"
           alt="Festive Plum Cakes Cake Sale poster for Vailankanni Parish Youth in association with Poppins Bakers, listing Dates &amp; Carrot Pudding, Butterscotch Pudding, and Rich Plum Cake prices, sold every Sunday from Nov 29 after the 6:30 and 8:30 AM Mass at Vailankanni Matha Church, Muthanallur."
           width="1024"
@@ -55,81 +55,85 @@
       </picture>
     </div>
 
-    <section class="fundraiser-info m-[0.9rem] rounded-card border border-line bg-cream-light px-[1.05rem] pb-[1.05rem] pt-4 shadow-card lg:mb-0" aria-label="Sale details">
-      <p class="assoc mb-[0.65rem] text-center font-serif text-[0.98rem] font-bold leading-[1.35] text-maroon-dark">Vailankanni Parish Youth in association with Poppins Bakers</p>
-      <p class="pickup text-center text-[0.84rem] text-muted">Pickup every Sunday from Nov 29 after 6:30 AM &amp; 8:30 AM Mass at Vailankanni Matha Church, Muthanallur, Harohalli, Sarjapura Road, Bengaluru 560099</p>
-      <p class="enquire mt-3 border-t border-dashed border-line pt-[0.7rem] text-center text-[0.88rem]" id="enquire">Enquiries: <a class="font-bold text-maroon no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 focus-visible:rounded-sm" href="tel:+917204017793">Cyril Martin • +91 72040 17793</a> <span class="enquire-sep mx-1 text-line" aria-hidden="true">|</span> <a class="font-bold text-maroon no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 focus-visible:rounded-sm" href="tel:+918050764341">Aashwin Alfy • +91 80507 64341</a></p>
+    <section class="fundraiser-info m-[0.9rem] rounded-m3-lg bg-m3-surface-container-low px-4 pb-4 pt-4 shadow-m3-1 lg:mb-0" aria-label="Sale details">
+      <p class="assoc mb-[0.65rem] text-center text-[1rem] font-medium leading-6 tracking-[0.15px] text-m3-primary">Vailankanni Parish Youth in association with Poppins Bakers</p>
+      <p class="pickup text-center text-[0.875rem] leading-5 text-m3-on-surface-variant">Pickup every Sunday from Nov 29 after 6:30 AM &amp; 8:30 AM Mass at Vailankanni Matha Church, Muthanallur, Harohalli, Sarjapura Road, Bengaluru 560099</p>
+      <p class="enquire mt-3 border-t border-m3-outline-variant pt-[0.7rem] text-center text-[0.875rem]" id="enquire">Enquiries: <a class="font-medium text-m3-primary no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary focus-visible:rounded-sm" href="tel:+917204017793">Cyril Martin • +91 72040 17793</a> <span class="enquire-sep mx-1 text-m3-outline-variant" aria-hidden="true">|</span> <a class="font-medium text-m3-primary no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary focus-visible:rounded-sm" href="tel:+918050764341">Aashwin Alfy • +91 80507 64341</a></p>
     </section>
     </aside>
 
     <div class="right-col lg:col-start-2 lg:row-start-2 lg:min-w-0 xl:row-start-1">
-    <h2 class="section-title mx-[1.05rem] mb-[0.55rem] mt-[0.4rem] scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] text-[0.72rem] font-bold uppercase tracking-[0.14em] text-muted lg:mt-0 lg:scroll-mb-5" id="menu-heading">Cake varieties</h2>
+    <h2 class="section-title mx-[1.05rem] mb-[0.55rem] mt-[0.4rem] scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant lg:mt-0 lg:scroll-mb-5" id="menu-heading">Cake varieties</h2>
     <div class="menu-list flex scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] flex-col gap-[0.7rem] px-[0.9rem] md:grid md:grid-cols-2 md:items-stretch lg:scroll-mb-5 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]" id="menu-list" role="list" aria-labelledby="menu-heading"></div>
-    <p class="cart-error mx-[0.9rem] mt-[0.7rem] hidden rounded-[10px] bg-maroon-soft px-3 py-[0.55rem] text-[0.85rem] font-semibold text-maroon-dark [&.visible]:block" id="cart-error" role="alert" aria-live="assertive"></p>
+    <p class="cart-error mx-[0.9rem] mt-[0.7rem] hidden rounded-m3-sm bg-m3-primary-container px-3 py-[0.55rem] text-[0.875rem] font-medium text-m3-on-primary-container [&.visible]:block" id="cart-error" role="alert" aria-live="assertive"></p>
 
-    <form class="order-form mx-[0.9rem] mt-[1.15rem] rounded-card border border-line bg-cream-light px-4 pb-[1.1rem] pt-4 shadow-card" id="order-form" novalidate>
-      <h2 class="mb-[0.85rem] text-[1.05rem] font-bold">Your details</h2>
+    <form class="order-form mx-[0.9rem] mt-[1.15rem] rounded-m3-lg bg-m3-surface-container-low px-4 pb-[1.1rem] pt-4 shadow-m3-1" id="order-form" novalidate>
+      <h2 class="mb-4 text-[1.375rem] font-normal leading-7 text-m3-on-surface">Your details</h2>
 
-      <div class="field mb-[0.85rem] last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:bg-maroon-soft [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-xl [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-xl [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-name">
-        <label class="mb-[0.3rem] block text-[0.8rem] font-bold" for="buyer-name">Buyer Name <span class="req text-maroon" aria-hidden="true">*</span></label>
-        <input class="w-full rounded-[10px] border-[1.5px] border-line bg-cream-light px-3 py-[0.7rem] text-base text-ink appearance-none placeholder:text-muted/60 focus:outline-none focus:border-maroon focus:shadow-[0_0_0_3px_rgba(122,10,16,0.45)]" type="text" id="buyer-name" name="name" autocomplete="name" required placeholder="Full name">
-        <p class="error mt-[0.3rem] hidden text-[0.78rem] font-semibold text-maroon" id="buyer-name-error"></p>
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-name">
+        <div class="relative">
+          <input class="peer block min-h-14 w-full rounded-m3-xs border border-m3-outline bg-transparent px-4 py-2 text-[1rem] text-m3-on-surface appearance-none hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder:text-transparent focus:placeholder:text-m3-on-surface-variant/70" type="text" id="buyer-name" name="name" autocomplete="name" required placeholder="Full name">
+          <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface-container-low px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem] motion-reduce:transition-none" for="buyer-name">Buyer Name <span class="req text-maroon" aria-hidden="true">*</span></label>
+        </div>
+        <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="buyer-name-error"></p>
       </div>
 
-      <div class="field mb-[0.85rem] last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:bg-maroon-soft [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-xl [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-xl [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-phone">
-        <label class="mb-[0.3rem] block text-[0.8rem] font-bold" for="buyer-phone">Phone Number <span class="req text-maroon" aria-hidden="true">*</span></label>
-        <input class="w-full rounded-[10px] border-[1.5px] border-line bg-cream-light px-3 py-[0.7rem] text-base text-ink appearance-none placeholder:text-muted/60 focus:outline-none focus:border-maroon focus:shadow-[0_0_0_3px_rgba(122,10,16,0.45)]" type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" required placeholder="10-digit mobile">
-        <p class="error mt-[0.3rem] hidden text-[0.78rem] font-semibold text-maroon" id="buyer-phone-error"></p>
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-phone">
+        <div class="relative">
+          <input class="peer block min-h-14 w-full rounded-m3-xs border border-m3-outline bg-transparent px-4 py-2 text-[1rem] text-m3-on-surface appearance-none hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder:text-transparent focus:placeholder:text-m3-on-surface-variant/70" type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" required placeholder="10-digit mobile">
+          <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface-container-low px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem] motion-reduce:transition-none" for="buyer-phone">Phone Number <span class="req text-maroon" aria-hidden="true">*</span></label>
+        </div>
+        <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="buyer-phone-error"></p>
       </div>
 
-      <div class="field mb-[0.85rem] last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:bg-maroon-soft [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-xl [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-xl [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-pickup-date">
-        <label class="mb-[0.3rem] block text-[0.8rem] font-bold" id="pickup-date-label">Pickup Date <span class="req text-maroon" aria-hidden="true">*</span></label>
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-pickup-date">
+        <label class="mb-2 block text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant" id="pickup-date-label">Pickup Date <span class="req text-maroon" aria-hidden="true">*</span></label>
         <div class="date-chips flex flex-wrap gap-[0.45rem]" id="date-chips" role="group" aria-labelledby="pickup-date-label"></div>
         <input type="hidden" id="pickup-date" name="pickupDate" value="">
-        <p class="error mt-[0.3rem] hidden text-[0.78rem] font-semibold text-maroon" id="pickup-date-error"></p>
+        <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="pickup-date-error"></p>
       </div>
 
-      <div class="field mb-[0.85rem] last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:bg-maroon-soft [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-xl [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-xl [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-mass">
-        <label class="mb-[0.3rem] block text-[0.8rem] font-bold" id="mass-label">Pickup after Mass <span class="req text-maroon" aria-hidden="true">*</span></label>
+      <div class="field mb-4 last-of-type:mb-0 scroll-mt-[0.85rem] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)] [&.invalid_.mass-options]:rounded-m3-md [&.invalid_.mass-options]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-mass">
+        <label class="mb-2 block text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant" id="mass-label">Pickup after Mass <span class="req text-maroon" aria-hidden="true">*</span></label>
         <div class="mass-options grid grid-cols-2 gap-2" id="mass-options" role="group" aria-labelledby="mass-label"></div>
         <input type="hidden" id="pickup-mass" name="mass" value="">
-        <p class="error mt-[0.3rem] hidden text-[0.78rem] font-semibold text-maroon" id="mass-error"></p>
+        <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="mass-error"></p>
       </div>
 
-      <p class="pickup-place mb-2 mt-[0.15rem] text-[0.8rem] leading-[1.4] text-muted" id="pickup-place">Pickup at Vailankanni Matha Church, Muthanallur after 6:30 AM &amp; 8:30 AM Mass</p>
-      <p class="closed-banner hidden rounded-[10px] bg-maroon-soft px-[0.8rem] py-[0.7rem] text-[0.88rem] font-bold text-maroon-dark [&.visible]:block" id="preorders-closed" role="status">Pre-orders closed. Pickups for this cake sale have ended.</p>
-      <p class="hint mt-[0.3rem] text-[0.75rem] text-muted [&.is-error]:text-gold-dark" id="stock-status"></p>
+      <p class="pickup-place mb-2 mt-[0.15rem] text-[0.875rem] leading-5 text-m3-on-surface-variant" id="pickup-place">Pickup at Vailankanni Matha Church, Muthanallur after 6:30 AM &amp; 8:30 AM Mass</p>
+      <p class="closed-banner hidden rounded-m3-sm bg-m3-primary-container px-3 py-[0.7rem] text-[0.875rem] font-medium text-m3-on-primary-container [&.visible]:block" id="preorders-closed" role="status">Pre-orders closed. Pickups for this cake sale have ended.</p>
+      <p class="hint mt-1 text-[0.75rem] text-m3-on-surface-variant [&.is-error]:text-gold-dark" id="stock-status"></p>
     </form>
     </div>
 
-    <aside class="sticky-bar fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-line bg-cream-light px-[0.9rem] pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-[0.7rem] shadow-[0_-8px_24px_rgba(42,35,6,0.1)] md:max-w-[640px] lg:sticky lg:bottom-auto lg:left-auto lg:top-4 lg:col-start-2 lg:row-start-1 lg:w-auto lg:max-w-none lg:translate-x-0 lg:rounded-card lg:border lg:px-[1.05rem] lg:pb-[1.05rem] lg:pt-4 lg:shadow-card xl:col-start-3" aria-label="Order summary">
-      <h2 class="summary-heading mb-[0.65rem] hidden text-[1.02rem] font-extrabold lg:block">Your order</h2>
+    <aside class="sticky-bar fixed inset-x-0 bottom-0 z-40 w-full bg-m3-surface-container px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-2px_6px_2px_rgba(0,0,0,0.15),0_-1px_2px_rgba(0,0,0,0.3)] lg:sticky lg:inset-x-auto lg:bottom-auto lg:top-4 lg:col-start-2 lg:row-start-1 lg:w-auto lg:rounded-m3-lg lg:bg-m3-surface-container-low lg:px-4 lg:pb-4 lg:pt-4 lg:shadow-m3-1 xl:col-start-3" aria-label="Order summary">
+      <h2 class="summary-heading mb-[0.65rem] hidden text-[1.375rem] font-normal leading-7 text-m3-on-surface lg:block">Your order</h2>
       <ul class="cart-lines mb-3 hidden max-h-[min(42vh,22rem)] overflow-auto lg:block" id="cart-lines"></ul>
       <div class="summary mb-[0.3rem] flex items-baseline justify-between font-bold">
-        <span class="count text-[0.92rem] text-muted" id="summary-count">0 items</span>
-        <span class="total text-[1.2rem] tabular-nums" id="summary-total">₹0</span>
+        <span class="count text-[0.875rem] font-medium text-m3-on-surface-variant" id="summary-count">0 items</span>
+        <span class="total text-[1.375rem] font-medium tabular-nums text-m3-on-surface" id="summary-total">₹0</span>
       </div>
-      <p class="order-confirm mb-[0.3rem] rounded-lg bg-[#e8f3dc] px-[0.55rem] py-[0.3rem] text-[0.8rem] font-bold leading-[1.3] text-pine" id="order-confirm" role="status" aria-live="polite" hidden></p>
-      <p class="payment-note mb-2 text-[0.75rem] font-semibold leading-[1.35] text-muted" id="payment-note">Payment: Pay at pickup, or UPI (number shown when you order)</p>
-      <div class="checkout-alert mb-2 hidden rounded-[10px] border-[1.5px] border-maroon bg-maroon-soft px-[0.7rem] pb-2 pt-[0.55rem] text-[0.8rem] font-semibold leading-[1.4] text-maroon-dark [&.visible]:block" id="checkout-alert" role="alert" aria-live="assertive" hidden></div>
+      <p class="order-confirm mb-[0.3rem] rounded-m3-sm bg-m3-tertiary-container px-2 py-1 text-[0.8125rem] font-medium leading-[1.3] text-m3-on-tertiary-container" id="order-confirm" role="status" aria-live="polite" hidden></p>
+      <p class="payment-note mb-2 text-[0.75rem] font-medium leading-4 tracking-[0.4px] text-m3-on-surface-variant" id="payment-note">Payment: Pay at pickup, or UPI (number shown when you order)</p>
+      <div class="checkout-alert mb-2 hidden rounded-m3-sm bg-m3-primary-container px-3 pb-2 pt-2 text-[0.8125rem] font-medium leading-[1.4] text-m3-on-primary-container [&.visible]:block" id="checkout-alert" role="alert" aria-live="assertive" hidden></div>
       <div class="cta-wrap w-full" id="place-order-wrap">
-        <button type="button" class="cta inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-0 bg-maroon px-4 py-[0.85rem] text-[1.02rem] font-extrabold tracking-[0.01em] text-cream-light [-webkit-tap-highlight-color:transparent] hover:enabled:bg-maroon-dark enabled:active:bg-maroon-dark disabled:cursor-wait disabled:opacity-75 [&.closed:disabled]:cursor-not-allowed [&.closed:disabled]:bg-pine [&.closed:disabled]:opacity-100 focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2" id="place-order-btn">Place Order via WhatsApp</button>
+        <button type="button" class="cta inline-flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-m3-lg border-0 bg-m3-primary px-6 py-4 text-[1rem] font-medium tracking-[0.1px] text-m3-on-primary shadow-m3-3 [-webkit-tap-highlight-color:transparent] hover:enabled:bg-[linear-gradient(#ffffff14,#ffffff14)] enabled:active:bg-[linear-gradient(#ffffff1f,#ffffff1f)] disabled:cursor-wait disabled:opacity-75 [&.closed:disabled]:cursor-not-allowed [&.closed:disabled]:bg-pine [&.closed:disabled]:opacity-100 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary" id="place-order-btn">Place Order via WhatsApp</button>
       </div>
     </aside>
   </div>
 
   <div class="form-alert fixed inset-0 z-[80] flex items-center justify-center p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]" id="form-alert" hidden>
-    <div class="form-alert-backdrop absolute inset-0 animate-[formAlertFade_0.2s_ease_forwards] bg-[rgba(82,5,5,0.55)] motion-reduce:animate-none" id="form-alert-backdrop" data-alert-dismiss="true"></div>
-    <div class="form-alert-dialog relative w-full max-w-[21.5rem] animate-[formAlertPop_0.2s_ease_forwards] rounded-card border-2 border-maroon bg-cream-light px-[1.15rem] pb-[1.1rem] pt-[1.2rem] text-ink shadow-[0_16px_40px_rgba(42,35,6,0.28)] motion-reduce:animate-none" id="form-alert-dialog" role="alertdialog" aria-modal="true" aria-labelledby="form-alert-title" aria-describedby="form-alert-body">
-      <h2 class="mb-[0.65rem] font-serif text-[1.35rem] font-bold tracking-[0.01em] text-maroon" id="form-alert-title">Almost there!</h2>
+    <div class="form-alert-backdrop absolute inset-0 animate-[formAlertFade_0.2s_ease_forwards] bg-[rgba(42,35,6,0.32)] motion-reduce:animate-none" id="form-alert-backdrop" data-alert-dismiss="true"></div>
+    <div class="form-alert-dialog relative w-full max-w-[21.5rem] animate-[formAlertPop_0.2s_ease_forwards] rounded-m3-xl bg-m3-surface-container-high p-6 text-m3-on-surface shadow-m3-3 motion-reduce:animate-none" id="form-alert-dialog" role="alertdialog" aria-modal="true" aria-labelledby="form-alert-title" aria-describedby="form-alert-body">
+      <h2 class="mb-4 text-[1.5rem] font-normal leading-8 text-m3-on-surface" id="form-alert-title">Almost there!</h2>
       <div id="form-alert-body">
-        <ul class="mb-4 list-disc pl-[1.15rem] text-[0.95rem] font-semibold leading-[1.45] text-ink" id="form-alert-list"></ul>
+        <ul class="mb-6 list-disc pl-[1.15rem] text-[0.875rem] font-normal leading-5 text-m3-on-surface-variant" id="form-alert-list"></ul>
       </div>
-      <button type="button" class="form-alert-ok min-h-11 w-full cursor-pointer rounded-xl border-0 bg-maroon px-4 py-[0.8rem] text-[1.02rem] font-extrabold text-cream-light active:bg-maroon-dark focus:outline-none focus-visible:outline-3 focus-visible:outline-gold focus-visible:outline-offset-2" id="form-alert-ok">OK, fix it</button>
+      <button type="button" class="form-alert-ok block min-h-12 w-full cursor-pointer rounded-full border-0 bg-m3-primary px-6 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-primary hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary min-[480px]:ml-auto min-[480px]:w-auto" id="form-alert-ok">OK, fix it</button>
     </div>
   </div>
 
-  <div class="toast pointer-events-none fixed bottom-[calc(var(--sticky-h)+0.6rem+env(safe-area-inset-bottom,0px))] left-1/2 z-50 w-[calc(100%-2rem)] max-w-[440px] -translate-x-1/2 translate-y-2 rounded-xl bg-ink px-[0.95rem] py-3 text-[0.86rem] font-semibold text-cream-light opacity-0 shadow-[0_10px_24px_rgba(42,35,6,0.25)] transition-[opacity,translate] duration-200 ease-in-out motion-reduce:transition-none md:max-w-[600px] lg:bottom-6 lg:left-auto lg:right-6 lg:w-96 lg:max-w-[calc(100vw-3rem)] lg:translate-x-0 [&.visible]:translate-y-0 [&.visible]:opacity-100" id="toast" role="status" aria-live="polite"></div>
+  <div class="toast pointer-events-none fixed bottom-[calc(var(--sticky-h)+0.6rem+env(safe-area-inset-bottom,0px))] left-1/2 z-50 w-[calc(100%-2rem)] max-w-[440px] -translate-x-1/2 translate-y-2 rounded-m3-xs bg-ink px-4 py-[0.875rem] text-[0.875rem] font-normal leading-5 tracking-[0.25px] text-cream-light opacity-0 shadow-m3-3 transition-[opacity,translate] duration-200 ease-in-out motion-reduce:transition-none md:max-w-[600px] lg:bottom-6 lg:left-auto lg:right-6 lg:w-96 lg:max-w-[calc(100vw-3rem)] lg:translate-x-0 [&.visible]:translate-y-0 [&.visible]:opacity-100" id="toast" role="status" aria-live="polite"></div>
 
   <!-- One settings file: poster, WhatsApp contacts, payment line, Sheets URL. -->
   <script src="site-config.js"></script>
@@ -595,8 +599,8 @@
       const el = document.getElementById('enquire');
       if (!el) return;
       el.innerHTML = 'Enquiries: ' + CONTACTS.map(function (c) {
-        return '<a class="font-bold text-maroon no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 focus-visible:rounded-sm" href="tel:+' + escapeHtml(c.number) + '">' + escapeHtml(c.name) + ' • ' + escapeHtml(contactDisplay(c)) + '</a>';
-      }).join(' <span class="enquire-sep mx-1 text-line" aria-hidden="true">|</span> ');
+        return '<a class="font-medium text-m3-primary no-underline whitespace-nowrap hover:underline focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary focus-visible:rounded-sm" href="tel:+' + escapeHtml(c.number) + '">' + escapeHtml(c.name) + ' • ' + escapeHtml(contactDisplay(c)) + '</a>';
+      }).join(' <span class="enquire-sep mx-1 text-m3-outline-variant" aria-hidden="true">|</span> ');
     }
 
     function applyPosterConfig() {
@@ -629,28 +633,28 @@
       els.menuList.innerHTML = '';
       MENU_ITEMS.forEach((item) => {
         const card = document.createElement('article');
-        card.className = 'menu-card flex justify-between gap-3 rounded-card border border-line bg-cream-light px-[0.95rem] pb-[0.9rem] pt-[0.95rem] shadow-card [&.sold-out]:opacity-[0.58]';
+        card.className = 'menu-card flex justify-between gap-3 md:flex-col md:justify-start rounded-m3-lg bg-m3-surface-container-low px-4 pb-4 pt-4 shadow-m3-1 [&.sold-out]:opacity-[0.6]';
         card.setAttribute('role', 'listitem');
 
         const tagHtml = item.tag
-          ? '<span class="tag inline-block rounded-full bg-maroon px-[0.4rem] py-[0.15rem] text-[0.62rem] font-bold uppercase tracking-[0.04em] text-cream-light">' + escapeHtml(item.tag) + '</span>'
+          ? '<span class="tag inline-block rounded-m3-sm bg-m3-secondary-container px-2 py-[0.15rem] text-[0.6875rem] font-medium uppercase tracking-[0.5px] text-m3-on-secondary-container">' + escapeHtml(item.tag) + '</span>'
           : '';
 
         card.innerHTML =
           '<div class="info min-w-0 flex-1">' +
             '<div class="name-row flex flex-wrap items-center gap-[0.4rem]">' +
-              '<h2 class="text-[1.02rem] font-bold leading-[1.3]">' + escapeHtml(item.name) + '</h2>' +
+              '<h2 class="text-[1rem] font-medium leading-6 tracking-[0.15px] text-m3-on-surface">' + escapeHtml(item.name) + '</h2>' +
               tagHtml +
             '</div>' +
-            '<p class="desc mt-[0.28rem] text-[0.8rem] text-muted">' + escapeHtml(item.description) + '</p>' +
-            '<p class="price mt-2 text-[1.05rem] font-extrabold text-ink">' + formatINR(item.price) +
-              ' <span class="weight ml-[0.15rem] text-[0.78rem] font-semibold text-muted">· ' + escapeHtml(item.weight) + '</span></p>' +
-            '<p class="stock-note mt-[0.3rem] text-[0.78rem] font-bold text-gold-dark" hidden></p>' +
+            '<p class="desc mt-1 text-[0.875rem] leading-5 text-m3-on-surface-variant">' + escapeHtml(item.description) + '</p>' +
+            '<p class="price mt-2 text-[1.125rem] font-medium leading-6 text-m3-primary">' + formatINR(item.price) +
+              ' <span class="weight ml-[0.15rem] text-[0.8125rem] font-medium text-m3-on-surface-variant">· ' + escapeHtml(item.weight) + '</span></p>' +
+            '<p class="stock-note mt-2 w-fit rounded-m3-sm bg-m3-secondary-container px-2 py-1 text-[0.75rem] font-medium leading-4 tracking-[0.4px] text-m3-on-secondary-container" hidden></p>' +
           '</div>' +
-          '<div class="stepper flex shrink-0 items-center gap-[0.35rem] self-end" data-id="' + escapeHtml(item.id) + '">' +
-            '<button type="button" class="minus size-11 shrink-0 cursor-pointer rounded-full border-[1.5px] border-maroon p-0 text-[1.45rem] font-semibold leading-none inline-flex items-center justify-center [-webkit-tap-highlight-color:transparent] disabled:cursor-default disabled:opacity-35 enabled:active:scale-[0.94] motion-reduce:enabled:active:scale-100 focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 bg-cream-light text-maroon hover:enabled:bg-maroon-soft" aria-label="Decrease quantity of ' + escapeHtml(displayName(item)) + '" disabled>−</button>' +
-            '<span class="qty min-w-[1.4rem] text-center text-[1.05rem] font-extrabold tabular-nums" aria-live="polite">0</span>' +
-            '<button type="button" class="plus size-11 shrink-0 cursor-pointer rounded-full border-[1.5px] border-maroon p-0 text-[1.45rem] font-semibold leading-none inline-flex items-center justify-center [-webkit-tap-highlight-color:transparent] disabled:cursor-default disabled:opacity-35 enabled:active:scale-[0.94] motion-reduce:enabled:active:scale-100 focus:outline-none focus-visible:outline-3 focus-visible:outline-maroon/45 focus-visible:outline-offset-2 bg-maroon text-cream-light hover:enabled:bg-maroon-dark" aria-label="Increase quantity of ' + escapeHtml(displayName(item)) + '">+</button>' +
+          '<div class="stepper flex shrink-0 items-center gap-1 self-end rounded-full bg-m3-surface-container-high p-1" data-id="' + escapeHtml(item.id) + '">' +
+            '<button type="button" class="minus size-12 shrink-0 cursor-pointer rounded-full border-0 p-0 text-[1.5rem] font-normal leading-none inline-flex items-center justify-center [-webkit-tap-highlight-color:transparent] disabled:cursor-default disabled:opacity-[0.38] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary bg-transparent text-m3-primary hover:enabled:bg-[linear-gradient(#2a230614,#2a230614)] enabled:active:bg-[linear-gradient(#2a23061f,#2a23061f)]" aria-label="Decrease quantity of ' + escapeHtml(displayName(item)) + '" disabled>−</button>' +
+            '<span class="qty min-w-[1.6rem] text-center text-[1rem] font-medium tabular-nums text-m3-on-surface" aria-live="polite">0</span>' +
+            '<button type="button" class="plus size-12 shrink-0 cursor-pointer rounded-full border-0 p-0 text-[1.5rem] font-normal leading-none inline-flex items-center justify-center [-webkit-tap-highlight-color:transparent] disabled:cursor-default disabled:opacity-[0.38] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary bg-m3-primary text-m3-on-primary hover:enabled:bg-[linear-gradient(#ffffff14,#ffffff14)] enabled:active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" aria-label="Increase quantity of ' + escapeHtml(displayName(item)) + '">+</button>' +
           '</div>';
 
         const minus = card.querySelector('.minus');
@@ -695,14 +699,14 @@
     function renderCartLines(cart) {
       if (!els.cartLines) return;
       if (!cart || !cart.length) {
-        els.cartLines.innerHTML = '<li class="cart-empty pb-2 pt-[0.2rem] text-[0.88rem] text-muted">Your cart is empty</li>';
+        els.cartLines.innerHTML = '<li class="cart-empty pb-2 pt-[0.2rem] text-[0.875rem] text-m3-on-surface-variant">Your cart is empty</li>';
         return;
       }
       els.cartLines.innerHTML = cart.map(function (line) {
-        return '<li class="cart-line grid grid-cols-[auto_1fr_auto] items-baseline gap-x-2 gap-y-[0.35rem] border-b border-line py-[0.35rem] text-[0.86rem]">' +
-          '<span class="cart-line-qty font-extrabold text-muted">' + line.qty + ' ×</span>' +
+        return '<li class="cart-line grid grid-cols-[auto_1fr_auto] items-baseline gap-x-2 gap-y-[0.35rem] border-b border-m3-outline-variant py-[0.4rem] text-[0.875rem]">' +
+          '<span class="cart-line-qty font-medium text-m3-on-surface-variant">' + line.qty + ' ×</span>' +
           '<span class="cart-line-name min-w-0">' + escapeHtml(line.name) + '</span>' +
-          '<span class="cart-line-total font-extrabold tabular-nums">' + formatINR(line.lineTotal) + '</span>' +
+          '<span class="cart-line-total font-medium tabular-nums">' + formatINR(line.lineTotal) + '</span>' +
           '</li>';
       }).join('');
     }
@@ -736,7 +740,7 @@
       open.forEach(function (date) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'date-chip inline-flex min-h-11 cursor-pointer flex-col items-center justify-center rounded-full border-[1.5px] border-line bg-cream-light px-[0.85rem] py-[0.55rem] text-[0.86rem] font-bold text-ink appearance-none [-webkit-tap-highlight-color:transparent] disabled:cursor-not-allowed aria-pressed:border-maroon aria-pressed:bg-maroon-soft aria-pressed:text-maroon-dark [&:hover:not(:disabled):not([aria-pressed=true])]:border-maroon [&:hover:not(:disabled):not([aria-pressed=true])]:bg-maroon-soft focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(122,10,16,0.45)]';
+        btn.className = 'date-chip relative inline-flex min-h-12 cursor-pointer flex-col items-center justify-center rounded-m3-sm border border-m3-outline bg-transparent px-4 py-[0.4rem] text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant appearance-none [-webkit-tap-highlight-color:transparent] disabled:cursor-not-allowed disabled:opacity-[0.38] aria-pressed:border-transparent aria-pressed:bg-m3-secondary-container aria-pressed:pl-8 aria-pressed:text-m3-on-secondary-container aria-pressed:before:absolute aria-pressed:before:left-2.5 aria-pressed:before:top-1/2 aria-pressed:before:-translate-y-1/2 aria-pressed:before:text-[1rem] aria-pressed:before:content-["✓"] [&:hover:not(:disabled)]:bg-[linear-gradient(#2a230614,#2a230614)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary';
         btn.dataset.id = date.id;
         btn.textContent = pickupDisplayLabel(date);
         btn.addEventListener('click', function () { selectPickupDate(date.id); });
@@ -750,7 +754,7 @@
       MASS_TIMES.forEach(function (mass) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'mass-option min-h-14 cursor-pointer rounded-[14px] border-[1.5px] border-line bg-cream-light px-[0.6rem] py-[0.9rem] text-[0.95rem] font-extrabold text-ink appearance-none [-webkit-tap-highlight-color:transparent] aria-pressed:border-maroon aria-pressed:bg-maroon-soft aria-pressed:text-maroon-dark [&:hover:not(:disabled):not([aria-pressed=true])]:border-maroon [&:hover:not(:disabled):not([aria-pressed=true])]:bg-maroon-soft focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(122,10,16,0.45)]';
+        btn.className = 'mass-option min-h-14 cursor-pointer rounded-m3-md border border-m3-outline bg-transparent px-3 py-3 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant appearance-none [-webkit-tap-highlight-color:transparent] disabled:cursor-not-allowed disabled:opacity-[0.38] aria-pressed:border-transparent aria-pressed:bg-m3-secondary-container aria-pressed:text-m3-on-secondary-container aria-pressed:before:mr-2 aria-pressed:before:content-["✓"] [&:hover:not(:disabled)]:bg-[linear-gradient(#2a230614,#2a230614)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary';
         btn.dataset.id = mass.id;
         btn.textContent = mass.label;
         btn.setAttribute('aria-pressed', mass.id === els.mass.value ? 'true' : 'false');
@@ -1450,9 +1454,9 @@
       els.formAlertTitle.textContent = closed ? 'Pre-orders closed' : (stock ? 'Out of stock' : 'Almost there!');
       els.formAlertOk.textContent = (closed || stock) ? 'OK' : 'OK, fix it';
       if (closed) {
-        els.formAlertBody.innerHTML = '<p class="mb-4 text-[0.95rem] font-semibold text-ink" id="form-alert-list">' + escapeHtml(issues[0].message) + '</p>';
+        els.formAlertBody.innerHTML = '<p class="mb-6 text-[0.875rem] leading-5 text-m3-on-surface-variant" id="form-alert-list">' + escapeHtml(issues[0].message) + '</p>';
       } else {
-        els.formAlertBody.innerHTML = '<ul class="mb-4 list-disc pl-[1.15rem] text-[0.95rem] font-semibold leading-[1.45] text-ink" id="form-alert-list">' +
+        els.formAlertBody.innerHTML = '<ul class="mb-6 list-disc pl-[1.15rem] text-[0.875rem] font-normal leading-5 text-m3-on-surface-variant" id="form-alert-list">' +
           issues.map(function (issue) {
             return '<li class="my-[0.2rem]">' + escapeHtml(issue.message) + '</li>';
           }).join('') + '</ul>';
