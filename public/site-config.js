@@ -1,7 +1,7 @@
 /*
  * site-config.js — the ONE place to edit sale settings.
  *
- * Used by the order page, admin.html, staff.html (as window.SITE_CONFIG)
+ * Used by the order page, orders.html, staff.html (as window.SITE_CONFIG)
  * and by the Netlify order function (via require/import). Edit, commit,
  * push: Netlify redeploys and every page + the function pick it up.
  *

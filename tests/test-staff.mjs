@@ -352,7 +352,7 @@ function seed(world, extra = {}) {
 }
 
 // ---- static source checks ----
-assert('version is 2026-11-24.3', /var SCRIPT_VERSION = '2026-11-24.3'/.test(src));
+assert('version is 2026-11-24.4', /var SCRIPT_VERSION = '2026-11-24.4'/.test(src));
 assert('doPost routes staff actions without using processOrder_ first',
   /isStaffAction_\(data\.action\)/.test(src) &&
   /handleStaffAction_\(data\)/.test(src));
@@ -517,7 +517,7 @@ assert('void walk-ins are skipped in the summary',
     pin: '2468',
     clientToken: 'deviceTokenE5'
   });
-  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-24.3');
+  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-24.4');
 
   const listed = world.ctx.handleStaffAction_({
     action: 'staff_orders',
@@ -567,6 +567,56 @@ assert('void walk-ins are skipped in the summary',
     expectedStatus: 'Pending'
   });
   assert('unknown orderId is not_found', found.status === 'not_found' && found.ok === false);
+}
+
+// ---- walk-in recorded time (Recorded At) ----
+{
+  const world = makeWorld({ props: { STAFF_PIN: '2468' } });
+  seed(world);
+  const NOW = Date.UTC(2026, 10, 24, 10, 0, 0);
+  const norm = (v) => world.ctx.normalizeRecordedAt_(v, NOW);
+  assert('recordedAt: a valid recent ISO time is kept as ISO', norm('2026-11-24T09:15:20.000Z') === '2026-11-24T09:15:20.000Z', norm('2026-11-24T09:15:20.000Z'));
+  assert('recordedAt: non-UTC offsets are normalised to ISO UTC', norm('2026-11-24T14:45:20+05:30') === '2026-11-24T09:15:20.000Z', norm('2026-11-24T14:45:20+05:30'));
+  assert('recordedAt: garbage falls back to now', norm('not a date') === new Date(NOW).toISOString() && norm('') === new Date(NOW).toISOString() && norm(undefined) === new Date(NOW).toISOString() && norm(12345) === new Date(NOW).toISOString());
+  assert('recordedAt: older than 14 days falls back to now', norm('2026-11-01T00:00:00.000Z') === new Date(NOW).toISOString());
+  assert('recordedAt: more than 5 minutes in the future falls back to now', norm('2026-11-24T10:30:00.000Z') === new Date(NOW).toISOString());
+  assert('recordedAt: up to 5 minutes ahead is tolerated (clock skew)', norm('2026-11-24T10:04:00.000Z') === '2026-11-24T10:04:00.000Z');
+
+  const hourAgo = new Date(Date.now() - 3600 * 1000).toISOString();
+  const first = world.ctx.staffAddWalkIn_({
+    walkinId: 'WI-REC-1', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 1, payment: 'Cash', recordedAt: hourAgo
+  });
+  assert('staff_add_walkin returns the recorded time', first.ok && first.recordedAt === hourAgo, JSON.stringify(first));
+  const tab = world.sheets['Walk-in Sales'];
+  const recCol = tab.data[0].indexOf('Recorded At');
+  assert('Recorded At column is created on the Walk-in Sales tab', recCol >= 0, JSON.stringify(tab.data[0]));
+  assert('Recorded At is stored as the ISO string', tab.data[first.row - 1][recCol] === hourAgo, String(tab.data[first.row - 1][recCol]));
+
+  const bad = world.ctx.staffAddWalkIn_({
+    walkinId: 'WI-REC-2', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 1, payment: 'UPI',
+    recordedAt: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
+  });
+  const fut = world.ctx.staffAddWalkIn_({
+    walkinId: 'WI-REC-3', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 1, payment: 'UPI',
+    recordedAt: new Date(Date.now() + 3600 * 1000).toISOString()
+  });
+  const none = world.ctx.staffAddWalkIn_({
+    walkinId: 'WI-REC-4', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 1, payment: 'UPI'
+  });
+  const near = (iso) => Math.abs(Date.parse(iso) - Date.now()) < 60 * 1000;
+  assert('too-old, future and missing recordedAt all fall back to the server time', near(bad.recordedAt) && near(fut.recordedAt) && near(none.recordedAt), JSON.stringify({ bad: bad.recordedAt, fut: fut.recordedAt, none: none.recordedAt }));
+
+  const listed = world.ctx.staffWalkInsFromValues_(tab.data, { date: '2026-11-29', dates: DATES });
+  const row1 = listed.walkins.find((w) => w.walkinId === 'WI-REC-1');
+  assert('staff_walkins rows return recordedAt', !!row1 && row1.recordedAt === hourAgo, JSON.stringify(row1));
+  const legacy = listed.walkins.find((w) => w.walkinId && !/^WI-REC-/.test(w.walkinId));
+  assert('legacy rows without a recorded time return an empty string', !!legacy && legacy.recordedAt === '', JSON.stringify(legacy));
+
+  const dup = world.ctx.staffAddWalkIn_({
+    walkinId: 'WI-REC-1', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 1, payment: 'Cash',
+    recordedAt: new Date(Date.now() - 60 * 1000).toISOString()
+  });
+  assert('a duplicate walkinId keeps the original time', dup.ok && dup.duplicate === true && tab.data[first.row - 1][recCol] === hourAgo, JSON.stringify({ dup, cell: tab.data[first.row - 1][recCol] }));
 }
 
 // ---- walk-in idempotency, void, summary exclusion ----
@@ -648,7 +698,7 @@ assert('void walk-ins are skipped in the summary',
     postData: { contents: JSON.stringify({ action: 'staff_login', pin: '2468', clientToken: 'deviceTokenF6' }) }
   });
   const staffBody = JSON.parse(staffRes.body);
-  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-24.3');
+  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-24.4');
 
   const beforeRows = world.sheets['Orders'].data.length;
   const order = {

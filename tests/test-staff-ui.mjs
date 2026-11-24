@@ -3,7 +3,7 @@ import { JSDOM } from 'jsdom';
 import fs from 'fs';
 
 const staffHtml = readPage('staff.html');
-const adminHtml = readPage('admin.html');
+const ordersHtml = readPage('orders.html');
 const indexHtml = readPage('index.html');
 
 const results = [];
@@ -18,7 +18,7 @@ const LIVE = 'AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJ
 assert('staff page has robots noindex', /<meta\s+name=["']robots["']\s+content=["']noindex/i.test(staffHtml));
 assert('staff page uses the live Sheets URL', staffHtml.includes(LIVE));
 assert('staff page has no WhatsApp links', !/whatsapp|wa\.me/i.test(fs.readFileSync(PUBLIC + '/staff.html', 'utf8')));
-assert('admin.html links to Staff mode', /href=["']staff\.html["']/.test(adminHtml) && /Staff mode/.test(adminHtml));
+assert('orders.html links to Staff mode', /href=["']staff\.html["']/.test(ordersHtml) && /Staff mode/.test(ordersHtml));
 assert('index.html does not link to staff.html', !/staff\.html/.test(fs.readFileSync(PUBLIC + '/index.html', 'utf8')));
 assert('PIN is stored in sessionStorage, not localStorage',
   staffHtml.includes("sessionStorage.setItem(PIN_KEY") &&
@@ -498,7 +498,7 @@ async function loadPreview() {
   assert('desktop layout: order cards grid 2 then 3 columns',
     /id="order-list"/.test(html) && html.includes('min-[720px]:grid-cols-2') && html.includes('min-[1000px]:grid-cols-3'));
   assert('desktop layout: cake grid on the left, sticky preview on the right',
-    /walkin-form">[\s\S]*id="item-grid"[\s\S]*<div class="walkin-side [^"]*min-\[720px\]:sticky[^"]*">[\s\S]*id="live-summary"[\s\S]*id="record-sale"/.test(html));
+    /walkin-form[^"]*">[\s\S]*id="item-grid"[\s\S]*<div class="walkin-side [^"]*min-\[720px\]:sticky[^"]*">[\s\S]*id="live-summary"[\s\S]*id="record-sale"/.test(html));
   assert('Recent walk-ins is a separate third tab panel after the Walk-in panel',
     /id="panel-walkin"[\s\S]*id="record-sale"[\s\S]*id="panel-recent"[\s\S]*id="walkin-list"/.test(html) &&
     !/id="panel-walkin"[^]*?id="walkin-list"[^]*?id="panel-recent"/.test(html));
@@ -558,6 +558,216 @@ async function loadPreview() {
   await sleep(40);
   assert('an untouched page re-selects today when the day changes', pg.window.__staff.getState().pickupDate === '2026-12-06');
   pg.window.close();
+}
+
+// ---- Recent walk-ins: time+name pill, search, grouping, Undo all; Clear all ----
+{
+  const page = await loadPreview();
+  const { document, window } = page;
+  const S = window.__staff;
+  const clock = (iso) => {
+    const d = new Date(iso);
+    const h = d.getHours();
+    return (h % 12 || 12) + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + (h >= 12 ? 'PM' : 'AM');
+  };
+  const cards = () => Array.from(document.querySelectorAll('#walkin-list article'));
+  const cardFor = (name) => cards().find((c) => (c.querySelector('.walkin-customer') || {}).textContent === name);
+
+  await S.setTab('recent');
+  await waitFor(() => cards().length >= 2);
+  assert('recent: search box exists in the Recent panel',
+    document.getElementById('panel-recent').contains(document.getElementById('recent-search')) &&
+    document.getElementById('recent-search').type === 'search');
+  assert('recent: unnamed legacy sales stay separate cards (one per sale)', cards().length === 2, String(cards().length));
+  const demoPill = cards()[0].querySelector('.walkin-pill');
+  assert('recent: the pill shows the time recorded (local 12-hour) and Walk-in when unnamed',
+    /\d{1,2}:\d{2} (AM|PM)/.test(demoPill.textContent) && /Walk-in/.test(demoPill.textContent), demoPill.textContent);
+  assert('recent: the time comes from recordedAt',
+    cards().some((c) => c.textContent.includes(clock('2026-11-29T03:35:00.000Z'))) &&
+    cards().some((c) => c.textContent.includes(clock('2026-11-29T04:05:00.000Z'))));
+  assert('recent: the newest sale is listed first',
+    cards()[0].textContent.includes(clock('2026-11-29T04:05:00.000Z')));
+
+  // record: Maria with two cakes, then "maria" (case-insensitive) with one more, then an unnamed 2-cake sale
+  await S.setTab('walkin');
+  S.setLineQty('Dates & Carrot Pudding (700g)', 1);
+  S.setLineQty('Rich Plum Cake (400g)', 2);
+  await S.addWalkin({ customer: 'Maria' });
+  S.setLineQty('Butterscotch Pudding (350g)', 1);
+  await S.addWalkin({ customer: 'maria' });
+  S.setLineQty('Rich Plum Cake (800g)', 1);
+  S.setLineQty('Dates & Carrot Pudding (350g)', 3);
+  await S.addWalkin({});
+  await S.setTab('recent');
+  await waitFor(() => cards().length === 4);
+  const maria = cardFor('Maria');
+  assert('recent: lines for the same customer (case-insensitive) merge into ONE card',
+    cards().length === 4 && maria && maria.querySelectorAll('li[data-walkin]').length === 3 &&
+    cards().filter((c) => /maria/i.test((c.querySelector('.walkin-customer') || {}).textContent || '')).length === 1,
+    String(cards().length));
+  const mariaTotal = Number(maria.querySelector('.walkin-total').textContent.replace(/[^\d]/g, ''));
+  assert('recent: the merged card total = 650 + 2x350 + 350', mariaTotal === 650 + 700 + 350, String(mariaTotal));
+  const unnamed = cards().find((c) => /Walk-in/.test(c.querySelector('.walkin-pill').textContent) && c.querySelectorAll('li[data-walkin]').length === 2);
+  assert('recent: an unnamed multi-cake sale is ONE card of its own lines', !!unnamed);
+  assert('recent: the badge counts cards (customers/sales), not lines',
+    document.getElementById('recent-count').textContent === '4' && document.querySelectorAll('#walkin-list li[data-walkin]').length === 7);
+  assert('recent: lines of one sale share a sale-id prefix and one recordedAt',
+    (() => {
+      const lines = S.getState().walkins.filter((w) => !w.voided && w.customer === 'Maria');
+      const first = lines.filter((w) => /^WI-[A-Z0-9]+-[A-Z0-9]+-\d+$/.test(w.walkinId));
+      const byBase = {};
+      first.forEach((w) => { (byBase[w.walkinId.split('-').slice(0, 3).join('-')] = byBase[w.walkinId.split('-').slice(0, 3).join('-')] || []).push(w); });
+      return Object.values(byBase).some((g) => g.length === 2 && g[0].recordedAt && g[0].recordedAt === g[1].recordedAt && !isNaN(new Date(g[0].recordedAt)));
+    })());
+  assert('recent: a just-recorded sale has a time in its pill', /\d{1,2}:\d{2} (AM|PM)/.test(maria.querySelector('.walkin-pill').textContent) && /Maria/.test(maria.querySelector('.walkin-pill').textContent));
+
+  // search
+  const search = document.getElementById('recent-search');
+  const type = (v) => { search.value = v; search.dispatchEvent(new window.Event('input', { bubbles: true })); };
+  type('maria');
+  assert('recent search: filters by customer name', cards().length === 1 && /Maria/.test(cards()[0].textContent));
+  type('BUTTERSCOTCH');
+  assert('recent search: matches cake names case-insensitively', cards().length === 1 && /Maria/.test(cards()[0].textContent));
+  type('upi');
+  assert('recent search: matches the payment', cards().length >= 1 && cards().every((c) => /UPI/.test(c.textContent)));
+  type('zzzz-nothing');
+  assert('recent search: shows a No matches state', cards().length === 0 && /No matches/.test(document.getElementById('walkin-list').textContent));
+  assert('recent search: the clear button appears and the badge still counts all cards',
+    !document.getElementById('recent-search-clear').classList.contains('hidden') && document.getElementById('recent-count').textContent === '4');
+  document.getElementById('recent-search-clear').click();
+  assert('recent search: clear resets the query and shows every card', search.value === '' && cards().length === 4);
+
+  // undo one line vs Undo all
+  const mariaLine = cardFor('Maria').querySelector('li[data-walkin] [data-undo]');
+  mariaLine.click();
+  await sleep(40);
+  assert('recent: Undo on a line removes only that line',
+    cardFor('Maria') && cardFor('Maria').querySelectorAll('li[data-walkin]').length === 2 && cards().length === 4);
+  const undoAllBtn = cardFor('Maria').querySelector('[data-undo-all]');
+  assert('recent: cards with 2+ lines have an Undo all button', !!undoAllBtn);
+  undoAllBtn.click();
+  await waitFor(() => !cardFor('Maria'));
+  assert('recent: Undo all voids every line of the card and the badge drops to 3',
+    !cardFor('Maria') && cards().length === 3 && document.getElementById('recent-count').textContent === '3');
+  const single = cards().find((c) => c.querySelectorAll('li[data-walkin]').length === 1);
+  assert('recent: single-line cards do not show Undo all', !!single && !single.querySelector('[data-undo-all]'));
+  window.close();
+}
+
+// ---- recordedAt travels in the payload and survives the outbox ----
+{
+  const store = { pin: '2468', walkins: [] };
+  let failNetwork = false;
+  const fetchImpl = makeFetch(({ body }) => {
+    if (body.action === 'staff_login') return { ok: true, status: 'ok', version: 'x' };
+    if (failNetwork) throw new Error('offline');
+    if (body.action === 'staff_orders') return { ok: true, pickupDate: '2026-11-29', orders: [], counts: { toCollect: 0, toCollectAmount: 0, pickedUp: 0, pending: 0 }, dates: [{ id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30' }] };
+    if (body.action === 'staff_walkins') return { ok: true, date: '2026-11-29', walkins: store.walkins.slice() };
+    if (body.action === 'staff_add_walkin') {
+      const row = { walkinId: body.walkinId, date: body.date, item: body.item, qty: body.qty, amount: 650, payment: body.payment, customer: body.customer || '', recordedAt: body.recordedAt, voided: false };
+      store.walkins.unshift(row);
+      return Object.assign({ ok: true }, row);
+    }
+    return { ok: false, error: 'unknown' };
+  });
+  const page = load('', fetchImpl);
+  const { window } = page;
+  await waitFor(() => page.document.getElementById('pin-gate') && !page.document.getElementById('pin-gate').hidden);
+  await window.__staff.login('2468');
+  await window.__staff.setTab('walkin');
+  window.__staff.setLineQty('Dates & Carrot Pudding (700g)', 1);
+  window.__staff.setLineQty('Rich Plum Cake (400g)', 1);
+  const before = Date.now();
+  await window.__staff.addWalkin({ customer: 'Online Olive' });
+  const adds = fetchImpl.calls.filter((c) => c.body.action === 'staff_add_walkin');
+  assert('recordedAt: every line of a sale posts the same ISO recordedAt',
+    adds.length === 2 && adds[0].body.recordedAt === adds[1].body.recordedAt &&
+    !isNaN(new Date(adds[0].body.recordedAt)) && new Date(adds[0].body.recordedAt).toISOString() === adds[0].body.recordedAt &&
+    new Date(adds[0].body.recordedAt).getTime() >= before - 1000, JSON.stringify(adds.map((c) => c.body.recordedAt)));
+
+  failNetwork = true;
+  window.__staff.setLineQty('Rich Plum Cake (800g)', 1);
+  window.__staff.setLineQty('Butterscotch Pudding (700g)', 1);
+  await window.__staff.addWalkin({ customer: 'Offline Otto' });
+  const q = window.__staff.getState().outbox.filter((e) => e.type === 'walkin' && e.payload.customer === 'Offline Otto');
+  assert('recordedAt: queued (offline) lines keep their true time in the outbox',
+    q.length === 2 && q[0].payload.recordedAt && q[0].payload.recordedAt === q[1].payload.recordedAt, JSON.stringify(q.map((e) => e.payload.recordedAt)));
+  assert('recordedAt: an offline sale shows as ONE queued card with its time',
+    (() => {
+      const cs = Array.from(page.document.querySelectorAll('#walkin-list article')).filter((c) => /Offline Otto/.test(c.textContent));
+      return cs.length === 1 && cs[0].querySelectorAll('li[data-walkin]').length === 2 && /Queued/.test(cs[0].textContent) && /\d{1,2}:\d{2} (AM|PM)/.test(cs[0].textContent);
+    })());
+  failNetwork = false;
+  await window.__staff.flushOutbox({ force: true });
+  await sleep(40);
+  const sent = fetchImpl.calls.filter((c) => c.body.action === 'staff_add_walkin' && c.body.customer === 'Offline Otto');
+  assert('recordedAt: the retry posts the original recordedAt', sent.length >= 2 && sent.every((c) => c.body.recordedAt === q[0].payload.recordedAt));
+  window.close();
+}
+
+// ---- Clear all ----
+{
+  const page = await loadPreview();
+  const { document, window } = page;
+  const S = window.__staff;
+  await S.setTab('walkin');
+  const clearBtn = document.getElementById('clear-sale');
+  assert('clear all: the button is in the preview panel next to Record sale, >=48px',
+    document.getElementById('walkin-preview').contains(clearBtn) && /min-h-12/.test(clearBtn.className) && /Clear all/.test(clearBtn.textContent) &&
+    clearBtn.parentElement === document.getElementById('record-sale').parentElement);
+  assert('clear all: disabled when there is nothing to clear', clearBtn.disabled === true);
+
+  const dateBefore = S.getState().pickupDate;
+  const recordedBefore = S.getState().walkins.length;
+  const outboxBefore = S.getState().outbox.length;
+  S.setLineQty('Dates & Carrot Pudding (700g)', 2);
+  S.setLineQty('Rich Plum Cake (400g)', 1);
+  S.setPayment('UPI');
+  const cust = document.getElementById('walkin-customer');
+  cust.value = 'Clara';
+  cust.dispatchEvent(new window.Event('input', { bubbles: true }));
+  S.setPayment('Cash');
+  S.setReceived(2000);
+  S.setPayment('UPI');
+  S.setReceived(500);
+  assert('clear all: enabled once the form has anything in it', clearBtn.disabled === false);
+  const snapReceived = S.getState().received;
+  clearBtn.click();
+  const st = S.getState();
+  assert('clear all: empties the cart, name, amount received and resets payment to Cash',
+    S.getCart().length === 0 && st.customer === '' && cust.value === '' && st.received === '' && st.payment === 'Cash' &&
+    document.getElementById('pay-cash').getAttribute('aria-pressed') === 'true');
+  assert('clear all: preview, total and Record button update',
+    document.getElementById('record-sale').disabled === true && /0/.test(document.getElementById('live-amount').textContent) &&
+    document.getElementById('cash-panel').classList.contains('hidden') && clearBtn.disabled === true);
+  assert('clear all: every pill quantity is back to 0',
+    Array.from(document.querySelectorAll('#item-grid .item-qty')).every((e) => e.textContent === '0'));
+  assert('clear all: does not change the selected date or touch recorded walk-ins and the outbox',
+    st.pickupDate === dateBefore && st.walkins.length === recordedBefore && st.outbox.length === outboxBefore);
+  const toastEl = Array.from(document.querySelectorAll('#toasts > div')).find((t) => /Sale cleared/.test(t.textContent));
+  assert('clear all: shows a Sale cleared snackbar with an Undo action', !!toastEl && /Undo/.test(toastEl.textContent) && !!toastEl.querySelector('button.toast-action'));
+  assert('clear all: focus moves to the cake grid (not lost on the disabled button)',
+    document.getElementById('item-grid').contains(document.activeElement));
+  toastEl.querySelector('button.toast-action').click();
+  const back = S.getState();
+  assert('clear all: Undo restores the cart, name, amount and payment exactly',
+    S.getCart().length === 2 && S.getCart().find((l) => l.item === 'Dates & Carrot Pudding (700g)').qty === 2 &&
+    S.getCart().find((l) => l.item === 'Rich Plum Cake (400g)').qty === 1 &&
+    back.customer === 'Clara' && cust.value === 'Clara' && back.payment === 'UPI' && back.received === snapReceived,
+    JSON.stringify({ c: back.customer, p: back.payment, r: back.received, s: snapReceived }));
+  assert('clear all: Undo removes the snackbar and re-enables Record sale',
+    !Array.from(document.querySelectorAll('#toasts > div')).some((t) => /Sale cleared/.test(t.textContent)) &&
+    document.getElementById('record-sale').disabled === false);
+  assert('clear all: Undo leaves recorded walk-ins and the outbox alone',
+    S.getState().walkins.length === recordedBefore && S.getState().outbox.length === outboxBefore);
+
+  // a payment-only change counts as "something to clear"
+  clearBtn.click();
+  S.setPayment('UPI');
+  assert('clear all: a non-default payment alone enables the button', clearBtn.disabled === false);
+  clearBtn.click();
+  assert('clear all: resets payment back to Cash', S.getState().payment === 'Cash' && clearBtn.disabled === true);
+  window.close();
 }
 
 const failed = results.filter((r) => !r.ok);

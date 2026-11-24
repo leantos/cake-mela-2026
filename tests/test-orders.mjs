@@ -2,7 +2,7 @@ import { readPage, CODE_GS, ROOT, PUBLIC } from './helpers.mjs';
 import { JSDOM } from 'jsdom';
 import fs from 'fs';
 
-const html = readPage('admin.html');
+const html = readPage('orders.html');
 const results = [];
 function assert(name, cond, detail) {
   results.push({ name, ok: !!cond, detail: cond ? undefined : (detail ?? 'failed') });
@@ -11,12 +11,12 @@ function assert(name, cond, detail) {
 }
 
 assert('stylesheet is Tailwind (compiled tailwind.css)', /<link[^>]+href=["']tailwind\.css["']/.test(html));
-assert('desktop app is full width (no max-width cap)', !html.includes('lg:max-w-[1600px]') && /class="app min-h-screen w-full/.test(html));
+assert('desktop app is full width and full height, padding not margins', !html.includes('lg:max-w-[1600px]') && /class="app flex min-h-dvh w-full flex-col/.test(html) && !/lg:p-\[clamp/.test(html));
 assert('wide screens use a 2-column dashboard grid',
   /min-\[1100px\]:grid-cols-\[minmax\(0,1fr\)_minmax\(520px,1\.15fr\)\]/.test(html));
 assert('desktop table type is bumped to at least 1rem', /lg:text-\[1\.05rem\]/.test(html));
 assert('has robots noindex', /<meta\s+name=["']robots["']\s+content=["']noindex["']/.test(html));
-assert('has no WhatsApp links or buttons', !/whatsapp|wa\.me/i.test(fs.readFileSync(PUBLIC + '/admin.html', 'utf8')));
+assert('has no WhatsApp links or buttons', !/whatsapp|wa\.me/i.test(fs.readFileSync(PUBLIC + '/orders.html', 'utf8')));
 assert('uses the live Sheets URL', html.includes('AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs'));
 assert('print stylesheet expands or is print-friendly', /@media print/.test(html));
 assert('uses details/summary for panels', /<details/.test(html) === false || true); // panels are rendered in JS
@@ -106,7 +106,7 @@ const mock = {
 };
 
 const dom = new JSDOM(html, {
-  url: 'https://example.com/admin.html',
+  url: 'https://example.com/orders.html',
   runScripts: 'dangerously',
   pretendToBeVisual: true,
   beforeParse(win) {
@@ -170,7 +170,7 @@ assert('progress bar shows picked up over ordered',
   /10 of 23 picked up/.test(document.querySelector('.progress-label')?.textContent || ''),
   document.querySelector('.progress')?.outerHTML?.slice(0, 300));
 
-window.__admin.setSelected('all');
+window.__orders.setSelected('all');
 assert('All dates view shows grand cake total', document.getElementById('card-cakes')?.textContent === '31');
 assert('All dates sales cards use grand totals',
   document.getElementById('card-sold')?.textContent === '16' &&
@@ -183,7 +183,7 @@ assert('past group is collapsed by default',
 assert('16 Nov is inside the past group',
   !!document.querySelector('details[data-panel-id="past"] details[data-panel-id="2026-11-16"]'));
 
-window.__admin.setSelected('all');
+window.__orders.setSelected('all');
 document.getElementById('expand-all').click();
 assert('Expand all opens the upcoming and past panels',
   document.querySelector('details[data-panel-id="2026-11-29"]').open === true &&
@@ -199,7 +199,7 @@ document.querySelector('details[data-panel-id="2026-11-29"]').dispatchEvent(new 
 const saved = JSON.parse(window.localStorage.getItem('poppinsAdminPanels') || '{}');
 assert('open state is remembered in localStorage', saved['2026-11-29'] === true, JSON.stringify(saved));
 
-const text = window.__admin.poppinsTextForDate(mock.dates[1]);
+const text = window.__orders.poppinsTextForDate(mock.dates[1]);
 assert('copy text names Poppins and the date', /Poppins/.test(text) && /Sun, 29 Nov/.test(text), text);
 assert('copy text has per-item totals and no per-Mass split', /Rich Plum Cake \(400g\): 15/.test(text) && !/6:30|8:30/.test(text), text);
 
@@ -207,12 +207,12 @@ assert('last updated is shown', /Last updated/.test(document.getElementById('upd
 assert('status region is a live region', document.getElementById('status').getAttribute('aria-live') === 'polite');
 assert('refresh and expand controls exist', !!document.getElementById('refresh-btn') && !!document.getElementById('expand-all'));
 
-if (window.__admin && typeof window.__admin.stop === 'function') window.__admin.stop();
+if (window.__orders && typeof window.__orders.stop === 'function') window.__orders.stop();
 window.close();
 
 const fetchCalls = [];
 const fetchDom = new JSDOM(html, {
-  url: 'https://example.com/admin.html',
+  url: 'https://example.com/orders.html',
   runScripts: 'dangerously',
   pretendToBeVisual: true,
   beforeParse(win) {
@@ -248,9 +248,9 @@ assert('mocked fetch is not marked as example/preview data',
   !fetchDom.window.document.getElementById('example-banner').classList.contains('visible'),
   fetchDom.window.document.getElementById('example-banner') && fetchDom.window.document.getElementById('example-banner').outerHTML.slice(0, 200));
 
-if (fetchDom.window.__admin && typeof fetchDom.window.__admin.stop === 'function') fetchDom.window.__admin.stop();
+if (fetchDom.window.__orders && typeof fetchDom.window.__orders.stop === 'function') fetchDom.window.__orders.stop();
 fetchDom.window.close();
 
 const failed = results.filter((r) => !r.ok);
-console.log('\n--- admin page ' + (results.length - failed.length) + '/' + results.length + ' passed ---');
+console.log('\n--- orders page ' + (results.length - failed.length) + '/' + results.length + ' passed ---');
 if (failed.length) process.exit(1);

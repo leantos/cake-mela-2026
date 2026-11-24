@@ -1,4 +1,4 @@
-# Netlify build settings for the Vailankanni Parish Youth cake pre-order site.
+# Netlify build settings for the Vailankanni Matha Youth cake pre-order site.
 [build]
   publish = "public"
   command = "npm run build"
@@ -22,3 +22,14 @@
   for = "/poster.*"
   [headers.values]
     Cache-Control = "public, max-age=3600"
+
+# The dashboard moved from /admin to /orders; keep old links working.
+[[redirects]]
+  from = "/admin"
+  to = "/orders"
+  status = 301
+
+[[redirects]]
+  from = "/admin.html"
+  to = "/orders"
+  status = 301

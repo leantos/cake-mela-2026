@@ -31,7 +31,7 @@
   </style>
 </head>
 <body class="bg-page font-sans leading-normal text-ink antialiased [--sticky-h:11.25rem] [--topbar-h:4.5rem]">
-  <header class="hero-head sticky top-0 z-30 flex h-[var(--topbar-h)] w-full items-center gap-[0.7rem] bg-m3-surface px-4 text-m3-on-surface shadow-m3-1 md:px-6 lg:px-[clamp(16px,3vw,48px)]">
+  <header class="hero-head sticky top-0 z-30 flex h-[var(--topbar-h)] w-full items-center gap-[0.7rem] bg-m3-surface px-3 text-m3-on-surface shadow-m3-1 md:px-4 lg:px-4">
       <img class="logo block size-14 shrink-0" src="logo.png" alt="Vailankanni Matha Youth logo" width="192" height="192">
       <div class="brand min-w-0 flex-1 text-left">
         <h1 class="truncate text-[1.25rem] font-medium leading-7 text-m3-primary">Vailankanni Matha Youth</h1>
@@ -49,11 +49,11 @@
         </div>
       </nav>
     </header>
-  <div class="app min-h-screen w-full bg-page md:px-6 pb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+1rem)] lg:m-0 lg:grid lg:w-full lg:max-w-none lg:grid-cols-[minmax(340px,32%)_minmax(0,1fr)] lg:items-start lg:gap-x-[1.35rem] lg:gap-y-4 lg:p-[clamp(16px,3vw,48px)] xl:grid-cols-[minmax(340px,32%)_minmax(0,1fr)_minmax(300px,22%)]">
+  <div class="app box-border min-h-[calc(100vh-var(--topbar-h))] supports-[height:100dvh]:min-h-[calc(100dvh-var(--topbar-h))] w-full bg-page px-3 md:px-4 pb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+1rem)] lg:grid lg:w-full lg:max-w-none lg:grid-cols-[minmax(340px,32%)_minmax(0,1fr)] lg:items-start lg:gap-x-4 lg:gap-y-4 lg:p-4 xl:grid-cols-[minmax(340px,32%)_minmax(0,1fr)_minmax(300px,22%)]">
     <aside class="left-col lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:pb-2 xl:row-span-1">
 
     <!-- Hero: WebP with JPEG fallback. Deploy poster.webp and poster.jpg alongside this file. -->
-    <div class="poster-wrap mb-3 box-border flex h-[calc(100vh-var(--topbar-h))] items-center justify-center p-[0.9rem] supports-[height:100dvh]:h-[calc(100dvh-var(--topbar-h))]">
+    <div class="poster-wrap box-border flex h-[calc(100vh-var(--topbar-h))] items-start justify-center py-3 supports-[height:100dvh]:h-[calc(100dvh-var(--topbar-h))]">
       <picture>
         <source type="image/webp" srcset="poster.webp">
         <img
@@ -68,14 +68,14 @@
 
     </aside>
 
-    <div class="right-col lg:col-start-2 lg:row-start-2 lg:min-w-0 xl:row-start-1">
-    <div class="order-tabs sticky top-[var(--topbar-h)] z-10 mx-[0.9rem] mb-3 grid grid-cols-3 rounded-m3-lg border border-m3-outline-variant bg-m3-surface lg:mx-0" id="order-tabs" role="tablist" aria-label="Order steps">
+    <div class="right-col flex flex-col gap-3 lg:col-start-2 lg:row-start-2 lg:min-w-0 xl:row-start-1">
+    <div class="order-tabs sticky top-[var(--topbar-h)] z-10 grid grid-cols-3 rounded-m3-lg border border-m3-outline-variant bg-m3-surface" id="order-tabs" role="tablist" aria-label="Order steps">
       <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-m3-primary  rounded-tl-m3-lg" id="tab-date" role="tab" aria-selected="true" aria-controls="panel-date"><span>1 · Pickup date</span><span class="ml-1 hidden size-2 rounded-full bg-maroon align-middle" id="tab-date-dot" aria-label="needs attention"></span></button>
       <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-m3-primary" id="tab-cakes" role="tab" aria-selected="false" aria-controls="panel-cakes" tabindex="-1"><span>2 · Cakes</span><span class="ml-1 hidden min-w-5 rounded-full bg-m3-primary px-1.5 text-[0.6875rem] leading-5 text-m3-on-primary" id="tab-cakes-badge" aria-label="cakes selected"></span><span class="ml-1 hidden size-2 rounded-full bg-maroon align-middle" id="tab-cakes-dot" aria-label="needs attention"></span></button>
       <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-m3-primary  rounded-tr-m3-lg" id="tab-details" role="tab" aria-selected="false" aria-controls="panel-details" tabindex="-1"><span>3 · Your details</span><span class="ml-1 hidden size-2 rounded-full bg-maroon align-middle" id="tab-details-dot" aria-label="needs attention"></span></button>
     </div>
-    <section id="panel-date" role="tabpanel" aria-labelledby="tab-date">
-    <div class="date-selector mx-[0.9rem] mb-4 rounded-m3-lg bg-m3-surface-container-low px-4 pb-[1.1rem] pt-4 shadow-m3-1 lg:mx-0">
+    <section class="flex flex-col gap-3" id="panel-date" role="tabpanel" aria-labelledby="tab-date">
+    <div class="date-selector rounded-m3-lg bg-m3-surface-container-low px-4 pb-[1.1rem] pt-4 shadow-m3-1">
       <p class="closed-banner hidden rounded-m3-sm bg-m3-primary-container px-3 py-[0.7rem] text-[0.875rem] font-medium text-m3-on-primary-container [&.visible]:block" id="preorders-closed" role="status">Pre-orders closed. Pickups for this cake sale have ended.</p>
       <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-pickup-date">
         <label class="mb-2 block text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant" id="pickup-date-label">Pickup Date <span class="req text-maroon" aria-hidden="true">*</span></label>
@@ -86,22 +86,22 @@
       <p class="pickup-place mb-2 mt-[0.15rem] text-[0.875rem] leading-5 text-m3-on-surface-variant" id="pickup-place">Pickup after Sunday Mass at Vailankanni Matha Church, Muthanallur</p>
       <p class="hint mt-1 text-[0.75rem] text-m3-on-surface-variant [&.is-error]:text-gold-dark" id="stock-status"></p>
     </div>
-    <div class="step-nav mx-[0.9rem] mt-4 flex items-center justify-between gap-3 lg:mx-0">
+    <div class="step-nav flex items-center justify-between gap-3">
       <span></span>
       <button type="button" class="step-next inline-flex min-h-12 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary border-0 bg-m3-primary text-m3-on-primary hover:bg-m3-primary/90" id="next-to-cakes">Next <span aria-hidden="true">→</span></button>
     </div>
     </section>
-    <section id="panel-cakes" role="tabpanel" aria-labelledby="tab-cakes" hidden>
-    <h2 class="section-title mx-[1.05rem] mb-[0.55rem] mt-[0.4rem] scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant lg:mt-0 lg:scroll-mb-5" id="menu-heading">Cake varieties</h2>
-    <div class="menu-list flex scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] flex-col gap-[0.7rem] px-[0.9rem] md:grid md:grid-cols-2 md:items-stretch lg:scroll-mb-5 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]" id="menu-list" role="list" aria-labelledby="menu-heading"></div>
-    <p class="cart-error mx-[0.9rem] mt-[0.7rem] hidden rounded-m3-sm bg-m3-primary-container px-3 py-[0.55rem] text-[0.875rem] font-medium text-m3-on-primary-container [&.visible]:block" id="cart-error" role="alert" aria-live="assertive"></p>
-    <div class="step-nav mx-[0.9rem] mt-4 flex items-center justify-between gap-3 lg:mx-0">
+    <section class="flex flex-col gap-3" id="panel-cakes" role="tabpanel" aria-labelledby="tab-cakes" hidden>
+    <h2 class="section-title px-1 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant lg:scroll-mb-5" id="menu-heading">Cake varieties</h2>
+    <div class="menu-list flex scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] flex-col gap-[0.7rem] md:grid md:grid-cols-2 md:items-stretch lg:scroll-mb-5 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]" id="menu-list" role="list" aria-labelledby="menu-heading"></div>
+    <p class="cart-error hidden rounded-m3-sm bg-m3-primary-container px-3 py-[0.55rem] text-[0.875rem] font-medium text-m3-on-primary-container [&.visible]:block" id="cart-error" role="alert" aria-live="assertive"></p>
+    <div class="step-nav flex items-center justify-between gap-3">
       <button type="button" class="step-back inline-flex min-h-12 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary border border-m3-outline bg-transparent text-m3-primary hover:bg-m3-primary/8" id="back-to-date"><span aria-hidden="true">←</span> Back</button>
       <button type="button" class="step-next inline-flex min-h-12 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary border-0 bg-m3-primary text-m3-on-primary hover:bg-m3-primary/90" id="next-to-details">Next <span aria-hidden="true">→</span></button>
     </div>
     </section>
-    <section id="panel-details" role="tabpanel" aria-labelledby="tab-details" hidden>
-    <form class="order-form mx-[0.9rem] lg:mx-0 rounded-m3-lg bg-m3-surface-container-low px-4 pb-[1.1rem] pt-4 shadow-m3-1" id="order-form" novalidate>
+    <section class="flex flex-col gap-3" id="panel-details" role="tabpanel" aria-labelledby="tab-details" hidden>
+    <form class="order-form rounded-m3-lg bg-m3-surface-container-low px-4 pb-[1.1rem] pt-4 shadow-m3-1" id="order-form" novalidate>
       <h2 class="mb-4 text-[1.375rem] font-normal leading-7 text-m3-on-surface">Your details</h2>
       <div class="field mb-4 last-of-type:mb-0 scroll-mt-[calc(var(--topbar-h)+0.85rem)] scroll-mb-[calc(var(--sticky-h)+env(safe-area-inset-bottom,0px)+0.75rem)] lg:scroll-mb-5 [&.invalid_input]:border-maroon [&.invalid_input]:shadow-[inset_0_0_0_1px_#7a0a10] [&.invalid_label]:text-maroon [&.invalid_.error]:block [&.invalid_.date-chips]:rounded-m3-md [&.invalid_.date-chips]:shadow-[0_0_0_3px_rgba(122,10,16,0.15)]" id="field-name">
         <div class="relative">
@@ -118,7 +118,7 @@
         <p class="error mt-1 hidden px-4 text-[0.75rem] font-medium text-maroon" id="buyer-phone-error"></p>
       </div>
     </form>
-    <div class="step-nav mx-[0.9rem] mt-4 flex items-center justify-between gap-3 lg:mx-0">
+    <div class="step-nav flex items-center justify-between gap-3">
       <button type="button" class="step-back inline-flex min-h-12 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary border border-m3-outline bg-transparent text-m3-primary hover:bg-m3-primary/8" id="back-to-cakes"><span aria-hidden="true">←</span> Back</button>
       <span></span>
     </div>

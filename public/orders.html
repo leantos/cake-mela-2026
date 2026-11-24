@@ -25,9 +25,9 @@
     }
   </style>
 </head>
-<body class="bg-page font-sans text-ink antialiased">
-  <div class="app min-h-screen w-full bg-m3-surface pb-10 shadow-m3-2 md:px-6 lg:bg-transparent lg:p-[clamp(16px,3vw,48px)] lg:shadow-none">
-    <header class="hero-head sticky top-0 z-30 flex items-center gap-4 border-b border-m3-outline-variant bg-m3-surface-container px-4 py-2 text-brand-blue shadow-m3-1 lg:static lg:rounded-t-m3-xl lg:px-6 lg:py-3">
+<body class="m-0 min-h-dvh bg-m3-surface font-sans text-ink antialiased">
+  <div class="app flex min-h-dvh w-full flex-col bg-m3-surface pb-10">
+    <header class="hero-head sticky top-0 z-30 flex items-center gap-4 border-b border-m3-outline-variant bg-m3-surface-container px-4 py-2 text-brand-blue shadow-m3-1 lg:px-6 lg:py-3">
       <img class="logo block size-14 shrink-0 lg:size-16" src="logo.png" width="56" height="56" alt="Vailankanni Matha Youth logo">
       <div class="brand min-w-0 flex-1 text-left">
         <h1 class="m-0 font-serif text-[1.375rem] leading-7 font-bold text-brand-blue lg:text-[1.75rem] lg:leading-9">Vailankanni Matha Youth</h1>
@@ -35,7 +35,7 @@
       </div>
       <a class="staff-link ml-auto inline-flex min-h-10 shrink-0 items-center self-center rounded-full bg-m3-primary-container px-4 text-[0.875rem] font-medium tracking-[0.1px] whitespace-nowrap text-m3-on-primary-container no-underline hover:shadow-m3-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12]" href="staff.html">Staff mode</a>
     </header>
-    <div class="page-body lg:rounded-b-m3-xl lg:bg-m3-surface lg:pb-7 lg:shadow-m3-2">
+    <div class="page-body flex-1 lg:pb-7">
       <p class="example-banner m-0 hidden bg-m3-secondary-container px-4 py-2 text-center text-[0.875rem] font-medium text-m3-on-secondary-container [&.visible]:block" id="example-banner">Example data — not live orders</p>
       <div class="toolbar flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pt-4 pb-2 lg:px-6">
         <p class="updated m-0 flex-[1_1_12rem] text-[0.875rem] leading-5 tracking-[0.25px] text-m3-on-surface-variant" id="updated">Loading totals…</p>
@@ -46,7 +46,7 @@
           <button type="button" class="btn btn-primary min-h-10 cursor-pointer appearance-none rounded-full px-6 text-[0.875rem] leading-5 font-medium tracking-[0.1px] whitespace-nowrap focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary lg:min-h-11 relative overflow-hidden before:pointer-events-none before:absolute before:inset-0 before:bg-current before:opacity-0 before:transition-opacity hover:before:opacity-[0.08] focus-visible:before:opacity-[0.12] active:before:opacity-[0.12] bg-m3-primary-container text-m3-on-primary-container hover:shadow-m3-1" id="refresh-btn">Refresh</button>
         </div>
       </div>
-      <p class="status mx-4 mt-0 mb-2 min-h-5 text-[0.875rem] leading-5 tracking-[0.25px] text-m3-on-surface-variant [&.is-error]:font-medium [&.is-error]:text-m3-error lg:mx-6" id="status" role="status" aria-live="polite"></p>
+      <p class="status mt-0 mb-2 min-h-5 px-4 text-[0.875rem] leading-5 tracking-[0.25px] text-m3-on-surface-variant [&.is-error]:font-medium [&.is-error]:text-m3-error lg:px-6" id="status" role="status" aria-live="polite"></p>
       <section class="cards grid grid-cols-3 gap-2 px-4 pb-3 lg:gap-4 lg:px-6 lg:pb-4" aria-label="Orders">
         <article class="card rounded-m3-lg bg-m3-primary-container px-2 pt-3 pb-3 text-center text-m3-on-primary-container lg:px-4 lg:py-4">
           <p class="label m-0 text-[0.75rem] leading-4 font-medium tracking-[0.5px] uppercase opacity-80 lg:text-[0.8125rem]">Ordered cakes</p>
@@ -770,7 +770,7 @@
     loadSummary({ initial: true });
     refreshTimer = setInterval(function () { loadSummary({ keepSelection: true, silent: true }); }, REFRESH_MS);
 
-    window.__admin = {
+    window.__orders = {
       MOCK_SUMMARY: MOCK_SUMMARY,
       loadSummary: loadSummary,
       setSelected: setSelected,

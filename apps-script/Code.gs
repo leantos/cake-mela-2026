@@ -181,7 +181,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-24.3';
+var SCRIPT_VERSION = '2026-11-24.4';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -3377,7 +3377,7 @@ function staffSetStatus_(data) {
 
 function ensureWalkInExtraColumns_(tab) {
   var headers = getHeaders_(tab);
-  var extras = ['Walk-in ID', 'Void', 'Customer'];
+  var extras = ['Walk-in ID', 'Void', 'Customer', 'Recorded At'];
   var i, name;
   for (i = 0; i < extras.length; i++) {
     name = extras[i];
@@ -3388,6 +3388,13 @@ function ensureWalkInExtraColumns_(tab) {
   }
   var idCol = headers.indexOf('Walk-in ID');
   var voidCol = headers.indexOf('Void');
+  try {
+    // ISO timestamps must stay text so Sheets never converts/mangles them.
+    var recCol = headers.indexOf('Recorded At');
+    if (recCol >= 0 && tab.getMaxRows) {
+      tab.getRange(2, recCol + 1, Math.max(tab.getMaxRows() - 1, 1), 1).setNumberFormat('@');
+    }
+  } catch (err0) {}
   try {
     if (idCol >= 0 && tab.hideColumns) tab.hideColumns(idCol + 1);
     if (voidCol >= 0 && tab.hideColumns) tab.hideColumns(voidCol + 1);
@@ -3478,6 +3485,7 @@ function staffWalkInsFromValues_(values, opts) {
     payment = normalizePayment_(wcell(row, 'Payment'));
     notes = String(wcell(row, 'Notes') || '').trim();
     var customer = String(wcell(row, 'Customer') || '').trim();
+    var recordedAt = recordedAtCellToString_(wcell(row, 'Recorded At'));
     list.push({
       row: r + 1,
       walkinId: walkinId,
@@ -3489,10 +3497,39 @@ function staffWalkInsFromValues_(values, opts) {
       payment: payment,
       notes: notes,
       customer: customer,
+      recordedAt: recordedAt,
       voided: voided
     });
   }
   return { ok: true, date: dateId, walkins: list, version: SCRIPT_VERSION };
+}
+
+var RECORDED_AT_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
+var RECORDED_AT_MAX_FUTURE_MS = 5 * 60 * 1000;
+
+/**
+ * Client-supplied sale time (offline-queued sales keep their real time).
+ * Returns an ISO 8601 string. Anything that is not a real date within the
+ * last 14 days (and at most 5 minutes in the future) falls back to now.
+ */
+function normalizeRecordedAt_(value, nowMs) {
+  var now = typeof nowMs === 'number' ? nowMs : new Date().getTime();
+  var ms = NaN;
+  if (typeof value === 'string' && value.trim() && value.length <= 40) {
+    ms = new Date(value.trim()).getTime();
+  }
+  if (isNaN(ms) || ms < now - RECORDED_AT_MAX_AGE_MS || ms > now + RECORDED_AT_MAX_FUTURE_MS) {
+    ms = now;
+  }
+  return new Date(ms).toISOString();
+}
+
+function recordedAtCellToString_(cell) {
+  if (cell === null || typeof cell === 'undefined' || cell === '') return '';
+  if (Object.prototype.toString.call(cell) === '[object Date]') {
+    return isNaN(cell.getTime()) ? '' : cell.toISOString();
+  }
+  return String(cell).trim();
 }
 
 function staffListWalkIns_(data) {
@@ -3553,6 +3590,9 @@ function staffAddWalkIn_(data) {
     var idCol = headers.indexOf('Walk-in ID');
     var voidCol = headers.indexOf('Void');
     var customerCol = headers.indexOf('Customer');
+    var recordedAtCol = headers.indexOf('Recorded At');
+    var recordedAt = normalizeRecordedAt_(data && data.recordedAt);
+    if (recordedAtCol >= 0) tab.getRange(nextRow, recordedAtCol + 1).setNumberFormat('@').setValue(recordedAt);
     if (customerCol >= 0 && customer) tab.getRange(nextRow, customerCol + 1).setNumberFormat('@').setValue(customer);
     if (dateCol >= 0) tab.getRange(nextRow, dateCol + 1).setValue(dateId);
     if (itemCol >= 0) tab.getRange(nextRow, itemCol + 1).setValue(item);
@@ -3573,7 +3613,8 @@ function staffAddWalkIn_(data) {
       price: price,
       amount: qty * price,
       payment: payment || 'Cash',
-      date: dateId
+      date: dateId,
+      recordedAt: recordedAt
     };
   } finally {
     lock.releaseLock();

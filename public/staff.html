@@ -13,8 +13,8 @@
   <style>button:not(:disabled) { cursor: pointer; } button:focus-visible, a:focus-visible, [role="tab"]:focus-visible { outline: 2px solid #7a0a10; outline-offset: 2px; }</style>
 </head>
 <body class="m-0 bg-page font-sans leading-[1.45] text-ink antialiased">
-  <div class="flex min-h-dvh w-full flex-col bg-m3-surface pb-[env(safe-area-inset-bottom)]">
-    <header class="flex items-center gap-[0.7rem] relative z-10 bg-m3-surface px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 text-m3-on-surface shadow-m3-1 min-[720px]:px-[1.4rem]">
+  <div class="flex min-h-dvh w-full flex-col not-supports-[height:100dvh]:min-h-screen bg-m3-surface pb-[env(safe-area-inset-bottom)]">
+    <header class="flex items-center gap-[0.7rem] relative z-10 bg-m3-surface px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 text-m3-on-surface shadow-m3-1 min-[720px]:px-6">
       <img class="block size-[52px] shrink-0" src="logo.png" width="52" height="52" alt="Vailankanni Matha Youth logo">
       <div class="min-w-0 flex-1 text-left">
         <h1 class="text-[1.25rem] font-medium leading-7 text-m3-primary min-[720px]:text-[1.375rem]">Vailankanni Matha Youth</h1>
@@ -22,46 +22,46 @@
       </div>
       <button type="button" class="min-h-12 shrink-0 rounded-full px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-primary hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]" id="lock-btn">Lock</button>
     </header>
-    <p class="hidden border-b border-[#efd59a] bg-[#fff4d6] px-[0.9rem] py-[0.45rem] text-center text-[0.82rem] font-bold text-gold-dark in-[.is-preview]:block" id="example-banner">Example data — not live orders</p>
-    <div class="sticky top-0 z-5 grid grid-cols-3 border-b border-m3-outline-variant bg-m3-surface min-[720px]:px-[1.4rem]" role="tablist" aria-label="Staff tasks">
+    <p class="hidden border-b border-[#efd59a] bg-[#fff4d6] px-4 py-[0.45rem] text-center text-[0.82rem] font-bold text-gold-dark in-[.is-preview]:block" id="example-banner">Example data — not live orders</p>
+    <div class="sticky top-0 z-5 grid grid-cols-3 border-b border-m3-outline-variant bg-m3-surface px-4 min-[720px]:px-6" role="tablist" aria-label="Staff tasks">
       <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary" id="tab-orders" role="tab" aria-selected="true" aria-controls="panel-orders">Orders</button>
       <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary" id="tab-walkin" role="tab" aria-selected="false" aria-controls="panel-walkin">Walk-in sale</button>
       <button type="button" class="min-h-12 border-b-[3px] border-transparent text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-primary/8 aria-selected:border-m3-primary aria-selected:text-m3-primary" id="tab-recent" role="tab" aria-selected="false" aria-controls="panel-recent"><span>Recent<span class="hidden min-[480px]:inline"> walk-ins</span></span> <span class="ml-1 hidden min-w-5 rounded-full bg-m3-primary px-1.5 text-[0.6875rem] leading-5 text-m3-on-primary" id="recent-count" aria-label="walk-ins today"></span></button>
     </div>
-    <main class="flex-1 px-[0.9rem] pt-[0.8rem] pb-[1.6rem] min-[720px]:px-[1.4rem] min-[720px]:pt-4 min-[720px]:pb-8">
-      <section id="panel-orders" role="tabpanel" aria-labelledby="tab-orders">
-        <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="date-chips" aria-label="Pickup date"></div>
+    <main class="flex-1 px-4 py-4 min-[720px]:px-6 min-[720px]:py-6">
+      <section class="flex flex-col gap-3" id="panel-orders" role="tabpanel" aria-labelledby="tab-orders">
+        <div class="flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="date-chips" aria-label="Pickup date"></div>
         <label class="sr-only" for="search">Search orders</label>
-        <input class="mb-[0.7rem] block min-h-12 w-full py-[0.55rem] rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary min-[720px]:max-w-[420px]" id="search" type="search" placeholder="Search name, phone, or order ID" autocomplete="off" enterkeyhint="search">
-        <div class="mb-[0.8rem] grid grid-cols-[1.2fr_1fr_1fr] gap-[0.45rem] min-[720px]:grid-cols-[repeat(3,minmax(0,220px))] min-[720px]:gap-[0.8rem]" aria-label="Totals">
-          <article class="rounded-m3-md bg-m3-surface-container px-[0.55rem] pt-[0.65rem] pb-[0.7rem] text-center">
+        <input class="block min-h-12 w-full py-[0.55rem] rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary min-[720px]:max-w-[420px]" id="search" type="search" placeholder="Search name, phone, or order ID" autocomplete="off" enterkeyhint="search">
+        <div class="grid grid-cols-[1.2fr_1fr_1fr] gap-[0.45rem] min-[720px]:grid-cols-[repeat(3,minmax(0,220px))] min-[720px]:gap-[0.8rem]" aria-label="Totals">
+          <article class="rounded-m3-md bg-m3-surface-container px-[0.55rem] pt-[0.65rem] pb-[0.7rem] flex flex-col gap-[0.15rem] text-center">
             <p class="text-[0.6875rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">To collect</p>
-            <p class="mt-[0.15rem] text-[1.5rem] leading-8 font-normal text-m3-primary" id="count-collect">0</p>
-            <p class="mt-[0.15rem] text-xs font-medium text-gold-dark" id="count-collect-amt">₹0</p>
+            <p class="text-[1.5rem] leading-8 font-normal text-m3-primary" id="count-collect">0</p>
+            <p class="text-xs font-medium text-gold-dark" id="count-collect-amt">₹0</p>
           </article>
-          <article class="rounded-m3-md bg-m3-surface-container px-[0.55rem] pt-[0.65rem] pb-[0.7rem] text-center">
+          <article class="rounded-m3-md bg-m3-surface-container px-[0.55rem] pt-[0.65rem] pb-[0.7rem] flex flex-col gap-[0.15rem] text-center">
             <p class="text-[0.6875rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Picked up</p>
-            <p class="mt-[0.15rem] text-[1.5rem] leading-8 font-normal text-m3-primary" id="count-picked">0</p>
+            <p class="text-[1.5rem] leading-8 font-normal text-m3-primary" id="count-picked">0</p>
           </article>
-          <article class="rounded-m3-md bg-m3-surface-container px-[0.55rem] pt-[0.65rem] pb-[0.7rem] text-center">
+          <article class="rounded-m3-md bg-m3-surface-container px-[0.55rem] pt-[0.65rem] pb-[0.7rem] flex flex-col gap-[0.15rem] text-center">
             <p class="text-[0.6875rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Pending</p>
-            <p class="mt-[0.15rem] text-[1.5rem] leading-8 font-normal text-m3-primary" id="count-pending">0</p>
+            <p class="text-[1.5rem] leading-8 font-normal text-m3-primary" id="count-pending">0</p>
           </article>
         </div>
-        <p class="mb-[0.7rem] text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant" id="orders-updated">Sign in to load orders.</p>
+        <p class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant" id="orders-updated">Sign in to load orders.</p>
         <div class="flex flex-col gap-[0.7rem] min-[720px]:grid min-[720px]:grid-cols-2 min-[720px]:items-start min-[720px]:gap-[0.9rem] min-[1000px]:grid-cols-3" id="order-list"></div>
       </section>
       <section id="panel-walkin" role="tabpanel" aria-labelledby="tab-walkin" hidden>
-        <div class="min-[720px]:grid min-[720px]:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] min-[720px]:items-start min-[720px]:gap-[1.6rem]">
-        <div class="walkin-form">
-        <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="walkin-date-chips" aria-label="Sale date"></div>
-        <p class="mb-2 text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Tap + to add cakes, − to remove</p>
-        <div class="mb-4 grid grid-cols-2 gap-2 min-[1000px]:grid-cols-3" id="item-grid"></div>
-        <div class="relative mb-4">
+        <div class="flex flex-col gap-3 min-[720px]:grid min-[720px]:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] min-[720px]:items-start min-[720px]:gap-[1.6rem]">
+        <div class="walkin-form flex flex-col gap-3">
+        <div class="flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="walkin-date-chips" aria-label="Sale date"></div>
+        <p class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Tap + to add cakes, − to remove</p>
+        <div class="grid grid-cols-2 gap-2 min-[1000px]:grid-cols-3" id="item-grid"></div>
+        <div class="relative">
           <input class="peer block min-h-14 w-full py-2 rounded-m3-xs border border-m3-outline bg-transparent px-4 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary placeholder-transparent" id="walkin-customer" type="text" maxlength="60" autocomplete="off" placeholder=" " aria-label="Customer name (optional)">
           <label class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 bg-m3-surface px-1 text-[1rem] text-m3-on-surface-variant transition-all peer-focus:top-0 peer-focus:text-[0.75rem] peer-focus:text-m3-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.75rem]" for="walkin-customer">Customer name (optional)</label>
         </div>
-        <div class="mb-[0.7rem] flex items-center justify-between gap-[0.6rem]">
+        <div class="flex items-center justify-between gap-[0.6rem]">
           <span class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Payment</span>
           <div class="flex" role="group" aria-label="Payment">
             <button type="button" class="rounded-l-full min-h-12 min-w-[84px] border border-m3-outline px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface hover:bg-m3-on-surface/8 aria-pressed:bg-m3-tertiary-container aria-pressed:text-m3-on-tertiary-container aria-pressed:before:mr-1.5 aria-pressed:before:content-['✓']" id="pay-cash" aria-pressed="true">Cash</button>
@@ -69,36 +69,45 @@
           </div>
         </div>
         </div>
-        <div class="walkin-side mt-2 min-[720px]:sticky min-[720px]:top-4 min-[720px]:mt-0 min-[720px]:max-h-[calc(100vh-2rem)] min-[720px]:overflow-y-auto">
-        <section class="rounded-m3-lg bg-m3-surface-container p-4 shadow-m3-1" id="walkin-preview" aria-label="Sale preview">
+        <div class="walkin-side min-[720px]:sticky min-[720px]:top-4 min-[720px]:max-h-[calc(100vh-2rem)] min-[720px]:overflow-y-auto">
+        <section class="flex flex-col gap-3 rounded-m3-lg bg-m3-surface-container p-4 shadow-m3-1" id="walkin-preview" aria-label="Sale preview">
           <h2 class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant uppercase">Sale preview</h2>
-          <div class="mt-2 min-h-[2.6rem] text-[0.875rem] font-medium text-m3-on-surface" id="live-summary" role="status" aria-live="polite">
+          <div class="flex min-h-[2.6rem] flex-col gap-2 text-[0.875rem] font-medium text-m3-on-surface" id="live-summary" role="status" aria-live="polite">
             <ul class="flex flex-col gap-1" id="live-lines"></ul>
-            <p class="mt-2 text-[0.75rem] font-medium text-m3-on-surface-variant" id="live-meta"></p>
+            <p class="text-[0.75rem] font-medium text-m3-on-surface-variant" id="live-meta"></p>
           </div>
-          <p class="mt-[0.4rem] mb-[0.85rem] text-center text-[2.25rem] leading-11 font-normal text-m3-primary" id="live-amount">₹0</p>
-          <div class="mb-[0.85rem] hidden rounded-m3-md bg-m3-surface p-3" id="cash-panel" aria-label="Cash change calculator">
+          <p class="text-center text-[2.25rem] leading-11 font-normal text-m3-primary" id="live-amount">₹0</p>
+          <div class="hidden flex-col gap-2 [&:not(.hidden)]:flex rounded-m3-md bg-m3-surface p-3" id="cash-panel" aria-label="Cash change calculator">
             <div class="relative">
               <span class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[1rem] text-m3-on-surface-variant" aria-hidden="true">₹</span>
               <input class="peer block min-h-14 w-full rounded-m3-xs border border-m3-outline bg-transparent py-2 pr-4 pl-9 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary" id="cash-received" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="Amount received" aria-label="Amount received">
             </div>
-            <div class="mt-2 flex flex-wrap gap-2" id="cash-quick" role="group" aria-label="Quick amounts">
+            <div class="flex flex-wrap gap-2" id="cash-quick" role="group" aria-label="Quick amounts">
               <button type="button" class="min-h-12 flex-none rounded-lg border border-m3-outline bg-transparent px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-on-surface/8 active:bg-m3-on-surface/12" data-cash="exact">Exact</button>
               <button type="button" class="min-h-12 flex-none rounded-lg border border-m3-outline bg-transparent px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-on-surface/8 active:bg-m3-on-surface/12" data-cash="100">₹100</button>
               <button type="button" class="min-h-12 flex-none rounded-lg border border-m3-outline bg-transparent px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-on-surface/8 active:bg-m3-on-surface/12" data-cash="200">₹200</button>
               <button type="button" class="min-h-12 flex-none rounded-lg border border-m3-outline bg-transparent px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-on-surface/8 active:bg-m3-on-surface/12" data-cash="500">₹500</button>
               <button type="button" class="min-h-12 flex-none rounded-lg border border-m3-outline bg-transparent px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-on-surface/8 active:bg-m3-on-surface/12" data-cash="2000">₹2000</button>
             </div>
-            <p class="mt-3 hidden rounded-m3-md px-4 py-3 text-center text-[1.5rem] leading-8 font-medium" id="cash-result" role="status" aria-live="polite"></p>
+            <p class="hidden rounded-m3-md px-4 py-3 text-center text-[1.5rem] leading-8 font-medium" id="cash-result" role="status" aria-live="polite"></p>
           </div>
-          <button type="button" class="w-full bg-m3-primary text-m3-on-primary shadow-m3-1 hover:shadow-m3-2 min-h-12 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] disabled:cursor-not-allowed disabled:opacity-[0.38] hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="record-sale">Record sale</button>
+          <div class="flex items-stretch gap-2">
+            <button type="button" class="min-h-12 flex-none rounded-full border border-m3-outline bg-transparent px-5 text-[0.875rem] font-medium tracking-[0.1px] text-m3-primary hover:bg-m3-primary/8 active:bg-m3-primary/12 disabled:cursor-not-allowed disabled:opacity-[0.38]" id="clear-sale" disabled>Clear all</button>
+            <button type="button" class="min-w-0 flex-1 bg-m3-primary text-m3-on-primary shadow-m3-1 hover:shadow-m3-2 min-h-12 rounded-full px-6 text-[0.875rem] font-medium tracking-[0.1px] disabled:cursor-not-allowed disabled:opacity-[0.38] hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" id="record-sale">Record sale</button>
+          </div>
         </section>
         </div>
         </div>
       </section>
-      <section id="panel-recent" role="tabpanel" aria-labelledby="tab-recent" hidden>
-        <div class="mb-[0.6rem] flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="recent-date-chips" aria-label="Sale date"></div>
-        <p class="mb-[0.7rem] text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant" id="walkin-updated">Recent walk-ins</p>
+      <section class="flex flex-col gap-3" id="panel-recent" role="tabpanel" aria-labelledby="tab-recent" hidden>
+        <div class="flex flex-nowrap gap-[0.4rem] overflow-x-auto pt-[0.15rem] pb-[0.2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[720px]:flex-wrap min-[720px]:overflow-x-visible" id="recent-date-chips" aria-label="Sale date"></div>
+        <div class="relative min-[720px]:max-w-[420px]">
+          <label class="sr-only" for="recent-search">Search recent walk-ins</label>
+          <svg class="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-m3-on-surface-variant" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input class="block min-h-12 w-full rounded-m3-xs border border-m3-outline bg-transparent py-[0.55rem] pr-12 pl-11 text-[1rem] text-m3-on-surface hover:border-m3-on-surface focus:border-m3-primary focus:outline-2 focus:-outline-offset-2 focus:outline-m3-primary [&::-webkit-search-cancel-button]:hidden" id="recent-search" type="search" placeholder="Search name, cake, payment or note" autocomplete="off" enterkeyhint="search">
+          <button type="button" class="absolute top-1/2 right-1 hidden size-12 -translate-y-1/2 rounded-full text-[1.25rem] leading-none text-m3-on-surface-variant hover:bg-m3-on-surface/8 active:bg-m3-on-surface/12" id="recent-search-clear" aria-label="Clear search">&times;</button>
+        </div>
+        <p class="text-[0.75rem] font-medium tracking-[0.5px] text-m3-on-surface-variant" id="walkin-updated">Recent walk-ins</p>
         <div class="flex flex-col gap-[0.7rem] min-[720px]:grid min-[720px]:grid-cols-2 min-[720px]:items-start min-[720px]:gap-[0.9rem] min-[1000px]:grid-cols-3" id="walkin-list"></div>
       </section>
     </main>
@@ -206,8 +215,8 @@
     { row: 7, orderId: 'PB-261121-EFGH', name: 'Rohan Naik', phone: '9811122233', pickupDate: '2026-12-06', items: '1 × Dates & Carrot Pudding (700g)', total: 650, status: 'Pending' }
   ];
   const MOCK_WALKINS = [
-    { walkinId: 'WI-demo-1', date: '2026-11-29', item: 'Dates & Carrot Pudding (700g)', qty: 1, price: 650, amount: 650, payment: 'Cash', notes: '', voided: false },
-    { walkinId: 'WI-demo-2', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 2, price: 350, amount: 700, payment: 'UPI', notes: '', voided: false }
+    { walkinId: 'WI-demo-1', date: '2026-11-29', item: 'Dates & Carrot Pudding (700g)', qty: 1, price: 650, amount: 650, payment: 'Cash', notes: '', recordedAt: '2026-11-29T03:35:00.000Z', voided: false },
+    { walkinId: 'WI-demo-2', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 2, price: 350, amount: 700, payment: 'UPI', notes: '', recordedAt: '2026-11-29T04:05:00.000Z', voided: false }
   ];
 
   const params = new URLSearchParams(location.search);
@@ -235,7 +244,8 @@
     lastOrdersAt: '',
     loading: false,
     ordersReq: 0,
-    walkinsReq: 0
+    walkinsReq: 0,
+    recentQuery: ''
   };
 
   function $(id) { return document.getElementById(id); }
@@ -283,13 +293,31 @@
     return CLS.pill + ' ' + CLS.pillPending;
   }
 
-  function toast(msg, kind) {
+  // opts.action = { label, onClick } adds a snackbar action button; opts.ms sets the lifetime.
+  function toast(msg, kind, opts) {
+    opts = opts || {};
     const wrap = $('toasts');
     const el = document.createElement('div');
     el.className = CLS.toast + ' ' + (kind === 'error' ? CLS.toastError : kind === 'ok' ? CLS.toastOk : CLS.toastInfo);
-    el.textContent = msg;
+    if (opts.action) {
+      const text = document.createElement('span');
+      text.className = 'min-w-0 flex-1';
+      text.textContent = msg;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'toast-action pointer-events-auto -mr-2 ml-3 min-h-12 rounded-full px-3 text-[0.875rem] font-medium tracking-[0.1px] text-[#f2c9a5] hover:bg-white/8 active:bg-white/12';
+      btn.textContent = opts.action.label;
+      btn.addEventListener('click', function () {
+        el.remove();
+        opts.action.onClick();
+      });
+      el.appendChild(text);
+      el.appendChild(btn);
+    } else {
+      el.textContent = msg;
+    }
     wrap.appendChild(el);
-    setTimeout(function () { el.remove(); }, 3200);
+    setTimeout(function () { el.remove(); }, opts.ms || 3200);
   }
 
   function getClientToken() {
@@ -421,6 +449,7 @@
         payment: payload.payment,
         customer: payload.customer || '',
         notes: payload.notes || '',
+        recordedAt: payload.recordedAt || '',
         voided: false
       };
       MOCK_WALKINS.unshift(row);
@@ -478,6 +507,7 @@
             payment: e.payload.payment,
             customer: e.payload.customer || '',
             notes: e.payload.notes || '',
+            recordedAt: e.payload.recordedAt || '',
             voided: false,
             _queued: true
           });
@@ -704,30 +734,122 @@
       : '';
     renderCash(total, lines.length > 0);
     $('record-sale').disabled = !lines.length;
+    $('clear-sale').disabled = !formIsDirty();
   }
+
+  /* ---------- Recent walk-ins: one card per customer / sale ---------- */
+  function fmtClock(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    let h = d.getHours();
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return h + ':' + pad2(d.getMinutes()) + ' ' + ap;
+  }
+
+  // recordedAt when present, else the timestamp embedded in a legacy walkinId.
+  function walkinTimeIso(w) {
+    if (w.recordedAt) {
+      const d = new Date(w.recordedAt);
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+    const p = String(w.walkinId || '').split('-');
+    if (p[0] === 'WI' && p[1] && /^[0-9A-Z]+$/.test(p[1])) {
+      const ms = parseInt(p[1], 36);
+      if (ms > 1.6e12 && ms < 4.1e12) return new Date(ms).toISOString();
+    }
+    return '';
+  }
+
+  // Lines of one Record sale share "WI-<time>-<rand>" and differ by a "-<n>" suffix.
+  function saleKey(id) {
+    const p = String(id || '').split('-');
+    return p.length >= 4 ? p.slice(0, 3).join('-') : String(id || '');
+  }
+
+  function groupWalkins(rows) {
+    const map = {};
+    const order = [];
+    rows.forEach(function (w) {
+      const name = String(w.customer || '').trim();
+      const key = name ? 'c:' + name.toLowerCase() : 's:' + saleKey(w.walkinId);
+      let g = map[key];
+      if (!g) {
+        g = map[key] = { key: key, customer: name, lines: [], time: '', total: 0, payments: [], notes: [], queued: false };
+        order.push(g);
+      }
+      g.lines.push(w);
+      g.customer = name; // rows are newest-first, so the first-recorded spelling wins
+      g.total += Number(w.amount) || 0;
+      if (w.payment && g.payments.indexOf(w.payment) < 0) g.payments.push(w.payment);
+      const note = String(w.notes || '').trim();
+      if (note && !/^\s*VOID\b/i.test(note) && g.notes.indexOf(note) < 0) g.notes.push(note);
+      if (w._queued) g.queued = true;
+      const t = walkinTimeIso(w);
+      if (t && t > g.time) g.time = t;
+    });
+    return order.sort(function (a, b) { return a.time === b.time ? 0 : (b.time > a.time ? 1 : -1); });
+  }
+
+  function groupMatches(g, query) {
+    const tokens = String(query || '').toLowerCase().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return true;
+    const hay = [g.customer, g.payments.join(' '), g.notes.join(' ')].concat(g.lines.map(function (w) {
+      return w.item + ' ' + shortItem(w.item);
+    })).join(' ').toLowerCase();
+    return tokens.every(function (t) { return hay.indexOf(t) >= 0; });
+  }
+
+  const CLOCK_SVG = '<svg class="size-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>';
 
   function renderWalkins() {
     const list = $('walkin-list');
     const rows = applyOutboxToWalkins(state.walkins).filter(function (w) { return !w.voided; });
+    const groups = groupWalkins(rows);
     const badge = $('recent-count');
-    badge.textContent = String(rows.length);
-    badge.classList.toggle('hidden', !rows.length);
-    badge.classList.toggle('inline-block', !!rows.length);
-    badge.classList.toggle('text-center', !!rows.length);
-    if (!rows.length) {
+    badge.textContent = String(groups.length);
+    badge.classList.toggle('hidden', !groups.length);
+    badge.classList.toggle('inline-block', !!groups.length);
+    badge.classList.toggle('text-center', !!groups.length);
+    const clear = $('recent-search-clear');
+    clear.classList.toggle('hidden', !state.recentQuery);
+    clear.classList.toggle('block', !!state.recentQuery);
+    if (!groups.length) {
       list.innerHTML = '<p class="' + CLS.empty + '">No walk-in sales for ' + escapeHtml(dateLabel(state.pickupDate)) + ' yet.</p>';
       return;
     }
-    list.innerHTML = rows.map(function (w) {
-      const queued = w._queued ? ' <span class="' + CLS.pill + ' ' + CLS.pillQueued + '">Queued</span>' : '';
-      return '<article class="' + CLS.card + '" data-walkin="' + escapeAttr(w.walkinId) + '">' +
-        '<div class="' + CLS.top + '"><div>' +
-        '<p class="' + CLS.name + '">' + w.qty + ' × ' + escapeHtml(shortItem(w.item)) + '</p>' +
-        '<p class="' + CLS.meta + '">' + escapeHtml(w.payment || '') +
-        (w.customer ? ' · <span class="walkin-customer">' + escapeHtml(w.customer) + '</span>' : '') + queued + '</p>' +
-        (w.notes && !/^\s*VOID\b/i.test(w.notes) ? '<p class="walkin-notes mt-1 text-[0.75rem] text-m3-on-surface-variant">' + escapeHtml(w.notes) + '</p>' : '') +
-        '</div><div><p class="' + CLS.amount + '">' + rupee(w.amount) + '</p>' +
-        '<button type="button" class="' + CLS.undo + '" data-undo="' + escapeAttr(w.walkinId) + '">Undo</button></div></div>' +
+    const shown = groups.filter(function (g) { return groupMatches(g, state.recentQuery); });
+    if (!shown.length) {
+      list.innerHTML = '<p class="no-matches ' + CLS.empty + '">No matches for “' + escapeHtml(state.recentQuery.trim()) + '”.</p>';
+      return;
+    }
+    list.innerHTML = shown.map(function (g) {
+      const clock = g.time ? fmtClock(g.time) : '';
+      const pillParts = [];
+      if (clock) pillParts.push('<time datetime="' + escapeAttr(g.time) + '">' + escapeHtml(clock) + '</time>');
+      if (g.customer) pillParts.push('<span class="walkin-customer">' + escapeHtml(g.customer) + '</span>');
+      else pillParts.unshift('<span class="walkin-customer-none">Walk-in</span>');
+      const pill = '<span class="walkin-pill inline-flex min-h-8 max-w-full items-center gap-[0.4rem] rounded-full bg-m3-secondary-container px-3 text-[0.8125rem] font-medium tracking-[0.1px] text-m3-on-secondary-container">' +
+        CLOCK_SVG + '<span class="min-w-0 truncate">' + pillParts.join(' · ') + '</span></span>';
+      const queued = g.queued ? '<span class="' + CLS.pill + ' ' + CLS.pillQueued + '">Queued</span>' : '';
+      const lines = g.lines.map(function (w) {
+        return '<li class="walkin-line flex items-center justify-between gap-2 border-t border-m3-outline-variant py-1 first:border-t-0" data-walkin="' + escapeAttr(w.walkinId) + '">' +
+          '<span class="min-w-0 flex-1 text-[0.9375rem] leading-5 text-m3-on-surface">' + w.qty + ' × ' + escapeHtml(shortItem(w.item)) + '</span>' +
+          '<span class="' + CLS.amount + '">' + rupee(w.amount) + '</span>' +
+          '<button type="button" class="' + CLS.undo + '" data-undo="' + escapeAttr(w.walkinId) + '" aria-label="Undo ' + escapeAttr(shortItem(w.item)) + '">Undo</button></li>';
+      }).join('');
+      const notes = g.notes.map(function (n) {
+        return '<p class="walkin-notes mt-1 text-[0.75rem] text-m3-on-surface-variant">' + escapeHtml(n) + '</p>';
+      }).join('');
+      const undoAll = g.lines.length > 1
+        ? '<button type="button" class="' + CLS.undo + '" data-undo-all="' + escapeAttr(g.key) + '">Undo all</button>' : '';
+      return '<article class="' + CLS.card + '" data-group="' + escapeAttr(g.key) + '">' +
+        '<div class="' + CLS.top + '">' + pill + queued + '</div>' +
+        '<ul class="mt-2 list-none p-0">' + lines + '</ul>' +
+        '<div class="mt-2 flex items-center justify-between gap-2 border-t border-m3-outline-variant pt-2">' +
+        '<p class="' + CLS.meta + ' !mt-0">' + escapeHtml(g.payments.join(' + ')) + '</p>' +
+        '<p class="walkin-total ' + CLS.amount + ' text-[1.125rem]">' + rupee(g.total) + '</p></div>' +
+        notes + (undoAll ? '<div class="mt-1 flex justify-end">' + undoAll + '</div>' : '') +
         '</article>';
     }).join('');
   }
@@ -950,15 +1072,19 @@
     const customer = String(opts.customer != null ? opts.customer : state.customer).trim().slice(0, 60);
     const noteTotal = lines.reduce(function (sum, l) { return sum + itemPrice(l.item) * l.qty; }, 0);
     const autoNote = (fromCart && (opts.payment || state.payment) === 'Cash') ? cashNote(noteTotal) : '';
+    // All lines of one sale share a base id (WI-<time>-<rand>-<n>) and one recordedAt.
+    const saleBase = newWalkinId();
+    const recordedAt = opts.recordedAt || new Date().toISOString();
     const entries = lines.map(function (line, idx) {
       const payload = {
-        walkinId: (opts.walkinId && lines.length === 1) ? opts.walkinId : newWalkinId(),
+        walkinId: (opts.walkinId && lines.length === 1) ? opts.walkinId : saleBase + '-' + (idx + 1),
         date: state.pickupDate,
         item: line.item,
         qty: line.qty,
         payment: opts.payment || state.payment,
         customer: customer,
-        notes: opts.notes || (idx === 0 ? autoNote : '')
+        notes: opts.notes || (idx === 0 ? autoNote : ''),
+        recordedAt: recordedAt
       };
       const price = itemPrice(payload.item);
       const local = {
@@ -971,6 +1097,7 @@
         payment: payload.payment,
         customer: payload.customer,
         notes: payload.notes,
+        recordedAt: payload.recordedAt,
         voided: false,
         _queued: true
       };
@@ -1029,6 +1156,54 @@
     }
     if (entries.length === 1) return results[0];
     return { ok: allOk, queued: !allOk, count: entries.length, results: results };
+  }
+
+  /* ---------- Clear all: reset the whole walk-in form (with an Undo snackbar) ---------- */
+  function formIsDirty() {
+    return cartLines().length > 0 || state.customer !== '' || state.received !== '' || state.payment !== 'Cash';
+  }
+
+  function clearSale() {
+    if (!formIsDirty()) return { ok: false, error: 'Nothing to clear' };
+    const snap = { cart: Object.assign({}, state.cart), customer: state.customer, received: state.received, payment: state.payment };
+    state.cart = {};
+    state.customer = '';
+    state.received = '';
+    state.payment = 'Cash';
+    renderWalkinForm();
+    const first = document.querySelector('#item-grid [data-act="inc"]');
+    if (first) first.focus();
+    toast('Sale cleared', 'info', {
+      ms: 5000,
+      action: {
+        label: 'Undo',
+        onClick: function () {
+          state.cart = snap.cart;
+          state.customer = snap.customer;
+          state.received = snap.received;
+          state.payment = snap.payment;
+          renderWalkinForm();
+          const rec = $('record-sale');
+          if (rec && !rec.disabled) rec.focus();
+        }
+      }
+    });
+    return { ok: true };
+  }
+
+  /** Undo every line of one customer/sale card (one idempotent void per line). */
+  async function undoGroup(key) {
+    const rows = applyOutboxToWalkins(state.walkins).filter(function (w) { return !w.voided; });
+    const g = groupWalkins(rows).find(function (x) { return x.key === key; });
+    if (!g) return { ok: false, error: 'Sale not found' };
+    const ids = g.lines.map(function (w) { return w.walkinId; });
+    let allOk = true;
+    for (let i = 0; i < ids.length; i++) {
+      const res = await voidWalkin(ids[i], { silent: true });
+      if (!(res && res.ok)) allOk = false;
+    }
+    if (allOk) toast('Sale undone.', 'ok');
+    return { ok: allOk, count: ids.length };
   }
 
   async function voidWalkin(walkinId, opts) {
@@ -1235,7 +1410,20 @@
     $('pay-cash').addEventListener('click', function () { state.payment = 'Cash'; renderWalkinForm(); });
     $('pay-upi').addEventListener('click', function () { state.payment = 'UPI'; renderWalkinForm(); });
     $('record-sale').addEventListener('click', function () { addWalkin(); });
+    $('clear-sale').addEventListener('click', function () { clearSale(); });
+    $('recent-search').addEventListener('input', function () {
+      state.recentQuery = $('recent-search').value.slice(0, 80);
+      renderWalkins();
+    });
+    $('recent-search-clear').addEventListener('click', function () {
+      state.recentQuery = '';
+      $('recent-search').value = '';
+      renderWalkins();
+      $('recent-search').focus();
+    });
     $('walkin-list').addEventListener('click', function (ev) {
+      const all = ev.target.closest('[data-undo-all]');
+      if (all) { undoGroup(all.getAttribute('data-undo-all')); return; }
       const btn = ev.target.closest('[data-undo]');
       if (!btn) return;
       voidWalkin(btn.getAttribute('data-undo'));
@@ -1322,6 +1510,8 @@
     setStatus: setStatus,
     addWalkin: addWalkin,
     voidWalkin: voidWalkin,
+    undoGroup: undoGroup,
+    clearSale: clearSale,
     setItem: function (name) {
       state.cart = {};
       state.item = name;
