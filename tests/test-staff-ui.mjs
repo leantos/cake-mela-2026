@@ -282,6 +282,14 @@ async function loadPreview() {
   page.dom.window.close();
 }
 
+{
+  const html = (await import('node:fs')).readFileSync(new URL('../public/staff.html', import.meta.url), 'utf8');
+  assert('desktop layout: wide container media query', /@media \(min-width: 720px\)[\s\S]*\.app \{ max-width: 1100px/.test(html));
+  assert('desktop layout: order cards grid', /\.order-list \{ display: grid; grid-template-columns: repeat\(2/.test(html));
+  assert('desktop layout: walk-in form and list columns',
+    /walkin-form">[\s\S]*id="record-sale"[\s\S]*<\/div>\s*<div class="walkin-side">[\s\S]*id="walkin-list"/.test(html));
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log('\n' + results.filter((r) => r.ok).length + '/' + results.length + ' passed');
 if (failed.length) process.exit(1);

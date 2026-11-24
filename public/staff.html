@@ -552,6 +552,29 @@
     .modal-actions { display: flex; gap: 0.5rem; }
     .modal-actions .btn { flex: 1; }
 
+
+    /* Desktop / tablet: use the width instead of a phone column. */
+    @media (min-width: 720px) {
+      .app { max-width: 1100px; }
+      header.hero-head { padding-left: 1.4rem; padding-right: 1.4rem; }
+      header.hero-head h1 { font-size: 1.3rem; }
+      .tabs { padding: 0.9rem 1.4rem 0; max-width: 420px; }
+      .page { padding: 1rem 1.4rem 2rem; }
+      .counts { grid-template-columns: repeat(3, minmax(0, 220px)); gap: 0.8rem; }
+      .search { max-width: 420px; }
+      .chips { flex-wrap: wrap; overflow-x: visible; }
+      .order-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; align-items: start; }
+      .walkin-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.6rem; align-items: start; }
+      .walkin-side .updated { margin-top: 0 !important; }
+      .item-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .btn-primary { max-width: 360px; }
+    }
+    @media (min-width: 1000px) {
+      .order-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (hover: hover) {
+      .chip:hover, .item-btn:hover { border-color: var(--gold); }
+    }
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
     }
@@ -597,6 +620,8 @@
         <div class="order-list" id="order-list"></div>
       </section>
       <section class="panel" id="panel-walkin" role="tabpanel" aria-labelledby="tab-walkin" hidden>
+        <div class="walkin-layout">
+        <div class="walkin-form">
         <div class="chips" id="walkin-date-chips" aria-label="Sale date"></div>
         <div class="item-grid" id="item-grid"></div>
         <div class="row">
@@ -624,8 +649,12 @@
         </div>
         <p class="live-amount" id="live-amount">₹0</p>
         <button type="button" class="btn btn-primary" id="record-sale">Record sale</button>
+        </div>
+        <div class="walkin-side">
         <p class="updated" id="walkin-updated" style="margin-top:1rem;">Recent walk-ins</p>
         <div class="walkin-list" id="walkin-list"></div>
+        </div>
+        </div>
       </section>
     </main>
   </div>
