@@ -11,6 +11,8 @@
  *                  the top bar). number = country code + mobile, digits only
  *                  (for tel:). display = how the number is shown. Orders are
  *                  not assigned to anyone: there is no WhatsApp step.
+ *   bulkDiscount — { minCakes, percent }: orders with that many cakes or more get
+ *                  that percentage off the total (the poster's bulk offer).
  *   appsScriptUrl — Google Apps Script web app /exec URL (Sheets backend).
  *                  The Netlify function can override it with the
  *                  APPS_SCRIPT_URL environment variable.
@@ -27,6 +29,10 @@
       { id: 'cyril', name: 'Cyril Martin', number: '917204017793', display: '+91 72040 17793' },
       { id: 'aashwin', name: 'Aashwin Alfy', number: '918050764341', display: '+91 80507 64341' }
     ],
+    // Poster offer: one order with minCakes or more cakes in total gets percent% off the
+    // whole order (rounded to whole rupees). Read by the order page AND the Netlify
+    // order function, so change it here only.
+    bulkDiscount: { minCakes: 50, percent: 10 },
     appsScriptUrl: 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec',
     orderApiPath: '/api/order',
     stockApiPath: '/api/stock'

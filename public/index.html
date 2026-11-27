@@ -143,6 +143,11 @@
     <aside class="sticky-bar fixed inset-x-0 bottom-0 z-40 w-full bg-m3-surface-container px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-1px_0_rgba(42,35,6,0.06),0_-4px_16px_rgba(42,35,6,0.10)] lg:sticky lg:inset-x-auto lg:bottom-auto lg:top-[calc(var(--topbar-h)+1rem)] lg:col-start-2 lg:row-start-1 lg:w-auto lg:rounded-m3-lg lg:bg-m3-surface-container-low lg:px-4 lg:pb-4 lg:pt-4 lg:shadow-m3-1 xl:col-start-3" aria-label="Order summary">
       <h2 class="summary-heading mb-[0.65rem] hidden text-[1.375rem] font-normal leading-7 text-m3-on-surface lg:block">Your order</h2>
       <ul class="cart-lines mb-3 hidden max-h-[min(42vh,22rem)] overflow-auto lg:block" id="cart-lines"></ul>
+      <div class="summary-discount mb-1 hidden text-[0.875rem] leading-5 text-m3-on-surface-variant" id="summary-discount">
+        <p class="flex items-baseline justify-between"><span>Subtotal</span><span class="tabular-nums" id="summary-subtotal">₹0</span></p>
+        <p class="flex items-baseline justify-between font-medium text-m3-primary"><span id="summary-discount-label">Bulk discount</span><span class="tabular-nums" id="summary-discount-amount">−₹0</span></p>
+      </div>
+      <p class="summary-discount-hint mb-1 hidden rounded-m3-sm bg-m3-secondary-container px-3 py-1 text-[0.8125rem] font-medium leading-5 text-m3-on-secondary-container" id="summary-discount-hint" role="status"></p>
       <div class="summary mb-[0.3rem] flex items-baseline justify-between font-bold">
         <span class="count text-[0.875rem] font-medium text-m3-on-surface-variant" id="summary-count">0 items</span>
         <span class="total text-[1.375rem] font-medium tabular-nums text-m3-on-surface" id="summary-total">₹0</span>
@@ -172,6 +177,8 @@
           <div>
             <p class="mb-1 text-[0.75rem] font-medium uppercase tracking-[0.5px] text-m3-on-surface-variant">Your cakes</p>
             <ul id="confirm-lines"></ul>
+            <p class="confirm-subtotal-row mt-3 hidden items-baseline justify-between text-[0.9375rem] text-m3-on-surface-variant" id="confirm-subtotal-row"><span>Subtotal</span><span class="tabular-nums" id="confirm-subtotal"></span></p>
+            <p class="confirm-discount-row hidden items-baseline justify-between text-[0.9375rem] font-medium text-m3-primary" id="confirm-discount-row"><span id="confirm-discount-label">Bulk discount</span><span class="tabular-nums" id="confirm-discount"></span></p>
             <p class="mt-3 flex items-baseline justify-between text-[1.125rem] font-medium text-m3-on-surface"><span>Total</span><span class="tabular-nums" id="confirm-total"></span></p>
           </div>
         </section>
@@ -475,15 +482,43 @@
         });
     }
 
+    /**
+     * Poster offer: BULK_DISCOUNT.percent% off an order of BULK_DISCOUNT.minCakes
+     * cakes or more (rounded to whole rupees). The rule lives in site-config.js;
+     * the Netlify function recomputes it and rejects a total that disagrees.
+     */
+    const BULK_DISCOUNT = (function () {
+      const b = (SITE_CONFIG && SITE_CONFIG.bulkDiscount) || {};
+      const minCakes = Number.isInteger(Number(b.minCakes)) && Number(b.minCakes) > 0 ? Number(b.minCakes) : 50;
+      const percent = Number(b.percent) > 0 && Number(b.percent) < 100 ? Number(b.percent) : 10;
+      return { minCakes: minCakes, percent: percent };
+    })();
+
+    /** subtotal -> { discountPercent, discountAmount, totalAmount } */
+    function priceFor(subtotal, totalItems) {
+      const discountPercent = totalItems >= BULK_DISCOUNT.minCakes ? BULK_DISCOUNT.percent : 0;
+      const discountAmount = Math.round(subtotal * discountPercent / 100);
+      return { discountPercent: discountPercent, discountAmount: discountAmount, totalAmount: subtotal - discountAmount };
+    }
+
+    /** totalAmount is the amount to pay (after any bulk discount). */
     function cartTotals(cart) {
-      return cart.reduce(
+      const base = cart.reduce(
         (acc, line) => {
           acc.totalItems += line.qty;
-          acc.totalAmount += line.lineTotal;
+          acc.subtotal += line.lineTotal;
           return acc;
         },
-        { totalItems: 0, totalAmount: 0 }
+        { totalItems: 0, subtotal: 0 }
       );
+      const priced = priceFor(base.subtotal, base.totalItems);
+      return {
+        totalItems: base.totalItems,
+        subtotal: base.subtotal,
+        discountPercent: priced.discountPercent,
+        discountAmount: priced.discountAmount,
+        totalAmount: priced.totalAmount
+      };
     }
 
     /**
@@ -802,6 +837,20 @@
           '<span>' + line.qty + ' \u00D7 ' + escapeHtml(line.name) + '</span>' +
           '<span class="font-medium tabular-nums">' + formatINR(line.lineTotal) + '</span></li>';
       }).join('');
+      // Old queued orders have no discount fields: treat them as no discount.
+      const discountAmount = Number(order.discountAmount) || 0;
+      const subtotal = order.subtotal != null ? Number(order.subtotal) : Number(order.totalAmount) + discountAmount;
+      const subRow = document.getElementById('confirm-subtotal-row');
+      const discRow = document.getElementById('confirm-discount-row');
+      subRow.classList.toggle('hidden', discountAmount <= 0);
+      subRow.classList.toggle('flex', discountAmount > 0);
+      discRow.classList.toggle('hidden', discountAmount <= 0);
+      discRow.classList.toggle('flex', discountAmount > 0);
+      if (discountAmount > 0) {
+        document.getElementById('confirm-subtotal').textContent = formatINR(subtotal);
+        document.getElementById('confirm-discount-label').textContent = 'Bulk discount (' + (Number(order.discountPercent) || BULK_DISCOUNT.percent) + '%)';
+        document.getElementById('confirm-discount').textContent = '\u2212' + formatINR(discountAmount);
+      }
       document.getElementById('confirm-total').textContent = formatINR(order.totalAmount);
       renderUpiPay(document.getElementById('confirm-upi'), { total: order.totalAmount, orderId: order.orderId });
       fillConfirmationCalls();
@@ -919,11 +968,31 @@
       }).join('');
     }
 
+    /** Subtotal + discount lines at 50+ cakes; a nudge when close to it. */
+    function renderDiscountSummary(totals) {
+      const box = document.getElementById('summary-discount');
+      const hint = document.getElementById('summary-discount-hint');
+      if (!box || !hint) return;
+      const on = totals.discountAmount > 0;
+      box.classList.toggle('hidden', !on);
+      if (on) {
+        document.getElementById('summary-subtotal').textContent = formatINR(totals.subtotal);
+        document.getElementById('summary-discount-label').textContent = 'Bulk discount (' + totals.discountPercent + '%)';
+        document.getElementById('summary-discount-amount').textContent = '\u2212' + formatINR(totals.discountAmount);
+      }
+      const remaining = BULK_DISCOUNT.minCakes - totals.totalItems;
+      const near = remaining > 0 && remaining <= 10;
+      hint.classList.toggle('hidden', !near);
+      hint.textContent = near ? 'Add ' + remaining + (remaining === 1 ? ' more cake' : ' more cakes') + ' for ' + BULK_DISCOUNT.percent + '% off' : '';
+    }
+
     function updateSummary() {
       const cart = getCart();
-      const { totalItems, totalAmount } = cartTotals(cart);
+      const totals = cartTotals(cart);
+      const { totalItems, totalAmount } = totals;
       els.summaryCount.textContent = totalItems + (totalItems === 1 ? ' item' : ' items');
       els.summaryTotal.textContent = formatINR(totalAmount);
+      renderDiscountSummary(totals);
       const badge = document.getElementById('tab-cakes-badge');
       if (badge) {
         badge.textContent = String(totalItems);
@@ -1730,6 +1799,9 @@
         pickupDateShort: pickup ? pickupDisplayLabel(pickup) : '',
         items: cart,
         totalItems: totals.totalItems,
+        subtotal: totals.subtotal,
+        discountPercent: totals.discountPercent,
+        discountAmount: totals.discountAmount,
         totalAmount: totals.totalAmount
       };
     }

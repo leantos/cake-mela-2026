@@ -127,3 +127,13 @@ You are picking up an existing, working project. Read this fully, then `README.m
 - **Code.gs `2026-11-24.7`:** new orders never write "Assigned To"; the column is no longer in `BASE_HEADERS` (it is in `LEGACY_HEADERS`, so an existing column is ignored and never treated as a cake column). `staff_orders` no longer returns `assignedTo`. New menu item **Cake Sale → Remove Assigned To column…** confirms first, then permanently deletes that column from Orders. Nothing is deleted automatically, including by `setupSheets`.
 - **Redeploy** `Code.gs` as a New version of the existing deployment.
 
+
+## Bulk discount (2026-11-27, Code.gs `2026-11-27.2`)
+- **Rule:** one order with 50 or more cakes in total (all cakes added together) gets 10% off the whole order, rounded to whole rupees: `discount = Math.round(subtotal * 10 / 100)`, `total = subtotal - discount`. 50 x 320 = 16000 -> 14400. The poster says "10% off on orders of 50 cakes & above".
+- **One place to change it:** `bulkDiscount: { minCakes: 50, percent: 10 }` in `public/site-config.js`, read by the order page and by `netlify/lib/orders.mjs` (`bulkDiscountRule`, `priceOrder`). Missing config falls back to 50 / 10.
+- **Order payload fields:** `subtotal`, `discountPercent`, `discountAmount`, and `totalAmount` = the amount to pay (after discount). Below 50 cakes: percent 0, amount 0, total = subtotal.
+- **Server check:** `validateOrder` recomputes the discount itself. A `totalAmount` that is not the expected discounted total is rejected with 400 `fields: ['totalAmount']` (also a wrong `subtotal` / `discountPercent` / `discountAmount` when sent). Exception so no order is lost: with `retry: true` or `fallback: true` an UNDISCOUNTED total (equal to the subtotal) is accepted as sent, because those orders may have been queued on a phone before the offer existed.
+- **Sheet:** the Orders `Total Amount (₹)` column stores the discounted total; subtotal and discount stay in the Raw JSON cell. Summaries, pending and collected totals read the stored total. Apps Script does NOT recompute the discount (Netlify is the validator); the page's direct-to-Apps-Script fallback stores what it sends.
+- **Order page:** shows Subtotal / "Bulk discount (10%)" / Total from the 50th cake, a hint ("Add N more cakes for 10% off") from 40 cakes, the same lines on the confirmation screen, and "Pay ₹<discounted total>" in the Payment panel and the screenshot message.
+- **Staff page:** an order card shows "Includes bulk discount (−₹X)" when its cake count is at the threshold and the stored total is below the list-price sum.
+- **Walk-in sales do NOT get the discount** (each sale is one cake type at list price). Redeploy `Code.gs` as a New version (the Sheet side only changed a comment and the version).

@@ -8,7 +8,7 @@ public/                 ← published site (Netlify "publish" dir)
   orders.html           order dashboard at /orders, behind the staff PIN (totals + pending orders list; /admin redirects here)
   staff.html            PIN-protected staff tools (status, walk-ins)
   site-config.js        ★ ONE settings file: poster, call contacts,
-                          payment line, Apps Script URL
+                          bulk discount (50+ cakes = 10% off), Apps Script URL
   poster.jpg / .webp, logo.png
 netlify/functions/
   order.mjs             POST /api/order  (GET = pending count)

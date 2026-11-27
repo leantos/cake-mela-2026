@@ -1442,6 +1442,86 @@ assert('rename: the title, meta tags and heading do not mention WhatsApp',
   !/whatsapp/i.test(document.title) && !Array.from(document.querySelectorAll('meta')).some((m) => /whatsapp/i.test(m.getAttribute('content') || '')) &&
   !/whatsapp/i.test((document.querySelector('h1') || {}).textContent || ''));
 
+// ---- Bulk discount: 10% off orders of 50+ cakes (poster offer) ----
+{
+  w.__setStockForTest({});
+  const steppers = () => Array.from(document.querySelectorAll('.stepper'));
+  const clearCart = () => steppers().forEach((st) => {
+    const minus = st.querySelector('.minus');
+    const qty = st.querySelector('.qty');
+    let guard = 0;
+    while (Number(qty.textContent) > 0 && !minus.disabled && guard++ < 200) minus.click();
+  });
+  const add = (idx, n) => { const plus = steppers()[idx].querySelector('.plus'); for (let i = 0; i < n; i++) plus.click(); };
+  const shown = (id) => !document.getElementById(id).classList.contains('hidden');
+  const PLUM400 = 5; // Rich Plum Cake (400g), 320 rupees
+
+  assert('discount: the page reads the offer from site-config (50 cakes, 10%)', JSON.stringify(w.eval('BULK_DISCOUNT')) === JSON.stringify({ minCakes: 50, percent: 10 }), JSON.stringify(w.eval('BULK_DISCOUNT')));
+  assert('discount: the page rule rounds to whole rupees (12345 -> 1235 off)', w.eval('priceFor(12345, 50)').discountAmount === 1235 && w.eval('priceFor(12345, 50)').totalAmount === 11110);
+  assert('discount: below the threshold nothing is taken off', w.eval('priceFor(15680, 49)').discountAmount === 0 && w.eval('priceFor(15680, 49)').discountPercent === 0);
+
+  clearCart();
+  add(PLUM400, 39);
+  assert('discount: no hint at 39 cakes (more than 10 away)', !shown('summary-discount-hint') && !shown('summary-discount'));
+  add(PLUM400, 1);
+  assert('discount: the hint appears at 40 cakes', shown('summary-discount-hint') && document.getElementById('summary-discount-hint').textContent === 'Add 10 more cakes for 10% off', document.getElementById('summary-discount-hint').textContent);
+  add(PLUM400, 9);
+  assert('discount: at 49 cakes the hint says 1 more cake and the price is the list price',
+    document.getElementById('summary-discount-hint').textContent === 'Add 1 more cake for 10% off' && !shown('summary-discount') && /15,680/.test(document.getElementById('summary-total').textContent),
+    document.getElementById('summary-discount-hint').textContent + ' | ' + document.getElementById('summary-total').textContent);
+  add(PLUM400, 1);
+  assert('discount: at 50 cakes the subtotal, discount line and discounted total show',
+    shown('summary-discount') && /16,000/.test(document.getElementById('summary-subtotal').textContent) &&
+    document.getElementById('summary-discount-label').textContent === 'Bulk discount (10%)' && /1,600/.test(document.getElementById('summary-discount-amount').textContent) &&
+    /^\u2212/.test(document.getElementById('summary-discount-amount').textContent) && /14,400/.test(document.getElementById('summary-total').textContent),
+    document.getElementById('summary-subtotal').textContent + ' | ' + document.getElementById('summary-discount-amount').textContent + ' | ' + document.getElementById('summary-total').textContent);
+  assert('discount: the hint goes away once the discount applies', !shown('summary-discount-hint'));
+  assert('discount: the Payment card says Pay with the discounted total', /Pay\s*.?14,400/.test(document.querySelector('#pay-upi-body .upi-amount').textContent), document.querySelector('#pay-upi-body .upi-amount').textContent);
+  assert('discount: the screenshot message uses the discounted total', /14%2C400|14,400/.test(decodeURIComponent(document.querySelector('#pay-upi-body .upi-screenshot').getAttribute('href'))) || decodeURIComponent(document.querySelector('#pay-upi-body .upi-screenshot').getAttribute('href')).includes('14,400'), document.querySelector('#pay-upi-body .upi-screenshot').getAttribute('href'));
+
+  const payload = w.eval('buildOrderPayload()');
+  assert('discount: the order payload carries subtotal, discountPercent, discountAmount and the discounted totalAmount',
+    payload.totalItems === 50 && payload.subtotal === 16000 && payload.discountPercent === 10 && payload.discountAmount === 1600 && payload.totalAmount === 14400,
+    JSON.stringify({ n: payload.totalItems, s: payload.subtotal, p: payload.discountPercent, d: payload.discountAmount, t: payload.totalAmount }));
+
+  w.showOrderConfirmation(payload);
+  const rowOn = (id) => { const el = document.getElementById(id); return !el.classList.contains('hidden') && el.classList.contains('flex'); };
+  assert('discount: the confirmation shows subtotal, bulk discount and the discounted total',
+    rowOn('confirm-subtotal-row') && rowOn('confirm-discount-row') && /16,000/.test(document.getElementById('confirm-subtotal').textContent) &&
+    document.getElementById('confirm-discount-label').textContent === 'Bulk discount (10%)' && /1,600/.test(document.getElementById('confirm-discount').textContent) &&
+    /14,400/.test(document.getElementById('confirm-total').textContent),
+    document.getElementById('confirm-subtotal').textContent + ' | ' + document.getElementById('confirm-discount').textContent + ' | ' + document.getElementById('confirm-total').textContent);
+  assert('discount: the confirmation payment panel asks for the discounted total', /14,400/.test(document.querySelector('#confirm-upi .upi-amount').textContent), document.querySelector('#confirm-upi .upi-amount').textContent);
+  w.hideOrderConfirmation();
+
+  // an old queued order (no discount fields) shows no discount lines
+  w.showOrderConfirmation({
+    orderId: 'PB-OLD-0001', pickupDate: '2026-11-29', pickupDateShort: 'Sun, 29 Nov',
+    items: [{ name: 'Rich Plum Cake (400g)', qty: 2, price: 350, lineTotal: 700 }], totalItems: 2, totalAmount: 700
+  });
+  assert('discount: an old queued order shows no discount lines and its own total',
+    !rowOn('confirm-subtotal-row') && !rowOn('confirm-discount-row') && /700/.test(document.getElementById('confirm-total').textContent));
+  w.hideOrderConfirmation();
+
+  // one cake fewer: back to the list price in the payload
+  clearCart();
+  add(PLUM400, 49);
+  const p49 = w.eval('buildOrderPayload()');
+  assert('discount: a 49-cake payload has no discount fields set and the list price total',
+    p49.discountPercent === 0 && p49.discountAmount === 0 && p49.subtotal === 15680 && p49.totalAmount === 15680,
+    JSON.stringify({ s: p49.subtotal, p: p49.discountPercent, d: p49.discountAmount, t: p49.totalAmount }));
+
+  // mixed cart: the 50 cakes are counted across all cakes, not per cake
+  clearCart();
+  add(0, 20); add(2, 20); add(4, 10); // Dates 700g x20, Butterscotch 700g x20, Plum 800g x10
+  const mixed = w.eval('buildOrderPayload()');
+  const mixedSub = 20 * 570 + 20 * 580 + 10 * 620;
+  assert('discount: 50 cakes across different cakes get the discount (mixed cart)',
+    mixed.totalItems === 50 && mixed.subtotal === mixedSub && mixed.discountAmount === Math.round(mixedSub * 0.1) && mixed.totalAmount === mixedSub - Math.round(mixedSub * 0.1),
+    JSON.stringify({ n: mixed.totalItems, s: mixed.subtotal, d: mixed.discountAmount, t: mixed.totalAmount }));
+  clearCart();
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log('\n--- ' + (results.length - failed.length) + '/' + results.length + ' passed ---');
 if (failed.length) {

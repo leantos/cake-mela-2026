@@ -11,6 +11,25 @@ import SITE_CONFIG from '../../public/site-config.js';
 
 export const STORE_NAME = 'orders';
 export const ORDER_ID_RE = /^PB-[A-Z0-9-]{4,40}$/;
+/**
+ * Bulk discount rule from site-config.js (poster: 10% off orders of 50 cakes
+ * and above). Falls back to the same defaults if the config has no usable value.
+ */
+export function bulkDiscountRule(config = SITE_CONFIG) {
+  const b = (config && config.bulkDiscount) || {};
+  const minCakes = Number.isInteger(Number(b.minCakes)) && Number(b.minCakes) > 0 ? Number(b.minCakes) : 50;
+  const percent = Number(b.percent) > 0 && Number(b.percent) < 100 ? Number(b.percent) : 10;
+  return { minCakes, percent };
+}
+
+/** Subtotal -> { discountPercent, discountAmount, totalAmount } (whole rupees). */
+export function priceOrder(subtotal, totalCakes, config = SITE_CONFIG) {
+  const rule = bulkDiscountRule(config);
+  const discountPercent = totalCakes >= rule.minCakes ? rule.percent : 0;
+  const discountAmount = Math.round(subtotal * discountPercent / 100);
+  return { discountPercent, discountAmount, totalAmount: subtotal - discountAmount };
+}
+
 const MAX_BODY_BYTES = 20000;
 const SHEET_TIMEOUT_MS = 20000;
 
@@ -47,7 +66,7 @@ function str(v, max) {
 }
 
 /** Validate + whitelist the page payload. Returns { ok, order } or { ok:false, errors }. */
-export function validateOrder(raw) {
+export function validateOrder(raw, config = SITE_CONFIG) {
   const errors = [];
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return { ok: false, errors: ['body must be a JSON object'] };
@@ -85,10 +104,33 @@ export function validateOrder(raw) {
     });
   }
   const totalItems = items.reduce((s, l) => s + l.qty, 0);
-  const totalAmount = items.reduce((s, l) => s + l.lineTotal, 0);
+  const subtotal = items.reduce((s, l) => s + l.lineTotal, 0);
+  // The server decides the discount; the page's numbers must agree with it.
+  const priced = priceOrder(subtotal, totalItems, config);
+  let discountPercent = priced.discountPercent;
+  let discountAmount = priced.discountAmount;
+  let totalAmount = priced.totalAmount;
+  // A retry from the phone's outbox (or a fallback) may have been queued before
+  // the bulk offer existed: the customer already saw the undiscounted total, so
+  // keep it as sent instead of losing the order.
+  const lenient = raw.retry === true || raw.fallback === true;
   if (!errors.length) {
     if (raw.totalItems != null && Number(raw.totalItems) !== totalItems) errors.push('totalItems');
-    if (raw.totalAmount != null && Number(raw.totalAmount) !== totalAmount) errors.push('totalAmount');
+    if (raw.totalAmount != null) {
+      const sent = Number(raw.totalAmount);
+      if (sent === priced.totalAmount) {
+        // correct: the discount fields, when present, must agree too
+        if (raw.subtotal != null && Number(raw.subtotal) !== subtotal) errors.push('subtotal');
+        if (raw.discountPercent != null && Number(raw.discountPercent) !== discountPercent) errors.push('discountPercent');
+        if (raw.discountAmount != null && Number(raw.discountAmount) !== discountAmount) errors.push('discountAmount');
+      } else if (lenient && sent === subtotal) {
+        discountPercent = 0;
+        discountAmount = 0;
+        totalAmount = subtotal;
+      } else {
+        errors.push('totalAmount');
+      }
+    }
   }
   if (errors.length) return { ok: false, errors };
 
@@ -104,6 +146,9 @@ export function validateOrder(raw) {
       pickupDateShort: str(raw.pickupDateShort, 40),
       items,
       totalItems,
+      subtotal,
+      discountPercent,
+      discountAmount,
       totalAmount
     },
     // A retry from the page's outbox (or an older page that still sends
@@ -191,7 +236,7 @@ export function noteOrderInStockCache(order) {
  */
 export async function acceptOrder(store, raw, opts = {}) {
   const now = opts.now ? opts.now() : Date.now();
-  const v = validateOrder(raw);
+  const v = validateOrder(raw, opts.config || SITE_CONFIG);
   if (!v.ok) return { status: 400, body: { ok: false, error: 'invalid', fields: v.errors } };
   const { order } = v;
   const key = 'order/' + order.orderId;

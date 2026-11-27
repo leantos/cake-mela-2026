@@ -182,7 +182,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-27.1';
+var SCRIPT_VERSION = '2026-11-27.2';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -835,6 +835,8 @@ function appendOrderRow_(sheet, data, status, headers, nextRow) {
   set('Phone', data.phone || '');
   set('Items', formatItems_(data.items));
   set('Total Items', data.totalItems || 0);
+  // The page / Netlify send the amount to PAY, i.e. after any bulk discount (10% off
+  // 50+ cakes). Subtotal and discount stay in Raw JSON below. Summaries read this column.
   set('Total Amount (₹)', data.totalAmount || 0);
   set('Status', status || 'Pending');
   set('Raw JSON', JSON.stringify(data));

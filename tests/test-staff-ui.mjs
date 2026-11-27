@@ -803,6 +803,19 @@ async function loadPreview() {
   page.window.close();
 }
 
+// ---- Bulk discount note on staff order cards (reads stored totals only) ----
+{
+  const page = await loadPreview();
+  const S = page.window.__staff;
+  const big = { items: '50 × Rich Plum Cake (400g)', total: 14400 };
+  assert('bulk note: an order of 50 cakes below list price says what the discount was', S.bulkDiscountNote(big) === 'Includes bulk discount (−₹1,600)', S.bulkDiscountNote(big));
+  assert('bulk note: mixed cakes add up to the list-price sum', S.bulkDiscountNote({ items: '20 × Dates & Carrot Pudding (700g)\n20 × Butterscotch Pudding (700g)\n10 × Rich Plum Cake (800g)', total: 26280 }) === 'Includes bulk discount (−₹2,920)', S.bulkDiscountNote({ items: '20 × Dates & Carrot Pudding (700g)\n20 × Butterscotch Pudding (700g)\n10 × Rich Plum Cake (800g)', total: 26280 }));
+  assert('bulk note: 49 cakes get no note', S.bulkDiscountNote({ items: '49 × Rich Plum Cake (400g)', total: 15680 }) === '');
+  assert('bulk note: 50 cakes at full price (old order) get no note', S.bulkDiscountNote({ items: '50 × Rich Plum Cake (400g)', total: 16000 }) === '');
+  assert('bulk note: orders with no readable items text get no note', S.bulkDiscountNote({ items: '', total: 100 }) === '' && S.bulkDiscountNote({ total: 100 }) === '');
+  page.window.close();
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log('\n' + results.filter((r) => r.ok).length + '/' + results.length + ' passed');
 if (failed.length) process.exit(1);

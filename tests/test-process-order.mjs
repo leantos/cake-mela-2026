@@ -734,6 +734,30 @@ assert('AFTER first saved does not write more often than BEFORE, and skips style
   assert('stock: staff cannot set OVERSOLD by hand', staffTo.ok === false, JSON.stringify(staffTo));
 }
 
+{
+  // Bulk discount: the Total Amount column holds the amount to pay (after 10% off 50+ cakes);
+  // subtotal and discount stay in Raw JSON; summaries read the stored total.
+  const world = makeWorld(CODE_GS);
+  seedHappyPath(world);
+  const res = world.ctx.processOrder_(sampleOrder({
+    orderId: 'PB-TEST-BULK',
+    items: [{ name: 'Rich Plum Cake (400g)', qty: 50, price: 320, lineTotal: 16000 }],
+    totalItems: 50, subtotal: 16000, discountPercent: 10, discountAmount: 1600, totalAmount: 14400
+  }), {});
+  const data = world.sheets['Orders'].data;
+  const row = data.find((r) => r && r[1] === 'PB-TEST-BULK');
+  const amountAt = data[0].indexOf('Total Amount (₹)');
+  const rawAt = data[0].indexOf('Raw JSON');
+  assert('bulk discount: an order with the discount fields saves', res.ok === true && (res.status === 'saved' || res.status === 'OVERSOLD' || res.oversold !== undefined || res.ok), JSON.stringify(res));
+  assert('bulk discount: the Total Amount column stores the discounted total', !!row && Number(row[amountAt]) === 14400, JSON.stringify(row && row[amountAt]));
+  const raw = row ? JSON.parse(row[rawAt]) : {};
+  assert('bulk discount: Raw JSON keeps subtotal, percent and discount amount', raw.subtotal === 16000 && raw.discountPercent === 10 && raw.discountAmount === 1600 && raw.totalAmount === 14400, JSON.stringify(raw));
+  // an order posted by the fallback path (no discount fields) is stored as sent
+  const fb = world.ctx.processOrder_(sampleOrder({ orderId: 'PB-TEST-BULK2', items: [{ name: 'Rich Plum Cake (400g)', qty: 50, price: 320, lineTotal: 16000 }], totalItems: 50, totalAmount: 16000, fallback: true }), {});
+  const fbRow = world.sheets['Orders'].data.find((r) => r && r[1] === 'PB-TEST-BULK2');
+  assert('bulk discount: a fallback order without discount fields is stored as sent (no server-side recompute)', fb.ok === true && !!fbRow && Number(fbRow[amountAt]) === 16000, JSON.stringify(fbRow && fbRow[amountAt]));
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log('\n=== CALL COUNTS (first saved order, schema already ok, tally in sync) ===');
 console.log('BEFORE', summarize(before.saved.stats));

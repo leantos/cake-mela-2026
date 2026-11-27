@@ -295,7 +295,7 @@ assert('the contact/alternation helpers are gone',
   };
   const plum = (qty) => order({
     items: [{ id: 'rich-plum-cake-400', name: PLUM, qty, price: 350, lineTotal: qty * 350 }],
-    totalItems: qty, totalAmount: qty * 350
+    totalItems: qty, totalAmount: lib.priceOrder(qty * 350, qty).totalAmount
   });
 
   // the 11th buyer: 10 left, order of 11 is rejected and not stored
@@ -418,6 +418,96 @@ assert('the contact/alternation helpers are gone',
   assert('stock api: POST is 405', s4.status === 405);
 
   stockMode = 'ok'; stockDates = []; lib.resetStockCache();
+}
+
+// ---- bulk discount: 10% off orders of 50+ cakes ----
+{
+  stockMode = 'ok'; stockDates = []; lib.resetStockCache(); // no stock limits, so only the price rule is under test
+  const mk = (qty, extra) => {
+    const price = 320;
+    const sub = qty * price;
+    const p = lib.priceOrder(sub, qty);
+    return order(Object.assign({
+      items: [{ id: 'rich-plum-cake-400', name: 'Rich Plum Cake (400g)', qty, price, lineTotal: sub }],
+      totalItems: qty, subtotal: sub,
+      discountPercent: p.discountPercent, discountAmount: p.discountAmount, totalAmount: p.totalAmount
+    }, extra || {}));
+  };
+  const hasField = (r, f) => r.status === 400 && Array.isArray(r.json.fields) && r.json.fields.includes(f);
+
+  const p49 = lib.priceOrder(49 * 320, 49);
+  const p50 = lib.priceOrder(50 * 320, 50);
+  assert('discount rule: 49 cakes get no discount', p49.discountPercent === 0 && p49.discountAmount === 0 && p49.totalAmount === 15680, JSON.stringify(p49));
+  assert('discount rule: 50 cakes get 10% (50 x 320 = 16000 -> 14400)', p50.discountPercent === 10 && p50.discountAmount === 1600 && p50.totalAmount === 14400, JSON.stringify(p50));
+  assert('discount rule: rounds to whole rupees (12345 -> 1235 off -> 11110)', lib.priceOrder(12345, 50).discountAmount === 1235 && lib.priceOrder(12345, 50).totalAmount === 11110);
+  assert('discount rule: reads site-config and falls back to 50 / 10',
+    lib.bulkDiscountRule({}).minCakes === 50 && lib.bulkDiscountRule({}).percent === 10 &&
+    lib.bulkDiscountRule({ bulkDiscount: { minCakes: 20, percent: 5 } }).minCakes === 20 && lib.bulkDiscountRule({ bulkDiscount: { minCakes: 20, percent: 5 } }).percent === 5 &&
+    lib.bulkDiscountRule().minCakes === 50);
+  assert('discount rule: the shipped config has the poster offer', JSON.stringify(lib.bulkDiscountRule()) === JSON.stringify({ minCakes: 50, percent: 10 }));
+
+  const r49 = await call(mk(49));
+  assert('discount: a 49-cake order at the full price is accepted', r49.status === 200 && r49.json.ok === true, JSON.stringify(r49.json));
+  await r49.settle();
+
+  const o50 = mk(50);
+  const r50 = await call(o50);
+  assert('discount: a 50-cake order with the discounted total is accepted', r50.status === 200 && r50.json.ok === true, JSON.stringify(r50.json));
+  await r50.settle();
+  const rec50 = await store.get('order/' + o50.orderId, { type: 'json' });
+  assert('discount: the stored record carries subtotal, percent, amount and the discounted total',
+    rec50.order.subtotal === 16000 && rec50.order.discountPercent === 10 && rec50.order.discountAmount === 1600 && rec50.order.totalAmount === 14400,
+    JSON.stringify(rec50.order));
+  const sent50 = sheetRows.get(o50.orderId);
+  assert('discount: the payload sent to the Sheet has the same fields and the discounted total',
+    sent50 && sent50.subtotal === 16000 && sent50.discountPercent === 10 && sent50.discountAmount === 1600 && sent50.totalAmount === 14400,
+    JSON.stringify(sent50));
+
+  // without the optional discount fields, a correct discounted total is still fine
+  const bare = mk(50);
+  delete bare.subtotal; delete bare.discountPercent; delete bare.discountAmount;
+  const rBare = await call(bare); await rBare.settle();
+  assert('discount: a 50-cake order with only the discounted total (no discount fields) is accepted', rBare.status === 200 && rBare.json.ok === true, JSON.stringify(rBare.json));
+
+  // wrong totals are rejected and never stored
+  const hitsBefore = sheetHits.length;
+  const stale = mk(50, { totalAmount: 16000, discountAmount: 0, discountPercent: 0 });
+  const rStale = await call(stale);
+  assert('discount: 50 cakes at the old undiscounted total are rejected (totalAmount)', hasField(rStale, 'totalAmount'), JSON.stringify(rStale.json));
+  assert('discount: a rejected order is not stored', (await store.get('order/' + stale.orderId, { type: 'json' })) == null && sheetHits.length === hitsBefore);
+  const early = mk(49, { totalAmount: 14112, discountAmount: 1568, discountPercent: 10 });
+  const rEarly = await call(early);
+  assert('discount: 49 cakes claiming the discount are rejected (totalAmount)', hasField(rEarly, 'totalAmount'), JSON.stringify(rEarly.json));
+  const greedy = mk(50, { totalAmount: 12000 });
+  assert('discount: an even lower total is rejected too', hasField(await call(greedy), 'totalAmount'));
+  const badAmt = mk(50, { discountAmount: 1 });
+  assert('discount: the right total with a wrong discountAmount field is rejected', hasField(await call(badAmt), 'discountAmount'));
+  const badPct = mk(50, { discountPercent: 25 });
+  assert('discount: a wrong discountPercent field is rejected', hasField(await call(badPct), 'discountPercent'));
+  const badSub = mk(50, { subtotal: 1 });
+  assert('discount: a wrong subtotal field is rejected', hasField(await call(badSub), 'subtotal'));
+
+  // an outbox retry queued before the offer existed keeps its undiscounted total
+  const legacyRetry = mk(50, { totalAmount: 16000, retry: true });
+  delete legacyRetry.subtotal; delete legacyRetry.discountPercent; delete legacyRetry.discountAmount;
+  const rLegacy = await call(legacyRetry); await rLegacy.settle();
+  const recLegacy = await store.get('order/' + legacyRetry.orderId, { type: 'json' });
+  assert('discount: a retry with the old undiscounted total is accepted as sent (not lost)',
+    rLegacy.status === 200 && recLegacy.order.totalAmount === 16000 && recLegacy.order.discountAmount === 0 && recLegacy.order.subtotal === 16000,
+    JSON.stringify(rLegacy.json) + JSON.stringify(recLegacy && recLegacy.order));
+  const legacyFallback = mk(50, { totalAmount: 16000, fallback: true });
+  const rFb = await call(legacyFallback); await rFb.settle();
+  assert('discount: a fallback order with the old total is accepted as sent too', rFb.status === 200 && rFb.json.ok === true);
+  const retryWrong = mk(50, { totalAmount: 15000, retry: true });
+  assert('discount: a retry is only lenient about the undiscounted total, not any total', hasField(await call(retryWrong), 'totalAmount'));
+
+  // old payloads (no discount fields) under the threshold are unchanged
+  const small = order();
+  const rSmall = await call(small); await rSmall.settle();
+  const recSmall = await store.get('order/' + small.orderId, { type: 'json' });
+  assert('discount: a small order without discount fields is valid and priced at list price',
+    rSmall.status === 200 && recSmall.order.totalAmount === 700 && recSmall.order.discountAmount === 0 && recSmall.order.subtotal === 700,
+    JSON.stringify(recSmall && recSmall.order));
 }
 
 // ---- backoff ----

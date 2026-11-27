@@ -266,6 +266,28 @@
     return hit ? hit.price : 0;
   }
 
+  /**
+   * "Includes bulk discount (-Rs X)" for an order of the poster's offer size: the
+   * cake count in the items text reaches the threshold in site-config.js and the
+   * stored total is below the list-price sum of those cakes. Returns '' otherwise
+   * (old orders, small orders, or prices that have since changed).
+   */
+  function bulkDiscountNote(o) {
+    const cfg = (window.SITE_CONFIG && window.SITE_CONFIG.bulkDiscount) || {};
+    const minCakes = Number(cfg.minCakes) > 0 ? Number(cfg.minCakes) : 50;
+    let cakes = 0;
+    let listSum = 0;
+    String(o.items || '').split('\n').forEach(function (line) {
+      const m = /^\s*(\d+)\s*[\u00D7x]\s*(.+?)\s*$/.exec(line);
+      if (!m) return;
+      cakes += Number(m[1]);
+      listSum += Number(m[1]) * itemPrice(m[2]);
+    });
+    const total = Number(o.total) || 0;
+    if (cakes < minCakes || !listSum || total >= listSum) return '';
+    return 'Includes bulk discount (\u2212' + rupee(listSum - total) + ')';
+  }
+
   function telHref(phone) {
     const digits = String(phone || '').replace(/\D/g, '');
     if (!digits) return '';
@@ -623,6 +645,7 @@
         '</div><span class="' + pillClass(o.status) + '">' + escapeHtml(o.status) + '</span>' + queued + '</div>' +
         '<p class="' + CLS.items + '">' + escapeHtml(o.items || '') + '</p>' +
         '<p class="' + CLS.total + '">' + rupee(o.total) + '</p>' +
+        (bulkDiscountNote(o) ? '<p class="bulk-note text-[0.75rem] leading-4 font-medium text-m3-on-surface-variant">' + escapeHtml(bulkDiscountNote(o)) + '</p>' : '') +
         '<div class="' + CLS.actions + '">' + actions + '</div>' +
         '</article>';
     }).join('');
@@ -1528,6 +1551,7 @@
     voidWalkin: voidWalkin,
     undoGroup: undoGroup,
     clearSale: clearSale,
+    bulkDiscountNote: bulkDiscountNote,
     setItem: function (name) {
       state.cart = {};
       state.item = name;
