@@ -502,21 +502,21 @@ w.__setStockForTest({
 });
 w.selectPickupDate('2026-12-06');
 for (let i = 0; i < 5; i++) firstPlus.click();
-assert('any listed date allows 5', cards[0].querySelector('.qty').textContent === '5',
-  cards[0].querySelector('.qty').textContent);
+assert('any listed date allows 5', cards[0].querySelector('.qty').value === '5',
+  cards[0].querySelector('.qty').value);
 assert('cards are not marked sold-out', !cards[0].classList.contains('sold-out'));
 
 w.selectPickupDate('2026-11-29');
-assert('date switch does not clamp the cart', cards[0].querySelector('.qty').textContent === '5',
-  cards[0].querySelector('.qty').textContent);
+assert('date switch does not clamp the cart', cards[0].querySelector('.qty').value === '5',
+  cards[0].querySelector('.qty').value);
 assert('no sold-out or remaining note on cards',
   !/Sold out|Only \d+ left/i.test(cards[0].querySelector('.stock-note')?.textContent || ''),
   cards[0].querySelector('.stock-note')?.textContent);
 
 firstPlus.click();
 firstPlus.click();
-assert('plus is not limited by planned stock', cards[0].querySelector('.qty').textContent === '7',
-  cards[0].querySelector('.qty').textContent);
+assert('plus is not limited by planned stock', cards[0].querySelector('.qty').value === '7',
+  cards[0].querySelector('.qty').value);
 assert('plus stays enabled for a pre-order', cards[0].querySelector('.plus').disabled === false);
 
 const lastCard = cards[5];
@@ -525,8 +525,8 @@ assert('no sold out note on plum 400', !/Sold out/.test(lastCard.querySelector('
 assert('plum 400 is not greyed as sold-out', !lastCard.classList.contains('sold-out'));
 assert('plum 400 plus stays enabled', lastCard.querySelector('.plus').disabled === false);
 lastPlus.click();
-assert('plum 400 can be added', lastCard.querySelector('.qty').textContent === '1',
-  lastCard.querySelector('.qty').textContent);
+assert('plum 400 can be added', lastCard.querySelector('.qty').value === '1',
+  lastCard.querySelector('.qty').value);
 
 w.__setStockForTest({}, 'error');
 zeroCart();
@@ -534,8 +534,8 @@ assert('fetch fail does not show a stock warning', !/confirmed limits|out of sto
   document.getElementById('stock-status').textContent);
 assert('fetch fail still defaults to 29 Nov', document.getElementById('pickup-date').value === '2026-11-29');
 for (let i = 0; i < 20; i++) firstPlus.click();
-assert('fetch fail does not clamp quantities', cards[0].querySelector('.qty').textContent === '20',
-  cards[0].querySelector('.qty').textContent);
+assert('fetch fail does not clamp quantities', cards[0].querySelector('.qty').value === '20',
+  cards[0].querySelector('.qty').value);
 const dec6chip = document.querySelector('.date-chip[data-id="2026-12-06"]');
 assert('fetch fail later dates stay orderable', dec6chip && dec6chip.disabled === false,
   dec6chip && (dec6chip.textContent + ' disabled=' + dec6chip.disabled));
@@ -588,7 +588,7 @@ assert('confirmation lists the cakes ordered',
   const sentPhone = document.getElementById('buyer-phone').value;
   document.getElementById('place-another').click();
   assert('place another order: hides the confirmation', confirmView().hidden === true);
-  assert('place another order: empties the cart', Array.from(document.querySelectorAll('.stepper .qty')).every((q) => q.textContent === '0') && /0 items/.test(document.getElementById('summary-count').textContent));
+  assert('place another order: empties the cart', Array.from(document.querySelectorAll('.stepper .qty')).every((q) => q.value === '0') && /0 items/.test(document.getElementById('summary-count').textContent));
   assert('place another order: clears name and phone', document.getElementById('buyer-name').value === '' && document.getElementById('buyer-phone').value === '');
   assert('place another order: goes back to the first step', document.getElementById('tab-date').getAttribute('aria-selected') === 'true');
   assert('place another order: forgets the finished order id', !window.sessionStorage.getItem('poppinsCheckoutOrderId') && !window.sessionStorage.getItem('poppinsLastPlaced'));
@@ -654,8 +654,8 @@ window.fetch = async function (url, opts) {
 };
 await w.placeOrder();
 assert('pre-order still ends on the confirmation (saved on this phone) if the server mentions stock', confirmShown() && /Order saved/.test(confirmTitle()), confirmTitle());
-assert('pre-order does not clamp the cart', cards[0].querySelector('.qty').textContent === '1',
-  cards[0].querySelector('.qty').textContent);
+assert('pre-order does not clamp the cart', cards[0].querySelector('.qty').value === '1',
+  cards[0].querySelector('.qty').value);
 const idAfterFirstQueue = window.sessionStorage.getItem('poppinsCheckoutOrderId');
 assert('queued checkout keeps the order id until the sheet confirms', !!idAfterFirstQueue, String(idAfterFirstQueue));
 await new Promise((r) => setTimeout(r, 40));
@@ -1095,25 +1095,25 @@ assert('CTA says Place order with a check icon and no WhatsApp', document.getEle
     note(plumCard).textContent);
   assert('stock: plus is disabled when out of stock', plumCard.querySelector('.plus').disabled === true);
   lastPlus.click();
-  assert('stock: cannot add an out-of-stock cake', plumCard.querySelector('.qty').textContent === '0');
+  assert('stock: cannot add an out-of-stock cake', plumCard.querySelector('.qty').value === '0');
 
   for (let i = 0; i < 6; i++) firstPlus.click();
-  assert('stock: stepper is capped at the remaining count', cards[0].querySelector('.qty').textContent === '3', cards[0].querySelector('.qty').textContent);
+  assert('stock: stepper is capped at the remaining count', cards[0].querySelector('.qty').value === '3', cards[0].querySelector('.qty').value);
   assert('stock: plus disabled at the cap', cards[0].querySelector('.plus').disabled === true);
   assert('stock: low stock shows "Only N left"', /Only 3 left/.test(note(cards[0]).textContent), note(cards[0]).textContent);
   assert('stock: low-stock cake is not marked sold-out', !cards[0].classList.contains('sold-out'));
   assert('stock: a bigger remainder shows no note', note(bsCard).hidden === true && note(bsCard).textContent === '', note(bsCard).textContent);
   for (let i = 0; i < 15; i++) bsCard.querySelector('.plus').click();
-  assert('stock: cap applies to larger remainders too (12)', bsCard.querySelector('.qty').textContent === '12', bsCard.querySelector('.qty').textContent);
+  assert('stock: cap applies to larger remainders too (12)', bsCard.querySelector('.qty').value === '12', bsCard.querySelector('.qty').value);
 
   // unlimited date: no label, no cap
   w.selectPickupDate('2026-12-06');
   assert('stock: date without limits clears labels and sold-out', !plumCard.classList.contains('sold-out') && note(plumCard).hidden === true);
   assert('stock: unlimited remaining is Infinity', w.remainingForItem({ name: 'Rich Plum Cake', weight: '400g' }, '2026-12-06') === Infinity);
   assert('stock: plus is enabled again on an unlimited date', plumCard.querySelector('.plus').disabled === false);
-  assert('stock: cart within limits is untouched on switch', cards[0].querySelector('.qty').textContent === '3');
+  assert('stock: cart within limits is untouched on switch', cards[0].querySelector('.qty').value === '3');
   for (let i = 0; i < 4; i++) firstPlus.click();
-  assert('stock: unlimited date has no cap', cards[0].querySelector('.qty').textContent === '7', cards[0].querySelector('.qty').textContent);
+  assert('stock: unlimited date has no cap', cards[0].querySelector('.qty').value === '7', cards[0].querySelector('.qty').value);
 
   // null remaining = unlimited too
   w.selectPickupDate('2026-12-13');
@@ -1122,7 +1122,7 @@ assert('CTA says Place order with a check icon and no WhatsApp', document.getEle
   // switching back to the limited date clamps the cart and tells the customer
   document.getElementById('toast').classList.remove('visible');
   w.selectPickupDate('2026-11-29');
-  assert('stock: cart is clamped when switching to a limited date', cards[0].querySelector('.qty').textContent === '3', cards[0].querySelector('.qty').textContent);
+  assert('stock: cart is clamped when switching to a limited date', cards[0].querySelector('.qty').value === '3', cards[0].querySelector('.qty').value);
   assert('stock: clamp shows a toast', document.getElementById('toast').classList.contains('visible') && /only 3 left/i.test(document.getElementById('toast').textContent),
     document.getElementById('toast').textContent);
   assert('stock: summary reflects the clamped cart', /3\s*×/.test(document.getElementById('cart-lines').textContent));
@@ -1189,7 +1189,7 @@ assert('CTA says Place order with a check icon and no WhatsApp', document.getEle
   assert('stock refresh: stale cart is stopped with the Out of stock alert',
     document.getElementById('form-alert').classList.contains('is-open') && document.getElementById('form-alert-title').textContent === 'Out of stock');
   assert('stock refresh: no order was posted and no confirmation shown', orderPosts === 0 && !confirmShown());
-  assert('stock refresh: cart is clamped to what is left', cards[0].querySelector('.qty').textContent === '1', cards[0].querySelector('.qty').textContent);
+  assert('stock refresh: cart is clamped to what is left', cards[0].querySelector('.qty').value === '1', cards[0].querySelector('.qty').value);
   w.closeFormAlert();
 
   // refresh failing must not block ordering (fail open)
@@ -1307,7 +1307,7 @@ assert('CTA says Place order with a check icon and no WhatsApp', document.getEle
   };
   await w.__loadPickupDatesForTest({ fresh: true });
   assert('fast stock: background refresh clamps the cart and keeps the date',
-    cards[0].querySelector('.qty').textContent === '1' && document.getElementById('pickup-date').value === '2026-11-29', cards[0].querySelector('.qty').textContent);
+    cards[0].querySelector('.qty').value === '1' && document.getElementById('pickup-date').value === '2026-11-29', cards[0].querySelector('.qty').value);
   assert('fast stock: the customer is told the cart changed', /Cart updated/.test(document.getElementById('toast').textContent), document.getElementById('toast').textContent);
 
   window.__TEST_DISABLE_NETWORK = true;
@@ -1450,7 +1450,7 @@ assert('rename: the title, meta tags and heading do not mention WhatsApp',
     const minus = st.querySelector('.minus');
     const qty = st.querySelector('.qty');
     let guard = 0;
-    while (Number(qty.textContent) > 0 && !minus.disabled && guard++ < 200) minus.click();
+    while (Number(qty.value) > 0 && !minus.disabled && guard++ < 200) minus.click();
   });
   const add = (idx, n) => { const plus = steppers()[idx].querySelector('.plus'); for (let i = 0; i < n; i++) plus.click(); };
   const shown = (id) => !document.getElementById(id).classList.contains('hidden');
@@ -1562,10 +1562,10 @@ assert('rename: the title, meta tags and heading do not mention WhatsApp',
   ad.querySelector('.date-chip[data-id="2026-12-06"]').click();
   const plus = ad.querySelector('.menu-card .plus');
   plus.click(); plus.click();
-  assert('reconcile: set up a picked date and two cakes', ad.getElementById('pickup-date').value === '2026-12-06' && ad.querySelector('.menu-card .qty').textContent === '2');
+  assert('reconcile: set up a picked date and two cakes', ad.getElementById('pickup-date').value === '2026-12-06' && ad.querySelector('.menu-card .qty').value === '2');
   await wait(500);
   assert('reconcile: the backend list wins (dates added and removed)', chipIds(ad).join() === payload.dates.map((d) => d.id).join(), chipIds(ad).join());
-  assert('reconcile: the picked date and the cart survive', ad.getElementById('pickup-date').value === '2026-12-06' && ad.querySelector('.menu-card .qty').textContent === '2');
+  assert('reconcile: the picked date and the cart survive', ad.getElementById('pickup-date').value === '2026-12-06' && ad.querySelector('.menu-card .qty').value === '2');
   answering.window.close();
 
   // 3. a picked date the backend no longer lists moves to the first open date; the cart stays
@@ -1575,7 +1575,7 @@ assert('rename: the title, meta tags and heading do not mention WhatsApp',
   dd.querySelector('.menu-card .plus').click();
   await wait(500);
   assert('reconcile: a date the backend dropped falls back to the first open date and keeps the cart',
-    dd.getElementById('pickup-date').value === '2026-11-29' && dd.querySelector('.menu-card .qty').textContent === '1', dd.getElementById('pickup-date').value);
+    dd.getElementById('pickup-date').value === '2026-11-29' && dd.querySelector('.menu-card .qty').value === '1', dd.getElementById('pickup-date').value);
   dropped.window.close();
 
   // 4. an unreachable backend (fetch rejects) leaves the built-in list in place

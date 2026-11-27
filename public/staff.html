@@ -174,7 +174,7 @@
     stepRow: 'mt-1 flex items-center justify-between gap-1',
     stepMinus: 'size-12 rounded-full border border-m3-outline text-[1.4rem] leading-none font-medium text-m3-on-surface hover:bg-m3-on-surface/8 active:bg-m3-on-surface/12 disabled:cursor-not-allowed disabled:opacity-[0.38]',
     stepPlus: 'size-12 rounded-full bg-m3-primary text-[1.4rem] leading-none font-medium text-m3-on-primary shadow-m3-1 hover:bg-[linear-gradient(#ffffff14,#ffffff14)] active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]',
-    stepQty: 'min-w-8 text-center text-[1.25rem] font-medium',
+    stepQty: 'h-10 w-12 rounded-full border-0 bg-transparent p-0 text-center text-[1.25rem] font-medium focus:bg-m3-surface focus:outline-2 focus:outline-m3-primary',
     liveLine: 'flex justify-between gap-2',
     amount: 'font-medium text-m3-primary',
     undo: 'min-h-12 min-w-[72px] rounded-full px-4 text-[0.875rem] font-medium tracking-[0.1px] text-m3-primary hover:bg-[linear-gradient(#2a230614,#2a230614)] active:bg-[linear-gradient(#2a23061f,#2a23061f)]',
@@ -770,7 +770,7 @@
         '<span class="' + CLS.iprice + '">' + rupee(m.price) + '</span></button>' +
         '<div class="' + CLS.stepRow + '">' +
         '<button type="button" class="' + CLS.stepMinus + '" data-act="dec" aria-label="Remove one ' + escapeAttr(m.name) + '"' + (q === 0 ? ' disabled' : '') + '>−</button>' +
-        '<span class="item-qty ' + CLS.stepQty + '" aria-live="polite">' + q + '</span>' +
+        '<input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" class="item-qty ' + CLS.stepQty + '" value="' + q + '" aria-label="Quantity of ' + escapeAttr(m.name) + '">' +
         '<button type="button" class="' + CLS.stepPlus + '" data-act="inc" aria-label="Add one ' + escapeAttr(m.name) + '">+</button>' +
         '</div></div>';
     }).join('');
@@ -1517,6 +1517,18 @@
       const name = pill.getAttribute('data-item');
       const cur = state.cart[name] || 0;
       setLineQty(name, btn.getAttribute('data-act') === 'inc' ? cur + 1 : cur - 1);
+    });
+    $('item-grid').addEventListener('focusin', function (ev) {
+      if (ev.target.classList && ev.target.classList.contains('item-qty')) ev.target.select();
+    });
+    $('item-grid').addEventListener('change', function (ev) {
+      const f = ev.target;
+      const pill = f.classList && f.classList.contains('item-qty') && f.closest('[data-item]');
+      if (!pill) return;
+      setLineQty(pill.getAttribute('data-item'), Number(f.value.replace(/\D/g, '')) || 0);
+    });
+    $('item-grid').addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && ev.target.classList && ev.target.classList.contains('item-qty')) { ev.preventDefault(); ev.target.blur(); }
     });
     $('walkin-customer').addEventListener('input', function () {
       state.customer = $('walkin-customer').value.slice(0, 60);

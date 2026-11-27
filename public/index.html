@@ -915,7 +915,7 @@
           '</div>' +
           '<div class="stepper flex shrink-0 items-center gap-1 self-end rounded-full bg-m3-surface-container-high p-1" data-id="' + escapeHtml(item.id) + '">' +
             '<button type="button" class="minus size-12 shrink-0 cursor-pointer rounded-full border-0 p-0 text-[1.5rem] font-normal leading-none inline-flex items-center justify-center [-webkit-tap-highlight-color:transparent] disabled:cursor-default disabled:opacity-[0.38] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary bg-transparent text-m3-primary hover:enabled:bg-[linear-gradient(#2a230614,#2a230614)] enabled:active:bg-[linear-gradient(#2a23061f,#2a23061f)]" aria-label="Decrease quantity of ' + escapeHtml(displayName(item)) + '" disabled>−</button>' +
-            '<span class="qty min-w-[1.6rem] text-center text-[1rem] font-medium tabular-nums text-m3-on-surface" aria-live="polite">0</span>' +
+            '<input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" value="0" class="qty h-12 w-11 rounded-full border-0 bg-transparent p-0 text-center text-[1rem] font-medium tabular-nums text-m3-on-surface focus:bg-m3-surface focus:outline-2 focus:outline-m3-primary" aria-label="Quantity of ' + escapeHtml(displayName(item)) + '">' +
             '<button type="button" class="plus size-12 shrink-0 cursor-pointer rounded-full border-0 p-0 text-[1.5rem] font-normal leading-none inline-flex items-center justify-center [-webkit-tap-highlight-color:transparent] disabled:cursor-default disabled:opacity-[0.38] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary bg-m3-primary text-m3-on-primary hover:enabled:bg-[linear-gradient(#ffffff14,#ffffff14)] enabled:active:bg-[linear-gradient(#ffffff1f,#ffffff1f)]" aria-label="Increase quantity of ' + escapeHtml(displayName(item)) + '">+</button>' +
           '</div>';
 
@@ -923,6 +923,15 @@
         const plus = card.querySelector('.plus');
         minus.addEventListener('click', () => changeQty(item.id, -1));
         plus.addEventListener('click', () => changeQty(item.id, 1));
+        const qtyInput = card.querySelector('.qty');
+        qtyInput.addEventListener('focus', () => qtyInput.select());
+        qtyInput.addEventListener('input', () => {
+          const digits = qtyInput.value.replace(/\D/g, '').slice(0, 2);
+          if (digits !== qtyInput.value) qtyInput.value = digits;
+          if (digits !== '') setQty(item.id, Number(digits), true);
+        });
+        qtyInput.addEventListener('change', () => setQty(item.id, Number(qtyInput.value.replace(/\D/g, '')) || 0, false));
+        qtyInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); qtyInput.blur(); } });
         els.menuList.appendChild(card);
       });
     }
@@ -936,19 +945,24 @@
     }
 
     function changeQty(id, delta) {
-      const next = (qtyById[id] || 0) + delta;
+      setQty(id, (qtyById[id] || 0) + delta, false);
+    }
+
+    function setQty(id, next, keepTyping) {
       qtyById[id] = Math.max(0, Math.min(maxQtyForItemId(id), next));
-      syncStepper(id);
+      syncStepper(id, keepTyping);
       updateSummary();
       if (cartTotals(getCart()).totalItems > 0) hideCartError();
       refreshCheckoutErrorSummary();
     }
 
-    function syncStepper(id) {
+    function syncStepper(id, keepTyping) {
       const root = els.menuList.querySelector('.stepper[data-id="' + id + '"]');
       if (!root) return;
       const qty = qtyById[id];
-      root.querySelector('.qty').textContent = String(qty);
+      const field = root.querySelector('.qty');
+      // While typing, leave the field alone unless the number was capped.
+      if (!keepTyping || Number(field.value) !== qty) field.value = String(qty);
       root.querySelector('.minus').disabled = qty <= 0;
       root.querySelector('.plus').disabled = qty >= maxQtyForItemId(id);
     }

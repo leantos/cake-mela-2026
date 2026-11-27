@@ -239,7 +239,7 @@ async function loadPreview() {
   assert('- is disabled while a cake is at 0', pillOf(DATES).querySelector('[data-act="dec"]').disabled === true);
   tap(DATES, 'inc'); tap(DATES, 'inc'); tap(PLUM, 'inc');
   assert('tapping + on two cakes puts both in the sale',
-    window.__staff.getCart().length === 2 && pillOf(DATES).querySelector('.item-qty').textContent === '2' && pillOf(DATES).getAttribute('data-on') === 'true',
+    window.__staff.getCart().length === 2 && pillOf(DATES).querySelector('.item-qty').value === '2' && pillOf(DATES).getAttribute('data-on') === 'true',
     JSON.stringify(window.__staff.getCart()));
   const prev = document.getElementById('live-summary').textContent;
   assert('preview lists every line and the total is the sum',
@@ -742,7 +742,7 @@ async function loadPreview() {
     document.getElementById('record-sale').disabled === true && /0/.test(document.getElementById('live-amount').textContent) &&
     document.getElementById('cash-panel').classList.contains('hidden') && clearBtn.disabled === true);
   assert('clear all: every pill quantity is back to 0',
-    Array.from(document.querySelectorAll('#item-grid .item-qty')).every((e) => e.textContent === '0'));
+    Array.from(document.querySelectorAll('#item-grid .item-qty')).every((e) => e.value === '0'));
   assert('clear all: does not change the selected date or touch recorded walk-ins and the outbox',
     st.pickupDate === dateBefore && st.walkins.length === recordedBefore && st.outbox.length === outboxBefore);
   const toastEl = Array.from(document.querySelectorAll('#toasts > div')).find((t) => /Sale cleared/.test(t.textContent));
