@@ -212,7 +212,7 @@
             'Rich Plum Cake (800g)': { total: 0 },
             'Rich Plum Cake (400g)': { total: 1 }
           },
-          totals: { cakes: 1, amount: 350, orders: 1 }
+          totals: { cakes: 1, amount: 320, orders: 1 }
         }
       ],
       grand: {
@@ -250,10 +250,10 @@
           row.pending = Math.round((row.total - row.pickedUp) * 0.5);
         });
         var pendCakes = MENU_ITEMS.reduce(function (n, name) { return n + (date.items[name].pending || 0); }, 0);
-        date.pending = { orders: Math.min(date.totals.orders, Math.max(0, Math.ceil(pendCakes / 2))), cakes: pendCakes, amount: pendCakes * 350 };
+        date.pending = { orders: Math.min(date.totals.orders, Math.max(0, Math.ceil(pendCakes / 2))), cakes: pendCakes, amount: pendCakes * 320 };
         var picked = MENU_ITEMS.reduce(function (n, name) { return n + (date.items[name].pickedUp || 0); }, 0);
         var walk = MENU_ITEMS.reduce(function (n, name) { return n + (date.items[name].walkIn || 0); }, 0);
-        var walkAmt = walk * 350;
+        var walkAmt = walk * 320;
         date.sales = {
           ordered: { cakes: date.totals.cakes, amount: date.totals.amount, orders: date.totals.orders },
           cancelled: { orders: index === 1 ? 2 : (index === 0 ? 1 : 0) },
@@ -293,11 +293,11 @@
 
     // Example orders for ?preview=1 only. Obviously fake data.
     const MOCK_STAFF_ORDERS = [
-      { row: 2, orderId: 'PB-261123-DEMO1', name: 'Asha Rao', phone: '9876543210', pickupDate: '2026-11-29', items: '2 × Rich Plum Cake (400g)', total: 700, status: 'Pending' },
-      { row: 3, orderId: 'PB-261123-DEMO2', name: 'Joseph Dsouza', phone: '9845012345', pickupDate: '2026-11-29', items: '1 × Dates & Carrot Pudding (700g)\n1 × Butterscotch Pudding (350g)', total: 1000, status: 'Pending' },
-      { row: 4, orderId: 'PB-261123-DEMO3', name: 'Maria Fernandes', phone: '9988776655', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (800g)', total: 650, status: 'Paid' },
-      { row: 5, orderId: 'PB-261123-DEMO4', name: 'Sunita Rao', phone: '9000011122', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (350g)', total: 350, status: 'Cancelled' },
-      { row: 6, orderId: 'PB-261123-DEMO5', name: 'Peter Lobo', phone: '9123456780', pickupDate: '2026-12-06', items: '3 × Rich Plum Cake (400g)', total: 1050, status: 'Pending' }
+      { row: 2, orderId: 'PB-261123-DEMO1', name: 'Asha Rao', phone: '9876543210', pickupDate: '2026-11-29', items: '2 × Rich Plum Cake (400g)', total: 640, status: 'Pending' },
+      { row: 3, orderId: 'PB-261123-DEMO2', name: 'Joseph Dsouza', phone: '9845012345', pickupDate: '2026-11-29', items: '1 × Dates & Carrot Pudding (700g)\n1 × Butterscotch Pudding (350g)', total: 870, status: 'Pending' },
+      { row: 4, orderId: 'PB-261123-DEMO3', name: 'Maria Fernandes', phone: '9988776655', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (800g)', total: 620, status: 'Paid' },
+      { row: 5, orderId: 'PB-261123-DEMO4', name: 'Sunita Rao', phone: '9000011122', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (350g)', total: 300, status: 'Cancelled' },
+      { row: 6, orderId: 'PB-261123-DEMO5', name: 'Peter Lobo', phone: '9123456780', pickupDate: '2026-12-06', items: '3 × Rich Plum Cake (400g)', total: 960, status: 'Pending' }
     ];
 
     const els = {

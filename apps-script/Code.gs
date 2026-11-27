@@ -74,12 +74,12 @@ var WALKIN_HEADERS = ['Date', 'Item', 'Qty', 'Price each', 'Amount', 'Payment', 
 
 /** Official menu prices, used by the Walk-in Sales price-each formula. */
 var MENU_ITEM_PRICES = {
-  'Dates & Carrot Pudding (700g)': 650,
-  'Dates & Carrot Pudding (350g)': 330,
-  'Butterscotch Pudding (700g)': 700,
-  'Butterscotch Pudding (350g)': 350,
-  'Rich Plum Cake (800g)': 650,
-  'Rich Plum Cake (400g)': 350
+  'Dates & Carrot Pudding (700g)': 570,
+  'Dates & Carrot Pudding (350g)': 300,
+  'Butterscotch Pudding (700g)': 580,
+  'Butterscotch Pudding (350g)': 300,
+  'Rich Plum Cake (800g)': 620,
+  'Rich Plum Cake (400g)': 320
 };
 
 
@@ -182,7 +182,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-24.8';
+var SCRIPT_VERSION = '2026-11-27.1';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};

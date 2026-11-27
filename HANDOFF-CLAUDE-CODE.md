@@ -6,9 +6,11 @@ You are picking up an existing, working project. Read this fully, then `README.m
 - A Christmas cake pre-order fundraiser for Vailankanni Matha Youth with Poppins Bakers, at Vailankanni Matha Church, Muthanallur (Harohalli, Sarjapura Road, Bengaluru 560099).
 - **Pickup only**, every Sunday from 29 Nov 2026, after the 6:30 AM or 8:30 AM Mass. There is no delivery.
 - **Menu (₹):**
-  - Dates & Carrot Pudding: 700g 650, 350g 330
-  - Butterscotch Pudding: 700g 700, 350g 350
-  - Rich Plum Cake: 800g 650, 400g 350
+  - Dates & Carrot Pudding: 700g 570, 350g 300
+  - Butterscotch Pudding: 700g 580, 350g 300
+  - Rich Plum Cake: 800g 620, 400g 320
+  - **Price update (2026-11-27, Code.gs `2026-11-27.1`, new "Offer Price" poster).** Prices live in three places: `MENU_ITEM_PRICES` in `Code.gs`, `MENU_ITEMS` in `public/index.html` and `MENU` in `public/staff.html`. New prices apply to NEW orders and walk-ins only: existing Orders rows keep the amount they were saved with. The hidden `_ItemPrices` tab is rewritten from `MENU_ITEM_PRICES` every time `setupSheets` (or a walk-in) runs, and the Walk-in Sales `Price each`/`Amount` columns are formulas over it, so any walk-in rows recorded BEFORE the change will re-price to the new numbers. The poster's "10% off on orders of 50 cakes & above" bulk discount is NOT implemented in the order total.
+
 - **Contacts.** Orders alternate between two WhatsApp numbers:
   - Cyril Martin, 917204017793 (+91 72040 17793)
   - Aashwin Alfy, 918050764341 (+91 80507 64341)

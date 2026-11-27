@@ -193,12 +193,12 @@
   const SEARCH_DEBOUNCE_MS = 280;
 
   const MENU = [
-    { name: 'Dates & Carrot Pudding (700g)', short: 'Dates 700g', price: 650 },
-    { name: 'Dates & Carrot Pudding (350g)', short: 'Dates 350g', price: 330 },
-    { name: 'Butterscotch Pudding (700g)', short: 'Butterscotch 700g', price: 700 },
-    { name: 'Butterscotch Pudding (350g)', short: 'Butterscotch 350g', price: 350 },
-    { name: 'Rich Plum Cake (800g)', short: 'Plum 800g', price: 650 },
-    { name: 'Rich Plum Cake (400g)', short: 'Plum 400g', price: 350 }
+    { name: 'Dates & Carrot Pudding (700g)', short: 'Dates 700g', price: 570 },
+    { name: 'Dates & Carrot Pudding (350g)', short: 'Dates 350g', price: 300 },
+    { name: 'Butterscotch Pudding (700g)', short: 'Butterscotch 700g', price: 580 },
+    { name: 'Butterscotch Pudding (350g)', short: 'Butterscotch 350g', price: 300 },
+    { name: 'Rich Plum Cake (800g)', short: 'Plum 800g', price: 620 },
+    { name: 'Rich Plum Cake (400g)', short: 'Plum 400g', price: 320 }
   ];
   const DEFAULT_DATES = [
     { id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30' },
@@ -208,16 +208,16 @@
   ];
 
   const MOCK_ORDERS = [
-    { row: 2, orderId: 'PB-261123-HVAB', name: "Anita D'Souza", phone: '9876543210', pickupDate: '2026-11-29', items: '1 × Dates & Carrot Pudding (700g)\n2 × Rich Plum Cake (400g)', total: 1350, status: 'Pending' },
-    { row: 3, orderId: 'PB-261123-KLMN', name: 'Cyril Martin', phone: '7204017793', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (700g)', total: 700, status: 'Paid' },
-    { row: 4, orderId: 'PB-261123-QRST', name: 'Maria Fernandes', phone: '9988776655', pickupDate: '2026-11-29', items: '2 × Dates & Carrot Pudding (350g)\n1 × Rich Plum Cake (800g)', total: 1310, status: 'Picked up' },
-    { row: 5, orderId: 'PB-261122-ABCD', name: 'Joseph Pinto', phone: '9123456780', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Pending' },
-    { row: 6, orderId: 'PB-261122-WXYZ', name: 'Sunita Rao', phone: '9000011122', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (350g)', total: 350, status: 'Cancelled' },
-    { row: 7, orderId: 'PB-261121-EFGH', name: 'Rohan Naik', phone: '9811122233', pickupDate: '2026-12-06', items: '1 × Dates & Carrot Pudding (700g)', total: 650, status: 'Pending' }
+    { row: 2, orderId: 'PB-261123-HVAB', name: "Anita D'Souza", phone: '9876543210', pickupDate: '2026-11-29', items: '1 × Dates & Carrot Pudding (700g)\n2 × Rich Plum Cake (400g)', total: 1210, status: 'Pending' },
+    { row: 3, orderId: 'PB-261123-KLMN', name: 'Cyril Martin', phone: '7204017793', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (700g)', total: 580, status: 'Paid' },
+    { row: 4, orderId: 'PB-261123-QRST', name: 'Maria Fernandes', phone: '9988776655', pickupDate: '2026-11-29', items: '2 × Dates & Carrot Pudding (350g)\n1 × Rich Plum Cake (800g)', total: 1220, status: 'Picked up' },
+    { row: 5, orderId: 'PB-261122-ABCD', name: 'Joseph Pinto', phone: '9123456780', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 320, status: 'Pending' },
+    { row: 6, orderId: 'PB-261122-WXYZ', name: 'Sunita Rao', phone: '9000011122', pickupDate: '2026-11-29', items: '1 × Butterscotch Pudding (350g)', total: 300, status: 'Cancelled' },
+    { row: 7, orderId: 'PB-261121-EFGH', name: 'Rohan Naik', phone: '9811122233', pickupDate: '2026-12-06', items: '1 × Dates & Carrot Pudding (700g)', total: 570, status: 'Pending' }
   ];
   const MOCK_WALKINS = [
-    { walkinId: 'WI-demo-1', date: '2026-11-29', item: 'Dates & Carrot Pudding (700g)', qty: 1, price: 650, amount: 650, payment: 'Cash', notes: '', recordedAt: '2026-11-29T03:35:00.000Z', voided: false },
-    { walkinId: 'WI-demo-2', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 2, price: 350, amount: 700, payment: 'UPI', notes: '', recordedAt: '2026-11-29T04:05:00.000Z', voided: false }
+    { walkinId: 'WI-demo-1', date: '2026-11-29', item: 'Dates & Carrot Pudding (700g)', qty: 1, price: 570, amount: 570, payment: 'Cash', notes: '', recordedAt: '2026-11-29T03:35:00.000Z', voided: false },
+    { walkinId: 'WI-demo-2', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 2, price: 320, amount: 640, payment: 'UPI', notes: '', recordedAt: '2026-11-29T04:05:00.000Z', voided: false }
   ];
 
   const params = new URLSearchParams(location.search);

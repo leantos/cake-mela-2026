@@ -65,12 +65,12 @@ assert('menu names order', JSON.stringify(names) === JSON.stringify([
 
 const prices = [...cards].map((c) => c.querySelector('.price')?.textContent.replace(/\s+/g, ' ').trim());
 assert('poster prices', JSON.stringify(prices) === JSON.stringify([
-  '₹650 · 700g',
-  '₹330 · 350g',
-  '₹700 · 700g',
-  '₹350 · 350g',
-  '₹650 · 800g',
-  '₹350 · 400g'
+  '₹570 · 700g',
+  '₹300 · 350g',
+  '₹580 · 700g',
+  '₹300 · 350g',
+  '₹620 · 800g',
+  '₹320 · 400g'
 ]), JSON.stringify(prices));
 
 const tags = [...cards].map((c) => c.querySelector('.tag')?.textContent || '');
@@ -352,11 +352,11 @@ assert('closed banner hidden while dates remain', !document.getElementById('preo
   zeroCart();
   assert('upi: with an empty cart the card asks you to pick cakes', card.querySelector('.upi-amount').textContent === 'Pick your cakes to see the amount', card.querySelector('.upi-amount').textContent);
   cards[0].querySelector('.plus').click();
-  assert('upi: the details-step amount follows the cart', card.querySelector('.upi-amount').textContent === 'Pay ₹650', card.querySelector('.upi-amount').textContent);
+  assert('upi: the details-step amount follows the cart', card.querySelector('.upi-amount').textContent === 'Pay ₹570', card.querySelector('.upi-amount').textContent);
   const cshot = card.querySelector('a.upi-screenshot');
   const cmsg = new URL(cshot.getAttribute('href')).searchParams.get('text');
   assert('upi: before ordering the message has the total but no order ID wording',
-    cmsg === 'Hi Cyril, I have paid ₹650 for my cake order. Screenshot attached.' && !/PB-|order PB/.test(cmsg) && cshot.getAttribute('target') === '_blank' && /noopener/.test(cshot.getAttribute('rel')), cmsg);
+    cmsg === 'Hi Cyril, I have paid ₹570 for my cake order. Screenshot attached.' && !/PB-|order PB/.test(cmsg) && cshot.getAttribute('target') === '_blank' && /noopener/.test(cshot.getAttribute('rel')), cmsg);
   zeroCart();
   const waLinks = Array.from(document.querySelectorAll('a[href*="wa.me"]'));
   const shotLinks = waLinks.filter((a) => a.classList.contains('upi-screenshot'));
@@ -386,9 +386,9 @@ firstPlus.click();
 lastPlus.click();
 const summaryCount = document.getElementById('summary-count').textContent;
 const summaryTotal = document.getElementById('summary-total').textContent;
-assert('summary after 2x dates 700 + 1x plum 400', summaryCount === '3 items' && summaryTotal === '₹1,650', summaryCount + ' ' + summaryTotal);
+assert('summary after 2x dates 700 + 1x plum 400', summaryCount === '3 items' && summaryTotal === '₹1,460', summaryCount + ' ' + summaryTotal);
 firstMinus.click();
-assert('summary after minus', document.getElementById('summary-count').textContent === '2 items' && document.getElementById('summary-total').textContent === '₹1,000',
+assert('summary after minus', document.getElementById('summary-count').textContent === '2 items' && document.getElementById('summary-total').textContent === '₹890',
   document.getElementById('summary-count').textContent + ' ' + document.getElementById('summary-total').textContent);
 
 // Validation: empty submit (items present, identity missing, no date yet)
@@ -1003,8 +1003,8 @@ assert('WebP source with JPEG fallback',
   document.querySelector('picture source[type="image/webp"]')?.getAttribute('srcset') === 'poster.webp' &&
   document.querySelector('picture img')?.getAttribute('src') === 'poster.jpg');
 assert('hero has width and height to avoid CLS',
-  document.querySelector('picture img')?.getAttribute('width') === '1024' &&
-  document.querySelector('picture img')?.getAttribute('height') === '1536');
+  document.querySelector('picture img')?.getAttribute('width') === '1080' &&
+  document.querySelector('picture img')?.getAttribute('height') === '1620');
 assert('hero fetchpriority is high',
   document.querySelector('picture img')?.getAttribute('fetchpriority') === 'high');
 assert('preconnects Apps Script origins',
@@ -1037,11 +1037,11 @@ firstPlus.click();
 assert('cart-lines lists the added item',
   /2\s*×/.test(document.getElementById('cart-lines').textContent) &&
   /Dates & Carrot Pudding \(700g\)/.test(document.getElementById('cart-lines').textContent) &&
-  /₹1,300/.test(document.getElementById('cart-lines').textContent),
+  /₹1,140/.test(document.getElementById('cart-lines').textContent),
   document.getElementById('cart-lines').textContent);
 assert('compact summary stays in sync with cart-lines',
   document.getElementById('summary-count').textContent === '2 items' &&
-  document.getElementById('summary-total').textContent === '₹1,300');
+  document.getElementById('summary-total').textContent === '₹1,140');
 
 // ---- Poster palette + full-width desktop grid ----
 assert('theme-color is poster maroon', document.querySelector('meta[name="theme-color"]')?.getAttribute('content') === '#7a0a10');

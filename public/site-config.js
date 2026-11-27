@@ -20,8 +20,8 @@
     poster: {
       webp: 'poster.webp',
       jpg: 'poster.jpg',
-      width: 1024,
-      height: 1536
+      width: 1080,
+      height: 1620
     },
     contacts: [
       { id: 'cyril', name: 'Cyril Martin', number: '917204017793', display: '+91 72040 17793' },

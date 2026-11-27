@@ -156,8 +156,8 @@ async function loadPreview() {
   window.__staff.setQty(2);
   window.__staff.setPayment('UPI');
   assert('live amount updates with qty and item',
-    document.getElementById('live-amount').textContent.replace(/\s/g, '').includes('1,300') ||
-    document.getElementById('live-amount').textContent.includes('1300'),
+    document.getElementById('live-amount').textContent.replace(/\s/g, '').includes('1,140') ||
+    document.getElementById('live-amount').textContent.includes('1140'),
     document.getElementById('live-amount').textContent);
   const liveSum = document.getElementById('live-summary').textContent;
   assert('live summary shows qty, item and payment (no Mass)',
@@ -176,7 +176,7 @@ async function loadPreview() {
   assert('Recent walk-ins card shows the customer name', document.getElementById('walkin-list').textContent.includes('Maria'));
   assert('customer field is cleared after a successful record', custInput.value === '' && window.__staff.getState().customer === '');
   const afterWalk = window.__staff.getState().walkins.filter((w) => !w.voided);
-  const recorded = afterWalk.find((w) => w.payment === 'UPI' && w.amount === 1300);
+  const recorded = afterWalk.find((w) => w.payment === 'UPI' && w.amount === 1140);
   assert('recording a walk-in sale adds it to the recent list',
     afterWalk.length === beforeWalk + 1 && recorded,
     JSON.stringify(afterWalk));
@@ -243,7 +243,7 @@ async function loadPreview() {
     JSON.stringify(window.__staff.getCart()));
   const prev = document.getElementById('live-summary').textContent;
   assert('preview lists every line and the total is the sum',
-    prev.includes('2 × ' + DATES) && prev.includes('1 × ' + PLUM) && flat(document.getElementById('live-amount')).includes('1650'), prev);
+    prev.includes('2 × ' + DATES) && prev.includes('1 × ' + PLUM) && flat(document.getElementById('live-amount')).includes('1460'), prev);
   tap(PLUM, 'dec');
   assert('- takes a cake all the way back to 0 and out of the sale',
     window.__staff.getCart().length === 1 && pillOf(PLUM).getAttribute('data-on') === 'false' && pillOf(PLUM).querySelector('[data-act="dec"]').disabled === true);
@@ -405,8 +405,8 @@ async function loadPreview() {
 
 
   // ---- cash change calculator ----
-  window.__staff.setItem('Dates & Carrot Pudding (700g)'); // 650
-  window.__staff.setLineQty('Rich Plum Cake (400g)', 1);   // 350 -> total 1000
+  window.__staff.setItem('Dates & Carrot Pudding (700g)'); // 570
+  window.__staff.setLineQty('Rich Plum Cake (400g)', 1);   // 320 -> total 890
   window.__staff.setPayment('Cash');
   const cdoc = window.document;
   const panelEl = () => cdoc.getElementById('cash-panel');
@@ -420,13 +420,13 @@ async function loadPreview() {
   cdoc.querySelector('#cash-quick [data-cash="500"]').click();
   assert('quick button fills the field', cdoc.getElementById('cash-received').value === '500');
   assert('amount below the total shows "Short by" with the shortfall',
-    /Short by/.test(resultEl().textContent) && digits(resultEl().textContent) === 500, resultEl().textContent);
+    /Short by/.test(resultEl().textContent) && digits(resultEl().textContent) === 390, resultEl().textContent);
   cdoc.querySelector('#cash-quick [data-cash="2000"]').click();
   assert('amount above the total shows the change to give',
-    /Change to give/.test(resultEl().textContent) && digits(resultEl().textContent) === 1000, resultEl().textContent);
+    /Change to give/.test(resultEl().textContent) && digits(resultEl().textContent) === 1110, resultEl().textContent);
   cdoc.querySelector('#cash-quick [data-cash="exact"]').click();
   assert('Exact fills the sale total and shows change ₹0',
-    cdoc.getElementById('cash-received').value === '1000' && /Change to give/.test(resultEl().textContent) && digits(resultEl().textContent) === 0, resultEl().textContent);
+    cdoc.getElementById('cash-received').value === '890' && /Change to give/.test(resultEl().textContent) && digits(resultEl().textContent) === 0, resultEl().textContent);
   const typed = cdoc.getElementById('cash-received');
   typed.value = '12a3456789';
   typed.dispatchEvent(new window.Event('input', { bubbles: true }));
@@ -446,7 +446,7 @@ async function loadPreview() {
   assert('two-line cash sale queues two entries and only the first has the note',
     cashQ.length === 2 && withNote.length === 1 && cashQ[0].payload.notes === withNote[0].payload.notes, JSON.stringify(cashQ.map((e) => e.payload.notes)));
   assert('note records received, change and the sale total',
-    /Cash received ₹2,000, change ₹1,000 \(sale total ₹1,000\)/.test(withNote[0].payload.notes), withNote[0].payload.notes);
+    /Cash received ₹2,000, change ₹1,110 \(sale total ₹890\)/.test(withNote[0].payload.notes), withNote[0].payload.notes);
   assert('note does not start with VOID', !/^\s*VOID/i.test(withNote[0].payload.notes));
   assert('Recent walk-ins card shows the note', cdoc.querySelectorAll('#walkin-list .walkin-notes').length === 1 &&
     /Cash received/.test(cdoc.querySelector('#walkin-list .walkin-notes').textContent));
@@ -607,7 +607,7 @@ async function loadPreview() {
     cards().filter((c) => /maria/i.test((c.querySelector('.walkin-customer') || {}).textContent || '')).length === 1,
     String(cards().length));
   const mariaTotal = Number(maria.querySelector('.walkin-total').textContent.replace(/[^\d]/g, ''));
-  assert('recent: the merged card total = 650 + 2x350 + 350', mariaTotal === 650 + 700 + 350, String(mariaTotal));
+  assert('recent: the merged card total = 570 + 2x320 + 300', mariaTotal === 570 + 640 + 300, String(mariaTotal));
   const unnamed = cards().find((c) => /Walk-in/.test(c.querySelector('.walkin-pill').textContent) && c.querySelectorAll('li[data-walkin]').length === 2);
   assert('recent: an unnamed multi-cake sale is ONE card of its own lines', !!unnamed);
   assert('recent: the badge counts cards (customers/sales), not lines',
