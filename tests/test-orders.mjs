@@ -373,8 +373,8 @@ const fetchDom = new JSDOM(html, {
   }
 });
 await new Promise((r) => setTimeout(r, 50));
-assert('mocked fetch requests action=summary',
-  fetchCalls.some((c) => /action=summary/.test(c.url) && c.method === 'GET'),
+assert('mocked fetch asks the Netlify /api/summary snapshot first',
+  fetchCalls.some((c) => /\/api\/summary/.test(c.url) && c.method === 'GET'),
   JSON.stringify(fetchCalls));
 assert('mocked fetch fills the default 29 Nov cake card',
   fetchDom.window.document.getElementById('card-cakes')?.textContent === '23',
@@ -396,10 +396,10 @@ fetchDom.window.close();
   const gated = clone(mock);
   gated.dates.find((d) => d.id === '2026-11-29').pending = { orders: 3, cakes: 5, amount: 1750 };
 
-  function mkPage({ url, session, handler }) {
+  function mkPage({ url, session, handler, localSeed }) {
     const calls = [];
     const sess = new Map(session || []);
-    const local = new Map();
+    const local = new Map(localSeed || []);
     const d = new JSDOM(html, {
       url: url || 'https://example.com/orders.html',
       runScripts: 'dangerously',
@@ -424,7 +424,8 @@ fetchDom.window.close();
           if (opts && opts.body) { try { body = JSON.parse(opts.body); } catch (e) { body = null; } }
           calls.push({ url: String(u), method, type: opts && opts.headers && opts.headers['Content-Type'], body });
           if (!handler) throw new Error('network disabled in tests');
-          const out = handler(String(u), method, body);
+          const out = await handler(String(u), method, body);
+          if (out && out.__fail) return { ok: false, status: out.__fail, json: async () => ({ ok: false }), text: async () => '' };
           return { ok: true, status: 200, json: async () => clone(out), text: async () => JSON.stringify(out) };
         };
       }
@@ -432,7 +433,7 @@ fetchDom.window.close();
     return { dom: d, win: d.window, doc: d.window.document, calls, sess, local };
   }
   const pageDone = (pg) => { try { if (pg.win.__orders) pg.win.__orders.stop(); } catch (e) {} pg.win.close(); };
-  const summaryGets = (pg) => pg.calls.filter((c) => c.method === 'GET' && /action=summary/.test(c.url));
+  const summaryGets = (pg) => pg.calls.filter((c) => c.method === 'GET' && /action=summary|\/api\/summary/.test(c.url));
 
   const ORDERS = [
     { row: 5, orderId: 'PB-X-3', name: 'Zed Third', phone: '9000000003', pickupDate: '2026-11-29', items: '1 × Rich Plum Cake (400g)', total: 350, status: 'Pending' },
@@ -575,6 +576,84 @@ fetchDom.window.close();
   assert('empty: a friendly empty state shows when the list has no Pending orders',
     !!pg.doc.querySelector('#pending-2026-11-29 .pending-orders-empty') && pg.doc.querySelectorAll('.pending-order').length === 0);
   staffOrdersMode = 'ok';
+  pageDone(pg);
+
+  // ---- fast loading: Netlify snapshot first, Apps Script as fallback, caches that never leak ----
+  const hang = () => new Promise(() => {});
+  const SESSION = [['poppinsStaffPin', '2468']];
+  const pendingForDay = ORDERS.filter((o) => o.pickupDate === '2026-11-29' && o.status === 'Pending');
+
+  // /api/summary answers: it is the first (and only) totals request
+  staffOrdersMode = 'ok';
+  pg = mkPage({ handler, session: SESSION });
+  await waitFor(() => pg.doc.getElementById('card-cakes').textContent === '23');
+  const firstGet = summaryGets(pg)[0];
+  assert('fast: totals come from the Netlify /api/summary snapshot first, with no Apps Script call',
+    !!firstGet && /\/api\/summary$/.test(firstGet.url) && !pg.calls.some((c) => c.method === 'GET' && /action=summary/.test(c.url)),
+    JSON.stringify(pg.calls.map((c) => c.url)));
+  assert('fast: the last totals are kept in localStorage and hold no names or phone numbers',
+    pg.local.has('poppinsOrdersSummaryCache') && !/Zed|9000000003|phone/.test(pg.local.get('poppinsOrdersSummaryCache')),
+    String(pg.local.get('poppinsOrdersSummaryCache')).slice(0, 120));
+  await waitFor(() => pg.doc.querySelectorAll('#pending-2026-11-29 .pending-order').length === pendingForDay.length);
+  assert('fast: the pending list is kept in sessionStorage for this tab only (never localStorage)',
+    pg.sess.has('poppinsPendingCache:2026-11-29') && !/Zed|9000000003/.test([...pg.local.values()].join('|')),
+    [...pg.sess.keys()].join(','));
+  // manual Refresh asks for live numbers
+  pg.doc.getElementById('refresh-btn').click();
+  await waitFor(() => pg.calls.some((c) => /\/api\/summary\?fresh=1$/.test(c.url)));
+  assert('fast: the Refresh button asks /api/summary?fresh=1', pg.calls.some((c) => /\/api\/summary\?fresh=1$/.test(c.url)));
+  // Lock wipes both caches
+  pg.doc.getElementById('lock-btn').click();
+  await sleep(30);
+  assert('fast: Lock wipes the cached totals and the cached pending list',
+    !pg.local.has('poppinsOrdersSummaryCache') && ![...pg.sess.keys()].some((k) => k.indexOf('poppinsPendingCache:') === 0) && pg.sess.size === 0,
+    [...pg.sess.keys()].join(',') + ' | ' + [...pg.local.keys()].join(','));
+  pageDone(pg);
+
+  // /api/summary fails -> the direct Apps Script call is the fallback
+  pg = mkPage({ session: SESSION, handler: (u, m, b) => (m === 'GET' && /\/api\/summary/.test(u) ? { __fail: 502 } : handler(u, m, b)) });
+  await waitFor(() => pg.doc.getElementById('card-cakes').textContent === '23');
+  const gets = summaryGets(pg);
+  assert('fast: when /api/summary fails the page falls back to the Apps Script totals',
+    gets.length >= 2 && /\/api\/summary$/.test(gets[0].url) && /action=summary/.test(gets[1].url) && pg.doc.getElementById('card-cakes').textContent === '23',
+    JSON.stringify(gets.map((c) => c.url)));
+  pageDone(pg);
+
+  // cached totals paint BEFORE any network answer, with an Updating status
+  pg = mkPage({
+    session: SESSION,
+    localSeed: [['poppinsOrdersSummaryCache', JSON.stringify({ at: Date.now() - 60000, data: gated })]],
+    handler: (u, m, b) => (m === 'GET' ? hang() : handler(u, m, b))
+  });
+  await sleep(120);
+  assert('fast: cached totals paint immediately while the network is still hanging',
+    pg.doc.getElementById('card-cakes').textContent === '23' && /Updating/.test(pg.doc.getElementById('status').textContent) &&
+    pg.doc.querySelectorAll('details').length > 0, pg.doc.getElementById('status').textContent);
+  pageDone(pg);
+
+  // a cache older than an hour is ignored
+  pg = mkPage({
+    session: SESSION,
+    localSeed: [['poppinsOrdersSummaryCache', JSON.stringify({ at: Date.now() - 2 * 60 * 60 * 1000, data: gated })]],
+    handler: (u, m, b) => (m === 'GET' ? hang() : handler(u, m, b))
+  });
+  await sleep(120);
+  assert('fast: totals older than one hour are not shown',
+    pg.doc.getElementById('card-cakes').textContent === '—' && pg.doc.querySelectorAll('details').length === 0);
+  pageDone(pg);
+
+  // the pending list paints from the session cache first, then updates
+  pg = mkPage({
+    session: SESSION.concat([['poppinsPendingCache:2026-11-29', JSON.stringify({ at: Date.now() - 5000, orders: pendingForDay })]]),
+    handler: (u, m, b) => (b && b.action === 'staff_orders' ? hang() : handler(u, m, b))
+  });
+  await waitFor(() => pg.doc.querySelectorAll('#pending-2026-11-29 .pending-order').length === pendingForDay.length);
+  assert('fast: the cached pending list shows at once with an Updating marker while staff_orders is still loading',
+    pg.doc.querySelectorAll('#pending-2026-11-29 .pending-order').length === pendingForDay.length &&
+    !!pg.doc.querySelector('#pending-2026-11-29 .pending-orders-updating'));
+  pg.doc.getElementById('lock-btn').click();
+  await sleep(30);
+  assert('fast: Lock removes the cached pending list from the session', pg.sess.size === 0, [...pg.sess.keys()].join(','));
   pageDone(pg);
 
   // preview mode: example data, no gate, no network

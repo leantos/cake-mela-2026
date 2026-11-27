@@ -5,7 +5,7 @@
  * (Scheduled functions run only on the published production deploy.)
  */
 import { getStore } from '@netlify/blobs';
-import { STORE_NAME, blobsConsistency, sweepPending, appsScriptUrl, refreshStockSnapshot } from '../lib/orders.mjs';
+import { STORE_NAME, blobsConsistency, sweepPending, appsScriptUrl, refreshStockSnapshot, refreshSummarySnapshot } from '../lib/orders.mjs';
 
 export default async () => {
   const store = getStore({ name: STORE_NAME, consistency: blobsConsistency() });
@@ -15,8 +15,12 @@ export default async () => {
   const stockWork = refreshStockSnapshot(store, { url, timeoutMs: 6000 })
     .then((d) => (d ? 'refreshed' : 'unavailable'))
     .catch(() => 'error');
-  const [summary, stock] = await Promise.all([sweepPending(store, { url, budgetMs: 25000 }), stockWork]);
-  console.log('sweep-orders', JSON.stringify(summary), 'stock-snapshot', stock);
+  // Same for the /orders totals snapshot (aggregates only).
+  const summaryWork = refreshSummarySnapshot(store, { url, timeoutMs: 6000 })
+    .then((d) => (d ? 'refreshed' : 'unavailable'))
+    .catch(() => 'error');
+  const [summary, stock, totals] = await Promise.all([sweepPending(store, { url, budgetMs: 25000 }), stockWork, summaryWork]);
+  console.log('sweep-orders', JSON.stringify(summary), 'stock-snapshot', stock, 'summary-snapshot', totals);
 };
 
 export const config = {

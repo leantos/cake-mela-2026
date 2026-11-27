@@ -246,10 +246,49 @@
     loading: false,
     ordersReq: 0,
     walkinsReq: 0,
+    ordersError: '',
+    ordersUpdating: false,
+    walkinsUpdating: false,
     recentQuery: ''
   };
 
   function $(id) { return document.getElementById(id); }
+
+  /* ---------- Fast loading: last lists per date, kept for THIS tab session only ----------
+     Orders and walk-ins carry names and phone numbers, so they go in sessionStorage (never
+     localStorage, never the server) and logout() wipes them. */
+  const STAFF_CACHE_PREFIX = 'poppinsStaffCache:';
+  const staffCacheKeys = {};
+  function staffCacheKey(kind, date) { return STAFF_CACHE_PREFIX + kind + ':' + date; }
+  function readStaffCache(kind, date) {
+    if (isPreview || !date) return null;
+    const key = staffCacheKey(kind, date);
+    try {
+      const v = JSON.parse(sessionStorage.getItem(key) || 'null');
+      if (v && typeof v === 'object') { staffCacheKeys[key] = true; return v; }
+    } catch (err) { /* no cache */ }
+    return null;
+  }
+  function writeStaffCache(kind, date, value) {
+    if (isPreview || !date) return;
+    const key = staffCacheKey(kind, date);
+    staffCacheKeys[key] = true;
+    try { sessionStorage.setItem(key, JSON.stringify(value)); } catch (err) { /* private mode etc. */ }
+  }
+  function clearStaffCaches() {
+    Object.keys(staffCacheKeys).forEach(function (key) {
+      try { sessionStorage.removeItem(key); } catch (err) {}
+      delete staffCacheKeys[key];
+    });
+    try {
+      const keys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k && k.indexOf(STAFF_CACHE_PREFIX) === 0) keys.push(k);
+      }
+      keys.forEach(function (k) { sessionStorage.removeItem(k); });
+    } catch (err) {}
+  }
 
   function rupee(n) {
     const v = Math.round(Number(n) || 0);
@@ -618,12 +657,18 @@
   function renderOrders() {
     const list = $('order-list');
     const orders = applyOutboxToOrders(state.orders);
+    const banner = state.ordersError
+      ? '<div class="orders-error ' + CLS.empty + ' col-span-full" role="alert">Couldn’t refresh the orders: ' + escapeHtml(state.ordersError) +
+        ' <button type="button" class="mt-2 min-h-12 rounded-full bg-m3-primary px-5 font-medium text-m3-on-primary" data-retry="orders">Retry</button></div>'
+      : '';
     if (!orders.length) {
-      list.innerHTML = '<p class="' + CLS.empty + '">No orders for this date' + (state.q ? ' and search' : '') + '.</p>';
+      list.innerHTML = banner || ('<p class="' + CLS.empty + '">' + (state.ordersUpdating
+        ? 'Loading orders for ' + escapeHtml(dateLabel(state.pickupDate)) + '…'
+        : 'No orders for this date' + (state.q ? ' and search' : '') + '.') + '</p>');
       renderCounts();
       return;
     }
-    list.innerHTML = orders.map(function (o) {
+    list.innerHTML = banner + orders.map(function (o) {
       const href = telHref(o.phone);
       const phoneHtml = href
         ? '<a class="phone-link ' + CLS.phone + '" href="' + href + '">' + formatPhone(o.phone) + '</a>'
@@ -848,11 +893,18 @@
       return;
     }
     const shown = groups.filter(function (g) { return groupMatches(g, state.recentQuery); });
+    // A failed refresh never blanks a list we already have: keep it and say what went wrong.
+    const walkinPrefix = (state.walkinsError && !state.walkinsLoading
+      ? '<div class="walkin-error ' + CLS.empty + ' col-span-full" role="alert">Couldn’t refresh the walk-ins for ' + escapeHtml(dateLabel(state.pickupDate)) + ': ' + escapeHtml(state.walkinsError) +
+        ' <button type="button" class="mt-2 min-h-12 rounded-full bg-m3-primary px-5 font-medium text-m3-on-primary" data-retry="walkins">Retry</button></div>'
+      : '') + (state.walkinsUpdating
+      ? '<p class="walkin-updating col-span-full text-[0.8125rem] text-m3-on-surface-variant" role="status">Updating…</p>'
+      : '');
     if (!shown.length) {
-      list.innerHTML = '<p class="no-matches ' + CLS.empty + '">No matches for “' + escapeHtml(state.recentQuery.trim()) + '”.</p>';
+      list.innerHTML = walkinPrefix + '<p class="no-matches ' + CLS.empty + '">No matches for “' + escapeHtml(state.recentQuery.trim()) + '”.</p>';
       return;
     }
-    list.innerHTML = shown.map(function (g) {
+    list.innerHTML = walkinPrefix + shown.map(function (g) {
       const clock = g.time ? fmtClock(g.time) : '';
       const pillParts = [];
       if (clock) pillParts.push('<time datetime="' + escapeAttr(g.time) + '">' + escapeHtml(clock) + '</time>');
@@ -921,8 +973,8 @@
       state.unlocked = true;
       $('pin-error').textContent = '';
       showPin(false);
-      await loadOrders();
-      await loadWalkins();
+      paintCachedLists();
+      await Promise.all([loadOrders(), loadWalkins()]);
       flushOutbox();
       return res;
     }
@@ -944,6 +996,12 @@
     writePin('');
     state.orders = [];
     state.walkins = [];
+    state.ordersError = '';
+    state.ordersUpdating = false;
+    state.walkinsError = '';
+    state.walkinsUpdating = false;
+    state.walkinsLoading = false;
+    clearStaffCaches();
     renderOrders();
     renderWalkins();
     $('orders-updated').textContent = 'Locked.';
@@ -951,26 +1009,54 @@
     $('pin-input').value = '';
   }
 
+  // Show the last lists we loaded for the selected date at once (this tab only), then refresh them.
+  function paintCachedLists() {
+    const oc = readStaffCache('orders', state.pickupDate);
+    state.orders = (oc && Array.isArray(oc.orders)) ? oc.orders : [];
+    state.counts = (oc && oc.counts) || countsFrom(state.orders);
+    state.ordersError = '';
+    state.ordersUpdating = true;
+    const wc = readStaffCache('walkins', state.pickupDate);
+    state.walkins = (wc && Array.isArray(wc.walkins)) ? wc.walkins : [];
+    state.walkinsError = '';
+    state.walkinsLoading = !wc;
+    state.walkinsUpdating = !!wc;
+    $('orders-updated').textContent = 'Updating…';
+    renderOrders();
+    renderWalkins();
+  }
+
   async function loadOrders() {
     if (!state.unlocked && !isPreview) return;
     state.loading = true;
     const req = ++state.ordersReq;
+    const askedDate = state.pickupDate;
+    const askedQuery = state.q;
     try {
       const res = await staffPost({
         action: 'staff_orders',
-        pickupDate: state.pickupDate,
-        q: state.q
+        pickupDate: askedDate,
+        q: askedQuery
       });
       if (!res || !res.ok) {
         if (res && (res.status === 'unauthorized' || res.status === 'locked' || res.status === 'pin_unset')) {
           logout();
           $('pin-error').textContent = res.error || 'Please sign in again.';
-        } else {
-          toast((res && res.error) || 'Could not load orders.', 'error');
+          return res;
         }
+        if (req !== state.ordersReq) return res;
+        // Keep whatever list is on screen and say what went wrong.
+        state.ordersUpdating = false;
+        state.ordersError = String((res && (res.error || res.status)) || 'No response from the server');
+        renderOrders();
+        $('orders-updated').textContent = state.orders.length ? 'Showing the last orders loaded.' : '';
+        toast((res && res.error) || 'Could not load orders.', 'error');
         return res;
       }
       if (req !== state.ordersReq) return res;
+      if (!state.unlocked && !isPreview) return res;
+      state.ordersError = '';
+      state.ordersUpdating = false;
       if (res.dates && res.dates.length) state.dates = res.dates;
       if (!state.autoDateSettled) {
         state.autoDateSettled = true;
@@ -984,6 +1070,7 @@
       }
       state.orders = res.orders || [];
       state.counts = res.counts || countsFrom(state.orders);
+      if (!askedQuery) writeStaffCache('orders', askedDate, { orders: state.orders, counts: state.counts });
       state.lastOrdersAt = new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
       renderDates('date-chips');
       renderDates('walkin-date-chips');
@@ -1003,9 +1090,13 @@
   async function loadWalkins() {
     if (!state.unlocked && !isPreview) return;
     const req = ++state.walkinsReq;
-    const res = await staffPost({ action: 'staff_walkins', date: state.pickupDate });
+    const askedDate = state.pickupDate;
+    const res = await staffPost({ action: 'staff_walkins', date: askedDate });
     if (req !== state.walkinsReq) return res;
+    // Locked while the request was in flight (e.g. the parallel orders call came back unauthorized).
+    if (!state.unlocked && !isPreview) return res;
     state.walkinsLoading = false;
+    state.walkinsUpdating = false;
     if (!res || !res.ok) {
       state.walkinsError = String((res && (res.error || res.status)) || 'No response from the server');
       renderWalkins();
@@ -1016,6 +1107,7 @@
     }
     state.walkinsError = '';
     state.walkins = res.walkins || [];
+    writeStaffCache('walkins', askedDate, { walkins: state.walkins });
     renderWalkins();
     return res;
   }
@@ -1387,6 +1479,7 @@
       }, SEARCH_DEBOUNCE_MS);
     });
     $('order-list').addEventListener('click', function (ev) {
+      if (ev.target.closest('[data-retry="orders"]')) { state.ordersError = ''; state.ordersUpdating = !state.orders.length; renderOrders(); loadOrders(); return; }
       const menuBtn = ev.target.closest('[data-menu]');
       if (menuBtn && ev.target.closest('[data-menu]') === menuBtn && !ev.target.closest('[data-act]')) {
         const id = 'menu-' + menuBtn.getAttribute('data-menu');
@@ -1472,11 +1565,9 @@
     renderDates('date-chips');
     renderDates('walkin-date-chips');
     renderDates('recent-date-chips');
-    // Drop the previous date's walk-ins at once so they never show under the new date.
-    state.walkins = [];
-    state.walkinsLoading = true;
-    state.walkinsError = '';
-    renderWalkins();
+    // Swap in the cached lists for the new date (or a loading line) so the previous date's
+    // orders and walk-ins never show under it, then refresh both at the same time.
+    paintCachedLists();
     loadOrders();
     loadWalkins();
   }
@@ -1543,7 +1634,7 @@
       renderDates('date-chips');
       renderDates('walkin-date-chips');
       renderDates('recent-date-chips');
-      return loadOrders().then(function () { return loadWalkins(); });
+      return Promise.all([loadOrders(), loadWalkins()]);
     },
     search: function (q) { state.q = q; $('search').value = q; return loadOrders(); },
     setStatus: setStatus,

@@ -245,6 +245,82 @@ export async function refreshStockSnapshot(store, opts = {}) {
   return data;
 }
 
+/* ---------- durable summary snapshot (aggregates only, for /orders) ---------- */
+
+export const SUMMARY_SNAPSHOT_KEY = 'summary/latest';
+/** Older than this and /api/summary refreshes the snapshot in the background. */
+export const SUMMARY_STALE_MS = 20000;
+const SUMMARY_TIMEOUT_MS = 5000;
+
+/**
+ * The summary is aggregates only (cakes, amounts, counts). Keep just the keys
+ * the dashboard reads, so a customer name or phone number can never end up in
+ * the stored snapshot even if the backend sent one by mistake.
+ */
+export function sanitizeSummary(data) {
+  if (!data || typeof data !== 'object' || !Array.isArray(data.dates)) return null;
+  const out = {};
+  ['ok', 'version', 'lastUpdated', 'latestOrderAt', 'dates', 'grand'].forEach((k) => {
+    if (k in data) out[k] = data[k];
+  });
+  return JSON.parse(JSON.stringify(out));
+}
+
+function summaryUrlFor(url) {
+  return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'action=summary';
+}
+
+/** GET ?action=summary from Apps Script. null on ANY failure. */
+export async function fetchSummary(opts = {}) {
+  const fetchImpl = opts.fetch || fetch;
+  const url = opts.url || appsScriptUrl(opts.env || {});
+  if (!/^https?:\/\//.test(url) || /PASTE_YOUR_/i.test(url)) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs || SUMMARY_TIMEOUT_MS);
+  try {
+    const res = await fetchImpl(summaryUrlFor(url), { method: 'GET', redirect: 'follow', signal: controller.signal });
+    if (!res.ok) return null;
+    const data = JSON.parse(await res.text());
+    if (!data || !data.ok) return null;
+    return sanitizeSummary(data);
+  } catch (err) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** {at, data} or null. Never throws. */
+export async function readSummarySnapshot(store) {
+  try {
+    const v = await store.get(SUMMARY_SNAPSHOT_KEY, { type: 'json' });
+    if (v && v.data && Array.isArray(v.data.dates) && Number.isFinite(Number(v.at))) {
+      return { at: Number(v.at), data: v.data };
+    }
+  } catch (err) { /* treat as no snapshot */ }
+  return null;
+}
+
+/** Best effort. Stores the sanitised aggregates only. Returns true when written. */
+export async function writeSummarySnapshot(store, data, now = Date.now) {
+  try {
+    const clean = sanitizeSummary(data);
+    if (!clean) return false;
+    await store.setJSON(SUMMARY_SNAPSHOT_KEY, { at: now(), data: clean });
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+/** Fetch the live summary and store it. Returns the data, or null. */
+export async function refreshSummarySnapshot(store, opts = {}) {
+  const data = await fetchSummary({ url: opts.url, fetch: opts.fetch, timeoutMs: opts.timeoutMs || SUMMARY_TIMEOUT_MS });
+  if (!data) return null;
+  await writeSummarySnapshot(store, data, opts.now || Date.now);
+  return data;
+}
+
 /**
  * Stock for an order check: live (2s cap, 15s memory cache), else a snapshot
  * younger than 5 minutes, else null (the caller then fails open).

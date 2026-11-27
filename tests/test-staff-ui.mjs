@@ -816,6 +816,121 @@ async function loadPreview() {
   page.window.close();
 }
 
+// ---- Fast loading: cached lists per date (tab session only), parallel loads, errors keep the list ----
+{
+  const D1 = '2026-11-29';
+  const D2 = '2026-12-06';
+  const D3 = '2026-12-13';
+  const ord = (id, name, date, status) => ({ orderId: id, name, phone: '9000000001', row: 3, pickupDate: date, items: '1 × Rich Plum Cake (400g)', total: 320, status: status || 'Pending' });
+  const walk = (id, customer, date) => ({ walkinId: id, date, item: 'Rich Plum Cake (400g)', qty: 1, price: 320, amount: 320, payment: 'Cash', customer, notes: '', voided: false, recordedAt: '2026-11-24T04:30:00.000Z' });
+  const ORD = { [D1]: [ord('PB-F-1', 'Asha One', D1), ord('PB-F-2', 'Ben Two', D1, 'Paid')], [D2]: [ord('PB-F-3', 'Cara Three', D2)] };
+  const WLK = { [D1]: [walk('WI-fast-aaaa-1', 'Dana Walker', D1)], [D2]: [] };
+  const names = (page) => Array.from(page.document.querySelectorAll('#order-list .order-name')).map((n) => n.textContent);
+  const cacheKeys = (page) => { const out = []; for (let i = 0; i < page.window.sessionStorage.length; i++) out.push(page.window.sessionStorage.key(i)); return out.filter((k) => k.indexOf('poppinsStaffCache:') === 0); };
+
+  function mk(opts) {
+    const o = Object.assign({ mode: 'ok', hangOrders: false, hangWalks: false, ordersDelay: 0 }, opts || {});
+    const log = [];
+    const fetchImpl = makeFetch(async ({ body }) => {
+      if (body.action === 'staff_login') return { ok: true, status: 'ok' };
+      if (body.action === 'staff_orders') {
+        log.push('orders:start');
+        if (o.hangOrders) return new Promise(() => {});
+        if (o.ordersDelay) await sleep(o.ordersDelay);
+        log.push('orders:end');
+        if (o.mode === 'error') return { ok: false, error: 'Sheet exploded' };
+        if (o.mode === 'unauthorized') return { ok: false, status: 'unauthorized', error: 'Please sign in again.' };
+        return { ok: true, orders: ORD[body.pickupDate] || [] };
+      }
+      if (body.action === 'staff_walkins') {
+        log.push('walks:start');
+        if (o.hangWalks) return new Promise(() => {});
+        if (o.mode === 'error') return { ok: false, error: 'Sheet exploded' };
+        return { ok: true, walkins: WLK[body.date] || [] };
+      }
+      return { ok: false, error: 'unknown' };
+    });
+    const page = load('?date=' + D1, fetchImpl);
+    return Object.assign(page, { o, log, fetchImpl });
+  }
+  const seed = (page) => {
+    page.window.sessionStorage.setItem('poppinsStaffCache:orders:' + D1, JSON.stringify({ orders: ORD[D1], counts: { toCollect: 1, toCollectAmount: 320, pickedUp: 0, pending: 2, total: 2 } }));
+    page.window.sessionStorage.setItem('poppinsStaffCache:walkins:' + D1, JSON.stringify({ walkins: WLK[D1] }));
+    page.window.sessionStorage.setItem('poppinsStaffCache:orders:' + D2, JSON.stringify({ orders: ORD[D2], counts: { toCollect: 1, toCollectAmount: 320, pickedUp: 0, pending: 1, total: 1 } }));
+  };
+
+  // orders and walk-ins load at the same time, and the lists land in the tab's sessionStorage only
+  let pg = mk({ ordersDelay: 120 });
+  await pg.window.__staff.login('2468');
+  assert('fast: orders and walk-ins are requested in parallel (walk-ins start before orders finish)',
+    pg.log.indexOf('walks:start') >= 0 && pg.log.indexOf('walks:start') < pg.log.indexOf('orders:end'), pg.log.join(','));
+  await waitFor(() => cacheKeys(pg).indexOf('poppinsStaffCache:orders:' + D1) >= 0 && cacheKeys(pg).indexOf('poppinsStaffCache:walkins:' + D1) >= 0, 2500);
+  assert('fast: after loading, the lists are cached per date in sessionStorage',
+    cacheKeys(pg).indexOf('poppinsStaffCache:orders:' + D1) >= 0 && cacheKeys(pg).indexOf('poppinsStaffCache:walkins:' + D1) >= 0, cacheKeys(pg).join(','));
+  assert('fast: names and phone numbers never go to localStorage',
+    pg.window.localStorage.length === 0 || !/Asha|Dana|9000000001/.test(JSON.stringify(Object.assign({}, pg.window.localStorage))));
+  // the date change shows the cached list for that date at once, never the old date's
+  pg.window.sessionStorage.setItem('poppinsStaffCache:orders:' + D2, JSON.stringify({ orders: ORD[D2], counts: {} }));
+  pg.o.hangOrders = true;
+  pg.document.querySelector('#date-chips [data-date="' + D2 + '"]').click();
+  assert('fast: switching date paints the cached list for the new date at once, with Updating…',
+    names(pg).join(',') === 'Cara Three' && /Updating/.test(pg.document.getElementById('orders-updated').textContent), names(pg).join(','));
+  pg.document.querySelector('#date-chips [data-date="' + D3 + '"]').click();
+  assert('fast: a date with no cache shows a loading line, not the previous date\'s orders and not "no orders"',
+    names(pg).length === 0 && /Loading orders for/.test(pg.document.getElementById('order-list').textContent) && !/No orders for this date/.test(pg.document.getElementById('order-list').textContent),
+    pg.document.getElementById('order-list').textContent);
+  // Lock wipes the caches
+  pg.document.getElementById('lock-btn').click();
+  assert('fast: Lock wipes every cached list from the session', cacheKeys(pg).length === 0 && names(pg).length === 0, cacheKeys(pg).join(','));
+  pg.window.close();
+
+  // first paint comes from the cache while the network is still loading
+  pg = mk({ hangOrders: true, hangWalks: true });
+  seed(pg);
+  pg.window.__staff.login('2468');
+  await waitFor(() => names(pg).length > 0);
+  assert('fast: the cached orders paint at once while staff_orders is still loading',
+    names(pg).join(',') === 'Asha One,Ben Two' && /Updating/.test(pg.document.getElementById('orders-updated').textContent), names(pg).join(','));
+  assert('fast: the cached walk-ins paint at once with an Updating marker',
+    pg.document.querySelectorAll('#walkin-list article').length === 1 && !!pg.document.querySelector('#walkin-list .walkin-updating') &&
+    /Dana Walker/.test(pg.document.getElementById('walkin-list').textContent));
+  pg.window.close();
+
+  // an error keeps the cached list, names the problem and offers Retry (never blank, never "no orders")
+  pg = mk({ mode: 'error' });
+  seed(pg);
+  await pg.window.__staff.login('2468');
+  await sleep(40);
+  assert('fast: a failed orders refresh keeps the cached list, shows the real error and a Retry button',
+    names(pg).join(',') === 'Asha One,Ben Two' && /Sheet exploded/.test(pg.document.querySelector('#order-list .orders-error').textContent) &&
+    !!pg.document.querySelector('#order-list [data-retry="orders"]') && !/No orders for this date/.test(pg.document.getElementById('order-list').textContent));
+  assert('fast: a failed walk-ins refresh keeps the cached cards with an error and Retry',
+    pg.document.querySelectorAll('#walkin-list article').length === 1 && /Sheet exploded/.test(pg.document.querySelector('#walkin-list .walkin-error').textContent) &&
+    !!pg.document.querySelector('#walkin-list [data-retry="walkins"]'));
+  pg.o.mode = 'ok';
+  pg.document.querySelector('#order-list [data-retry="orders"]').click();
+  await waitFor(() => !pg.document.querySelector('#order-list .orders-error'));
+  assert('fast: Retry reloads the orders and clears the error', !pg.document.querySelector('#order-list .orders-error') && names(pg).join(',') === 'Asha One,Ben Two');
+  pg.window.close();
+
+  // with no cache an error shows the error, not "No orders for this date"
+  pg = mk({ mode: 'error' });
+  await pg.window.__staff.login('2468');
+  await sleep(40);
+  assert('fast: with nothing cached a failed load shows the error (not a false "no orders")',
+    /Sheet exploded/.test(pg.document.getElementById('order-list').textContent) && !/No orders for this date/.test(pg.document.getElementById('order-list').textContent));
+  pg.window.close();
+
+  // unauthorized wipes the caches too
+  pg = mk({ mode: 'unauthorized' });
+  seed(pg);
+  await pg.window.__staff.login('2468');
+  await sleep(40);
+  assert('fast: an unauthorized reply wipes the cached lists and shows the gate',
+    cacheKeys(pg).length === 0 && pg.document.getElementById('pin-gate').hidden === false && names(pg).length === 0, cacheKeys(pg).join(','));
+  pg.window.close();
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log('\n' + results.filter((r) => r.ok).length + '/' + results.length + ' passed');
 if (failed.length) process.exit(1);

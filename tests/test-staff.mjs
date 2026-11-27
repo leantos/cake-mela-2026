@@ -366,7 +366,7 @@ function seed(world, extra = {}) {
 }
 
 // ---- static source checks ----
-assert('version is 2026-11-27.2', /var SCRIPT_VERSION = '2026-11-27.2'/.test(src));
+assert('version is 2026-11-27.3', /var SCRIPT_VERSION = '2026-11-27.3'/.test(src));
 assert('doPost routes staff actions without using processOrder_ first',
   /isStaffAction_\(data\.action\)/.test(src) &&
   /handleStaffAction_\(data\)/.test(src));
@@ -538,7 +538,7 @@ assert('void walk-ins are skipped in the summary',
     pin: '2468',
     clientToken: 'deviceTokenE5'
   });
-  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-27.2');
+  assert('staff_login accepts the correct PIN', login.ok === true && login.version === '2026-11-27.3');
 
   const listed = world.ctx.handleStaffAction_({
     action: 'staff_orders',
@@ -769,7 +769,7 @@ assert('void walk-ins are skipped in the summary',
     postData: { contents: JSON.stringify({ action: 'staff_login', pin: '2468', clientToken: 'deviceTokenF6' }) }
   });
   const staffBody = JSON.parse(staffRes.body);
-  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-27.2');
+  assert('doPost staff_login returns ok JSON', staffBody.ok === true && staffBody.version === '2026-11-27.3');
 
   const beforeRows = world.sheets['Orders'].data.length;
   const order = {
@@ -787,6 +787,132 @@ assert('void walk-ins are skipped in the summary',
   assert('doPost without a staff action still saves a customer order',
     orderBody.ok === true && world.sheets['Orders'].data.length === beforeRows + 1,
     JSON.stringify(orderBody));
+}
+
+// ---- sheet values cache (30s, generation counter, chunked) ----
+{
+  // A tiny fake sheet that counts how many times its values are read.
+  const fakeSheet = (rows, hooks) => {
+    const sheet = {
+      reads: 0, rows,
+      getLastRow() { return this.rows.length; },
+      getLastColumn() { return this.rows.length ? this.rows[0].length : 0; },
+      getRange() {
+        const self = this;
+        return { getValues() { self.reads += 1; if (hooks && hooks.onRead) hooks.onRead(); return self.rows.map((r) => r.slice()); } };
+      }
+    };
+    return sheet;
+  };
+  const world = makeWorld({ props: { STAFF_PIN: '2468' } });
+  const ctx = world.ctx;
+
+  let sh = fakeSheet([['Order ID', 'Name'], ['PB-1', 'Asha'], ['PB-2', 'Ben']]);
+  const a = ctx.readSheetValuesCached_('orders', sh);
+  const b = ctx.readSheetValuesCached_('orders', sh);
+  assert('values cache: the second read in the window is served from the cache, not the sheet', sh.reads === 1 && JSON.stringify(a) === JSON.stringify(b), String(sh.reads));
+  sh.rows.push(['PB-3', 'Cara']);
+  assert('values cache: until something invalidates, the cached copy is what you get', ctx.readSheetValuesCached_('orders', sh).length === 3 && sh.reads === 1);
+  ctx.invalidateSheetValuesCache_();
+  assert('values cache: after an invalidation the next read re-reads the sheet and sees the change',
+    ctx.readSheetValuesCached_('orders', sh).length === 4 && sh.reads === 2, String(sh.reads));
+  assert('values cache: orders and walk-ins are cached separately', (() => {
+    const w = fakeSheet([['Walk-in ID'], ['WI-1']]);
+    const first = ctx.readSheetValuesCached_('walkins', w);
+    return first.length === 2 && ctx.readSheetValuesCached_('orders', sh).length === 4 && w.reads === 1;
+  })());
+  assert('values cache: options.fresh always reads the sheet (the order-save path)',
+    (() => { const before = sh.reads; ctx.readSheetValuesCached_('orders', sh, { fresh: true }); return sh.reads === before + 1; })());
+
+  // Dates survive the round trip as Date objects
+  const when = new Date('2026-11-29T00:00:00+05:30');
+  ctx.invalidateSheetValuesCache_();
+  sh = fakeSheet([['Pickup Date', 'Timestamp'], [when, 'text']]);
+  ctx.readSheetValuesCached_('orders', sh);
+  const cachedRows = ctx.readSheetValuesCached_('orders', sh);
+  assert('values cache: Date cells come back as Date objects with the same time', sh.reads === 1 && Object.prototype.toString.call(cachedRows[1][0]) === '[object Date]' && cachedRows[1][0].getTime() === when.getTime());
+
+  // Chunking: a big sheet is split across keys (CacheService keeps 100KB per value) and reassembled exactly
+  const big = [['Order ID', 'Items']];
+  for (let i = 0; i < 1500; i++) big.push(['PB-' + i, '2 × Dates & Carrot Pudding (700g) · ₹' + i + ' ' + 'x'.repeat(40)]);
+  ctx.invalidateSheetValuesCache_();
+  sh = fakeSheet(big);
+  ctx.readSheetValuesCached_('orders', sh);
+  const chunkKeys = [...world.cacheStore.keys()].filter((key) => /^sv-orders-.*-\d+$/.test(key));
+  const everyChunkSmall = chunkKeys.every((key) => world.cacheStore.get(key).length <= 30000);
+  assert('values cache: a large sheet is split into chunks of at most 30,000 characters', chunkKeys.length >= 2 && everyChunkSmall, String(chunkKeys.length));
+  const again = ctx.readSheetValuesCached_('orders', sh);
+  assert('values cache: chunks are reassembled exactly and served without reading the sheet', sh.reads === 1 && again.length === big.length && again[1500][1] === big[1500][1]);
+
+  // Too large to cache: still correct, simply not cached
+  ctx.invalidateSheetValuesCache_();
+  const huge = [['Order ID', 'Blob']];
+  for (let i = 0; i < 400; i++) huge.push(['PB-' + i, 'y'.repeat(3000)]);
+  sh = fakeSheet(huge);
+  ctx.readSheetValuesCached_('orders', sh);
+  ctx.readSheetValuesCached_('orders', sh);
+  assert('values cache: a sheet needing more than 30 chunks is not cached but is still returned correctly', sh.reads === 2 && ctx.readSheetValuesCached_('orders', sh).length === huge.length);
+
+  // A write during a slow read must never leave a stale copy behind
+  ctx.invalidateSheetValuesCache_();
+  sh = fakeSheet([['Order ID'], ['PB-OLD']], { onRead: (() => { let once = true; return () => { if (once) { once = false; ctx.invalidateSheetValuesCache_(); } }; })() });
+  const stale = ctx.readSheetValuesCached_('orders', sh);
+  sh.rows = [['Order ID'], ['PB-OLD'], ['PB-NEW']];
+  const next = ctx.readSheetValuesCached_('orders', sh);
+  assert('values cache: a read that overlaps a write is stored under the old generation and is never served afterwards',
+    stale.length === 2 && next.length === 3 && sh.reads === 2, JSON.stringify({ stale: stale.length, next: next.length, reads: sh.reads }));
+
+  // A broken cache never fails a read
+  const broken = makeWorld();
+  broken.ctx.CacheService = { getScriptCache() { throw new Error('cache down'); } };
+  sh = fakeSheet([['Order ID'], ['PB-1']]);
+  assert('values cache: if CacheService fails the sheet is read directly', broken.ctx.readSheetValuesCached_('orders', sh).length === 2 && sh.reads === 1);
+  const throwing = makeWorld();
+  throwing.ctx.CacheService = { getScriptCache() { return { get() { throw new Error('boom'); }, put() { throw new Error('boom'); }, getAll() { throw new Error('boom'); }, remove() {}, removeAll() {} }; } };
+  sh = fakeSheet([['Order ID'], ['PB-1']]);
+  assert('values cache: if the cache calls throw the sheet is read directly', throwing.ctx.readSheetValuesCached_('orders', sh).length === 2);
+  assert('values cache: invalidating with a broken cache never throws', (() => { try { broken.ctx.invalidateSheetValuesCache_(); throwing.ctx.invalidateSheetValuesCache_(); return true; } catch (e) { return false; } })());
+}
+
+// ---- every write path makes the next read see the change ----
+{
+  const world = makeWorld({ props: { STAFF_PIN: '2468' } });
+  seed(world);
+  const ctx = world.ctx;
+  const ordersFor = () => ctx.staffListOrders_({ pickupDate: '2026-11-29' }).orders;
+  const statusOf = (id) => (ordersFor().find((o) => o.orderId === id) || {}).status;
+  const walkIds = () => ctx.staffListWalkIns_({ date: '2026-11-29' }).walkins.map((w) => w.walkinId);
+
+  // warm the caches
+  assert('write paths: starting state is read (and cached)', statusOf('PB-1') === 'Pending' && walkIds().indexOf('WI-CACHE-1') < 0);
+  const genBefore = world.cacheStore.get('sheet-values-gen-v1');
+  assert('write paths: a generation counter exists once something is cached', !!genBefore);
+
+  const set = ctx.staffSetStatus_({ orderId: 'PB-1', status: 'Paid', expectedStatus: 'Pending' });
+  assert('write paths: a status change is visible to the very next staff_orders read', set.ok && statusOf('PB-1') === 'Paid', JSON.stringify(set));
+  assert('write paths: a status change bumps the generation', world.cacheStore.get('sheet-values-gen-v1') !== genBefore);
+
+  const add = ctx.staffAddWalkIn_({ walkinId: 'WI-CACHE-1', date: '2026-11-29', item: 'Rich Plum Cake (400g)', qty: 1, payment: 'Cash' });
+  assert('write paths: a recorded walk-in is visible to the very next staff_walkins read', add.ok && walkIds().indexOf('WI-CACHE-1') >= 0, JSON.stringify(add));
+
+  const del = ctx.staffDeleteWalkIn_({ walkinId: 'WI-CACHE-1' });
+  assert('write paths: an undone walk-in disappears from the very next staff_walkins read', del.ok && walkIds().indexOf('WI-CACHE-1') < 0, JSON.stringify(del));
+
+  // the summary and stock figures follow the same rule
+  const sumBefore = ctx.getOrderSummaryPayload_(world.ss);
+  const cakes = (p) => (p.dates.find((d) => d.id === '2026-11-29') || {}).totals.cakes;
+  const walk2 = ctx.staffAddWalkIn_({ walkinId: 'WI-CACHE-2', date: '2026-11-29', item: 'Dates & Carrot Pudding (350g)', qty: 3, payment: 'UPI' });
+  const sumAfter = ctx.getOrderSummaryPayload_(world.ss);
+  const walkCakes = (p) => ((p.dates.find((d) => d.id === '2026-11-29') || {}).sales.walkIn || {}).cakes;
+  assert('write paths: the summary sees a new walk-in right after it is recorded', walk2.ok && walkCakes(sumAfter) === walkCakes(sumBefore) + 3, JSON.stringify({ before: walkCakes(sumBefore), after: walkCakes(sumAfter) }));
+
+  // a hand edit in the Sheet (simple trigger) drops the caches as well
+  const g1 = world.cacheStore.get('sheet-values-gen-v1');
+  ctx.onEdit({});
+  assert('write paths: onEdit (a hand edit in the Sheet) bumps the generation and never throws', world.cacheStore.get('sheet-values-gen-v1') !== g1);
+  const hand = makeWorld();
+  hand.ctx.CacheService = { getScriptCache() { throw new Error('cache down'); } };
+  assert('write paths: onEdit swallows cache failures', (() => { try { hand.ctx.onEdit({}); return true; } catch (e) { return false; } })());
 }
 
 const failed = results.filter((r) => !r.ok);

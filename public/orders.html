@@ -129,6 +129,11 @@
     const C_PANEL_INNER = 'overflow-hidden px-4 pb-4';
     const C_CHIP = "inline-flex min-h-10 cursor-pointer appearance-none items-center rounded-m3-sm border border-m3-outline bg-transparent px-4 text-[0.875rem] leading-5 font-medium tracking-[0.1px] text-m3-on-surface-variant hover:bg-m3-on-surface/8 aria-pressed:border-transparent aria-pressed:bg-m3-secondary-container aria-pressed:text-m3-on-secondary-container aria-pressed:before:mr-2 aria-pressed:before:text-[1rem] aria-pressed:before:content-['✓'] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-m3-primary";
     const PANEL_STATE_KEY = 'poppinsAdminPanels';
+    // Fast-load caches. Totals are aggregates (localStorage is fine); the pending list holds names and
+    // phone numbers, so it lives in sessionStorage only (this tab) and is wiped by lock().
+    const SUMMARY_CACHE_KEY = 'poppinsOrdersSummaryCache';
+    const SUMMARY_CACHE_MAX_MS = 60 * 60 * 1000;
+    const PENDING_CACHE_PREFIX = 'poppinsPendingCache:';
     const MENU_ITEMS = [
       'Dates & Carrot Pudding (700g)',
       'Dates & Carrot Pudding (350g)',
@@ -932,6 +937,9 @@
           }).join('') + '</ul>';
         }
       }
+      if (st && st.status === 'ok' && st.updating) {
+        inner = '<p class="pending-orders-updating mt-1 text-[0.8125rem] leading-5 text-m3-on-surface-variant" role="status">Updating…</p>' + inner;
+      }
       return '<div class="pending-orders-wrap" data-pending-for="' + id + '">' + inner + '</div>';
     }
 
@@ -950,7 +958,11 @@
       var req = pendingReq[dateId] = (pendingReq[dateId] || 0) + 1;
       // A silent refresh keeps the current list on screen until the answer arrives.
       if (!opts.silent || !pendingByDate[dateId]) {
-        pendingByDate[dateId] = { status: 'loading', orders: [], error: '' };
+        // Paint the last list for this date at once (session only), then refresh it.
+        var cachedList = isMockMode() ? null : readPendingCache(dateId);
+        pendingByDate[dateId] = cachedList
+          ? { status: 'ok', orders: cachedList, error: '', at: 0, updating: true }
+          : { status: 'loading', orders: [], error: '' };
         rerenderPending(dateId);
       }
       var res = await staffPost({ action: 'staff_orders', pickupDate: dateId, q: '' });
@@ -962,6 +974,7 @@
         var list = (res.orders || []).filter(function (o) { return o && o.status === 'Pending'; });
         list.sort(function (a, b) { return (Number(a.row) || 0) - (Number(b.row) || 0); });
         pendingByDate[dateId] = { status: 'ok', orders: list, error: '', at: Date.now() };
+        if (!isMockMode()) writePendingCache(dateId, list);
       }
       rerenderPending(dateId);
     }
@@ -1040,6 +1053,7 @@
       summaryState = null;
       pendingByDate = {};
       pendingReq = {};
+      clearPrivateCaches();
       els.panels.innerHTML = '';
       els.matrixWrap.innerHTML = '';
       els.chips.innerHTML = '';
@@ -1077,11 +1091,75 @@
       return (window.__SHEETS_URL || SHEETS_WEBAPP_URL || '').trim();
     }
 
-    async function fetchSummary() {
+    function readSummaryCache() {
+      try {
+        var v = JSON.parse(localStorage.getItem(SUMMARY_CACHE_KEY) || 'null');
+        if (v && v.data && Array.isArray(v.data.dates) && Number.isFinite(Number(v.at)) && Date.now() - Number(v.at) < SUMMARY_CACHE_MAX_MS) return v;
+      } catch (err) { /* no cache */ }
+      return null;
+    }
+
+    function writeSummaryCache(data) {
+      try { localStorage.setItem(SUMMARY_CACHE_KEY, JSON.stringify({ at: Date.now(), data: data })); } catch (err) {}
+    }
+
+    var pendingCacheDates = {};
+    function readPendingCache(dateId) {
+      try {
+        var v = JSON.parse(sessionStorage.getItem(PENDING_CACHE_PREFIX + dateId) || 'null');
+        if (v && Array.isArray(v.orders)) { pendingCacheDates[dateId] = true; return v.orders; }
+        return null;
+      } catch (err) { return null; }
+    }
+
+    function writePendingCache(dateId, orders) {
+      pendingCacheDates[dateId] = true;
+      try { sessionStorage.setItem(PENDING_CACHE_PREFIX + dateId, JSON.stringify({ at: Date.now(), orders: orders })); } catch (err) {}
+    }
+
+    // Lock / unauthorized: nothing from the last session may stay in the browser.
+    function clearPrivateCaches() {
+      Object.keys(pendingCacheDates).forEach(function (id) {
+        try { sessionStorage.removeItem(PENDING_CACHE_PREFIX + id); } catch (err) {}
+      });
+      pendingCacheDates = {};
+      try {
+        var keys = [];
+        for (var i = 0; i < sessionStorage.length; i++) {
+          var k = sessionStorage.key(i);
+          if (k && k.indexOf(PENDING_CACHE_PREFIX) === 0) keys.push(k);
+        }
+        keys.forEach(function (k) { sessionStorage.removeItem(k); });
+      } catch (err) {}
+      try { localStorage.removeItem(SUMMARY_CACHE_KEY); } catch (err) {}
+    }
+
+    async function fetchSummaryJson(url, ms) {
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, ms);
+      try {
+        var res = await fetch(url, { method: 'GET', redirect: 'follow', signal: controller.signal });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var data = await res.json();
+        if (!data || data.ok === false || !Array.isArray(data.dates)) throw new Error((data && data.error) || 'No totals returned');
+        return data;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function fetchSummary(opts) {
+      opts = opts || {};
       if (isPreviewMode() || window.__USE_MOCK_SUMMARY) {
         usingMock = true;
         return JSON.parse(JSON.stringify(window.__MOCK_SUMMARY || MOCK_SUMMARY));
       }
+      // Netlify keeps a snapshot of the totals, so this answers at once; the direct Apps Script
+      // call (slow, 2-10s when cold) is only the fallback.
+      var apiPath = (window.SITE_CONFIG && window.SITE_CONFIG.summaryApiPath) || '/api/summary';
+      try {
+        return await fetchSummaryJson(apiPath + (opts.fresh ? '?fresh=1' : ''), opts.fresh ? 7000 : 3000);
+      } catch (err) { /* fall back to Apps Script below */ }
       const base = getSheetsUrl();
       const url = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'action=summary';
       const res = await fetch(url, { method: 'GET', redirect: 'follow' });
@@ -1091,11 +1169,32 @@
       return data;
     }
 
+    function initialSelection(data) {
+      if (/(?:\?|&)view=all(?:&|$)/.test(location.search || '') || window.__START_ALL) return 'all';
+      return nextUpcomingId(data.dates);
+    }
+
     async function loadSummary(opts) {
       opts = opts || {};
-      if (!opts.silent) setStatus('Loading totals…', false);
+      var liveCache = !isPreviewMode() && !window.__USE_MOCK_SUMMARY;
+      var paintedFromCache = false;
+      // First paint from the last totals this browser saw (aggregates only), then update.
+      if (opts.initial && liveCache && !summaryState) {
+        var cached = readSummaryCache();
+        if (cached) {
+          summaryState = cached.data;
+          selectedId = initialSelection(cached.data);
+          renderAll(cached.data);
+          paintedFromCache = true;
+        }
+      }
+      if (paintedFromCache) setStatus('Updating…', false);
+      else if (!opts.silent) setStatus('Loading totals…', false);
       try {
-        const data = await fetchSummary();
+        const data = await fetchSummary({ fresh: !!opts.fresh });
+        // Locked while the request was in flight: drop the answer, show and cache nothing.
+        if (!unlocked) return;
+        if (!usingMock && liveCache) writeSummaryCache(data);
         summaryState = data;
         if (!opts.keepSelection) {
           if (selectedId !== 'all' && !(data.dates || []).some(function (d) { return d.id === selectedId; })) {
@@ -1149,7 +1248,7 @@
     els.expandAll.addEventListener('click', function () { setAllPanels(true); });
     els.collapseAll.addEventListener('click', function () { setAllPanels(false); });
     els.refresh.addEventListener('click', function () {
-      loadSummary({ keepSelection: true, silent: false }).then(function () { syncPending({ force: true, silent: true }); });
+      loadSummary({ keepSelection: true, silent: false, fresh: true }).then(function () { syncPending({ force: true, silent: true }); });
     });
     document.getElementById('pin-form').addEventListener('submit', function (event) {
       event.preventDefault();

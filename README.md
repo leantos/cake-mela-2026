@@ -15,8 +15,10 @@ netlify/functions/
   order.mjs             POST /api/order  (GET = pending count)
   stock.mjs             GET /api/stock: dates + remaining stock, served from a
                           Blobs snapshot so it never waits on Apps Script
+  summary.mjs           GET /api/summary: the /orders totals (aggregates only),
+                          served from a Blobs snapshot the same way
   sweep-orders.mjs      every 5 min: re-send anything not yet in the Sheet and
-                          refresh the stock snapshot
+                          refresh the stock and totals snapshots
 netlify/lib/orders.mjs  validation, Blobs storage, forwarding
 apps-script/Code.gs     paste into the Sheet's Apps Script editor
 scripts/                update-poster.py, make-drop-zip.mjs, mock-apps-script.mjs, e2e-preview.mjs

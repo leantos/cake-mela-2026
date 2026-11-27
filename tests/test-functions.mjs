@@ -34,10 +34,27 @@ const sheetHits = [];
 let stockMode = 'ok'; // ok | fail | slow (3.5s) | hang (4.8s, past the 4s cap)
 let stockDates = []; // [{id, label, closesAt, remaining}]
 let stockGets = 0;
+let summaryMode = 'ok'; // ok | fail | slow (3.5s) | hang (7s, past the 6s cap)
+let summaryTotal = 5; // grand.cakes in the payload
+let summaryGets = 0;
+let summaryExtra = null; // extra (private) keys a misbehaving backend might send
 const mock = http.createServer((req, res) => {
   let body = '';
   req.on('data', (c) => { body += c; });
   req.on('end', () => {
+    if (req.method === 'GET' && /action=summary/.test(req.url || '')) {
+      summaryGets++;
+      res.setHeader('Content-Type', 'application/json');
+      if (summaryMode === 'fail') { res.statusCode = 500; return res.end('{"ok":false}'); }
+      const payload = JSON.stringify(Object.assign({
+        ok: true, version: 'test', lastUpdated: 'now', latestOrderAt: '',
+        dates: [{ id: '2026-11-29', label: 'Sun, 29 Nov', items: {}, totals: { cakes: summaryTotal, amount: summaryTotal * 320, orders: 1 }, sales: {}, pending: { orders: 1, cakes: summaryTotal, amount: summaryTotal * 320 } }],
+        grand: { cakes: summaryTotal, amount: summaryTotal * 320, orders: 1, items: {}, sales: {}, pending: { orders: 1, cakes: summaryTotal, amount: summaryTotal * 320 } }
+      }, summaryExtra || {}));
+      if (summaryMode === 'slow') return setTimeout(() => res.end(payload), 3500);
+      if (summaryMode === 'hang') return setTimeout(() => res.end(payload), 7000);
+      return res.end(payload);
+    }
     if (req.method === 'GET') {
       stockGets++;
       res.setHeader('Content-Type', 'application/json');
@@ -66,6 +83,7 @@ process.env.APPS_SCRIPT_URL = mockUrl;
 const lib = await import('../netlify/lib/orders.mjs');
 const { default: orderFn, config: orderCfg } = await import('../netlify/functions/order.mjs');
 const { default: stockFn, config: stockCfg } = await import('../netlify/functions/stock.mjs');
+const { default: summaryFn, config: summaryCfg } = await import('../netlify/functions/summary.mjs');
 const { default: sweepFn, config: sweepCfg } = await import('../netlify/functions/sweep-orders.mjs');
 const store = getStore({ name: lib.STORE_NAME, consistency: 'strong' });
 
@@ -631,6 +649,91 @@ assert('the contact/alternation helpers are gone',
 
 // ---- backoff ----
 assert('backoff 1,2,4..30 min', lib.backoffMs(1) === 60000 && lib.backoffMs(3) === 240000 && lib.backoffMs(20) === 1800000);
+
+// ---- /api/summary (aggregates only; snapshot served instantly, refreshed in the background) ----
+{
+  const clearSnap = () => store.delete(lib.SUMMARY_SNAPSHOT_KEY);
+  const getSummaryApi = (qs = '', method = 'GET', ctx) => summaryFn(new Request('http://localhost/api/summary' + qs, { method }), ctx);
+  const cakesOf = async (res) => (await res.json()).grand.cakes;
+  assert('config: summary function path is /api/summary', summaryCfg.path === '/api/summary');
+  await clearSnap();
+
+  // first-ever call: live fetch, stored for the next caller
+  summaryMode = 'ok'; summaryTotal = 5;
+  const sg0 = summaryGets;
+  const r1 = await getSummaryApi();
+  assert('summary api: the first-ever call fetches live once and answers', r1.status === 200 && summaryGets - sg0 === 1 && (await cakesOf(r1)) === 5 && r1.headers.get('x-summary-age') === '0');
+  assert('summary api: the CDN caches 10s and serves stale while revalidating',
+    /s-maxage=10/.test(r1.headers.get('netlify-cdn-cache-control') || '') && /stale-while-revalidate=120/.test(r1.headers.get('netlify-cdn-cache-control') || ''), r1.headers.get('netlify-cdn-cache-control'));
+  const stored = await lib.readSummarySnapshot(store);
+  assert('summary api: that answer was stored as the snapshot', !!stored && stored.data.grand.cakes === 5);
+
+  // instant while Apps Script is slow
+  await lib.writeSummarySnapshot(store, { ok: true, dates: [], grand: { cakes: 4 } }, () => Date.now() - 3000);
+  summaryMode = 'slow';
+  const sg1 = summaryGets;
+  const t0 = Date.now();
+  const r2 = await getSummaryApi();
+  assert('summary api: the snapshot is served instantly while Apps Script is slow, with no live fetch',
+    Date.now() - t0 < 600 && summaryGets === sg1 && (await cakesOf(r2)) === 4 && !r2.headers.get('x-summary-stale'), (Date.now() - t0) + 'ms');
+
+  // stale: old numbers at once, one background refresh
+  await lib.writeSummarySnapshot(store, { ok: true, dates: [], grand: { cakes: 4 } }, () => Date.now() - 40000);
+  summaryMode = 'ok'; summaryTotal = 9;
+  const waits = [];
+  const t1 = Date.now();
+  const r3 = await getSummaryApi('', 'GET', { waitUntil: (p) => waits.push(p) });
+  assert('summary api: a stale snapshot is answered at once with the old numbers and flagged stale',
+    Date.now() - t1 < 600 && (await cakesOf(r3)) === 4 && r3.headers.get('x-summary-stale') === '1' && Number(r3.headers.get('x-summary-age')) >= 39);
+  assert('summary api: a stale snapshot starts exactly one background refresh', waits.length === 1, String(waits.length));
+  await Promise.all(waits);
+  assert('summary api: the refresh stored the new numbers for the next caller', (await cakesOf(await getSummaryApi())) === 9);
+
+  // ?fresh=1: waits for live, never cached; falls back to the snapshot when Apps Script is down or slow
+  summaryTotal = 11;
+  const r4 = await getSummaryApi('?fresh=1');
+  assert('summary api: ?fresh=1 returns live numbers and is never cached',
+    (await cakesOf(r4)) === 11 && /no-store/.test(r4.headers.get('cache-control') || '') && !r4.headers.get('netlify-cdn-cache-control'));
+  summaryMode = 'fail';
+  const r5 = await getSummaryApi('?fresh=1');
+  assert('summary api: ?fresh=1 falls back to the snapshot (X-Summary-Fallback) when Apps Script fails',
+    r5.status === 200 && r5.headers.get('x-summary-fallback') === '1' && (await cakesOf(r5)) === 11);
+
+  // total failure: 502, never cached
+  await clearSnap();
+  const r6 = await getSummaryApi();
+  assert('summary api: no snapshot and Apps Script down is a 502 {ok:false}, never cached',
+    r6.status === 502 && (await r6.json()).ok === false && /no-store/.test(r6.headers.get('cache-control') || '') && !r6.headers.get('netlify-cdn-cache-control'));
+  assert('summary api: POST is 405', (await getSummaryApi('', 'POST')).status === 405);
+
+  // privacy: nothing but aggregates is ever stored or served, even if the backend misbehaves
+  await clearSnap();
+  summaryMode = 'ok'; summaryTotal = 3;
+  summaryExtra = { orders: [{ name: 'Zed Third', phone: '9000000003' }], staff: { pin: '2468' }, raw: 'Asha 9876543210' };
+  const rp = await getSummaryApi();
+  const served = JSON.stringify(await rp.json());
+  const snap = JSON.stringify(await lib.readSummarySnapshot(store));
+  assert('summary api: names, phones and extra keys are stripped from the answer and the stored snapshot',
+    !/Zed|9000000003|2468|9876543210|"orders":\[/.test(served) && !/Zed|9000000003|2468|9876543210|"orders":\[/.test(snap), served.slice(0, 160));
+  summaryExtra = null;
+
+  // the 5-minute sweep keeps the snapshot warm and a summary failure never fails the order sweep
+  await clearSnap();
+  summaryMode = 'ok'; summaryTotal = 6;
+  await sweepFn();
+  const warmed = await lib.readSummarySnapshot(store);
+  assert('sweep: refreshes the summary snapshot', !!warmed && warmed.data.grand.cakes === 6 && Date.now() - warmed.at < 5000);
+  summaryMode = 'fail';
+  let sweepOk = true;
+  try { await sweepFn(); } catch (e) { sweepOk = false; }
+  assert('sweep: a failing summary refresh never fails the sweep and keeps the old snapshot',
+    sweepOk && (await lib.readSummarySnapshot(store)).data.grand.cakes === 6);
+  summaryMode = 'ok';
+  assert('sanitizeSummary keeps only the aggregate keys', (() => {
+    const out = lib.sanitizeSummary({ ok: true, dates: [], grand: {}, orders: [1], name: 'x' });
+    return !('orders' in out) && !('name' in out) && out.ok === true && lib.sanitizeSummary({ nodates: 1 }) === null;
+  })());
+}
 
 mock.close();
 await blobs.stop();

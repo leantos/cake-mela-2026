@@ -18,6 +18,9 @@
  *                  dates still win once the backend answers, so keep this list in
  *                  step with the Stock tab headers. id = yyyy-mm-dd (IST), closesAt =
  *                  the cutoff after which a date is hidden (8:30 AM IST that day).
+ *   stockApiPath / summaryApiPath — the Netlify snapshot endpoints the pages ask FIRST
+ *                  (instant, never wait on Apps Script). summaryApiPath serves the /orders
+ *                  totals (aggregates only, never names or phone numbers).
  *   appsScriptUrl — Google Apps Script web app /exec URL (Sheets backend).
  *                  The Netlify function can override it with the
  *                  APPS_SCRIPT_URL environment variable.
@@ -52,7 +55,8 @@
     ],
     appsScriptUrl: 'https://script.google.com/macros/s/AKfycbyweMtzB7WrgSSzwBczduVaOAZ5dfYHLXBlJoUCU5bj7cU08IzLRfv7r2UpbJsAQyGs/exec',
     orderApiPath: '/api/order',
-    stockApiPath: '/api/stock'
+    stockApiPath: '/api/stock',
+    summaryApiPath: '/api/summary',
   };
 
   if (typeof module !== 'undefined' && module.exports) {

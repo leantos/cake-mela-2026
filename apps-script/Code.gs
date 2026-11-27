@@ -182,7 +182,7 @@ function setupSheets() {
  * (?action=order&payload=...). Optional ?callback= wraps JSONP.
  */
 /** Bump when the script changes, so a deployed version can be identified. */
-var SCRIPT_VERSION = '2026-11-27.2';
+var SCRIPT_VERSION = '2026-11-27.3';
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -503,6 +503,121 @@ function getSheetValues_(sheet) {
   if (lastRow < 1 || lastCol < 1) return [];
   return sheet.getRange(1, 1, lastRow, lastCol).getValues();
 }
+
+/* ---- sheet values cache (testable) ---- */
+
+/**
+ * Short-lived copy of the Orders / Walk-in Sales values for the READ paths
+ * (staff lists, summary, stock remaining), so a burst of refreshes from several
+ * phones doesn't re-read the whole Sheet each time.
+ *
+ * Correctness first:
+ *  - A generation counter is part of every cache key. Every write path bumps it
+ *    (invalidateSheetValuesCache_), so old copies become unreachable at once.
+ *  - The generation is read BEFORE the sheet, and the copy is stored under that
+ *    generation, so a slow read that finishes after a write lands in a dead
+ *    generation and is never served.
+ *  - The order-save path asks for a fresh read (options.fresh) and never uses it.
+ *  - CacheService keeps 100KB per value, so the JSON is split into 30,000-char
+ *    chunks (about 90KB even with multi-byte characters); a sheet needing more
+ *    than 30 chunks simply isn't cached.
+ *  - Any cache failure falls back to reading the sheet. It can never fail a request.
+ * Dates are stored as {__d: ms} so they come back as Date objects.
+ */
+var VALUES_CACHE_GEN_KEY = 'sheet-values-gen-v1';
+var VALUES_CACHE_TTL = 30; // seconds
+var VALUES_CACHE_GEN_TTL = 21600; // seconds (CacheService maximum)
+var VALUES_CACHE_CHUNK_CHARS = 30000;
+var VALUES_CACHE_MAX_CHUNKS = 30;
+
+function newValuesCacheGen_() {
+  return String(Date.now()) + '-' + String(Math.floor(Math.random() * 1000000));
+}
+
+function encodeSheetValues_(values) {
+  return JSON.stringify(values, function (key, value) {
+    var raw = this[key];
+    if (Object.prototype.toString.call(raw) === '[object Date]') {
+      return { __d: isNaN(raw.getTime()) ? null : raw.getTime() };
+    }
+    return value;
+  });
+}
+
+function decodeSheetValues_(text) {
+  return JSON.parse(text, function (key, value) {
+    if (value && typeof value === 'object' && !Array.isArray(value) && Object.prototype.hasOwnProperty.call(value, '__d')) {
+      return value.__d === null ? new Date(NaN) : new Date(value.__d);
+    }
+    return value;
+  });
+}
+
+/** Make every cached copy of the Orders / Walk-in values unreachable. Never throws. */
+function invalidateSheetValuesCache_() {
+  try {
+    var cache = getScriptCacheSafe_();
+    if (cache) cache.put(VALUES_CACHE_GEN_KEY, newValuesCacheGen_(), VALUES_CACHE_GEN_TTL);
+  } catch (err) {}
+}
+
+/**
+ * kind: 'orders' | 'walkins'. options.fresh = skip the cache entirely.
+ * Same result as getSheetValues_(sheet).
+ */
+function readSheetValuesCached_(kind, sheet, options) {
+  options = options || {};
+  if (!sheet) return [];
+  var cache = null;
+  try { cache = getScriptCacheSafe_(); } catch (errCache) { cache = null; }
+  if (!cache || options.fresh) return getSheetValues_(sheet);
+
+  var gen;
+  try {
+    gen = cache.get(VALUES_CACHE_GEN_KEY);
+    if (!gen) {
+      gen = newValuesCacheGen_();
+      cache.put(VALUES_CACHE_GEN_KEY, gen, VALUES_CACHE_GEN_TTL);
+    }
+  } catch (errGen) {
+    return getSheetValues_(sheet);
+  }
+  var base = 'sv-' + kind + '-' + gen;
+
+  try {
+    var count = Number(cache.get(base + '-n') || 0);
+    if (count > 0 && count <= VALUES_CACHE_MAX_CHUNKS) {
+      var keys = [];
+      var i;
+      for (i = 0; i < count; i++) keys.push(base + '-' + i);
+      var got = cache.getAll(keys);
+      var text = '';
+      var complete = true;
+      for (i = 0; i < count; i++) {
+        if (typeof got[keys[i]] !== 'string') { complete = false; break; }
+        text += got[keys[i]];
+      }
+      if (complete) return decodeSheetValues_(text);
+    }
+  } catch (errRead) {}
+
+  var values = getSheetValues_(sheet);
+  try {
+    var json = encodeSheetValues_(values);
+    var chunks = Math.ceil(json.length / VALUES_CACHE_CHUNK_CHARS);
+    if (chunks > 0 && chunks <= VALUES_CACHE_MAX_CHUNKS) {
+      var j;
+      for (j = 0; j < chunks; j++) {
+        cache.put(base + '-' + j, json.slice(j * VALUES_CACHE_CHUNK_CHARS, (j + 1) * VALUES_CACHE_CHUNK_CHARS), VALUES_CACHE_TTL);
+      }
+      // The count goes in last: a reader never sees a count without all its chunks.
+      cache.put(base + '-n', String(chunks), VALUES_CACHE_TTL);
+    }
+  } catch (errWrite) {}
+  return values;
+}
+
+/* ---- end sheet values cache ---- */
 
 /* ---- order path (testable) ---- */
 
@@ -1498,7 +1613,7 @@ function getStockRemaining_(options) {
   // Nothing is limited unless some Stock cell holds a number, so skip the
   // Orders / Walk-in reads in that case.
   if (stockHasAnyCap_(stockValues)) {
-    used = loadUsedByDate_(ss, dates, stockItemNames_(stockValues));
+    used = loadUsedByDate_(ss, dates, stockItemNames_(stockValues), !!options.bypassCache);
   }
   var payload = computeRemainingFromTables_(stockValues, used, MENU_ITEM_COLUMNS);
 
@@ -1547,11 +1662,13 @@ function stockHasAnyCap_(stockValues) {
 }
 
 /** {dateId: {item: qty}} of stock already used: non-Cancelled orders + non-VOID walk-ins. */
-function loadUsedByDate_(ss, dates, itemNames) {
+function loadUsedByDate_(ss, dates, itemNames, fresh) {
   var orders = ss.getSheetByName(ORDERS_SHEET_NAME);
   var walkIn = ss.getSheetByName(WALKIN_SHEET_NAME);
+  // The order-save path passes fresh=true: it must see every row already written.
   var summary = computeOrderSummaryFromValues_(
-    getSheetValues_(orders), dates, itemNames, new Date(), getSheetValues_(walkIn)
+    readSheetValuesCached_('orders', orders, { fresh: !!fresh }), dates, itemNames, new Date(),
+    readSheetValuesCached_('walkins', walkIn, { fresh: !!fresh })
   );
   return usedByDateFromSummary_(summary, itemNames);
 }
@@ -2239,6 +2356,7 @@ function addWalkInsToSummary_(byId, ensureBucket, walkInValues, itemNames) {
 }
 
 function invalidateSummaryCache_() {
+  invalidateSheetValuesCache_();
   try {
     var cache = getScriptCacheSafe_();
     if (cache) cache.remove(SUMMARY_CACHE_KEY);
@@ -2272,7 +2390,7 @@ function getOrderSummaryPayload_(ss) {
     var lastRow = sheet.getLastRow();
     var lastCol = sheet.getLastColumn();
     if (lastRow >= 1 && lastCol >= 1) {
-      values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+      values = readSheetValuesCached_('orders', sheet);
     }
   }
   var walkInSheet = ss && ss.getSheetByName(WALKIN_SHEET_NAME);
@@ -2284,7 +2402,7 @@ function getOrderSummaryPayload_(ss) {
     var wLastRow = walkInSheet.getLastRow();
     var wLastCol = walkInSheet.getLastColumn();
     if (wLastRow >= 1 && wLastCol >= 1) {
-      walkInValues = walkInSheet.getRange(1, 1, wLastRow, wLastCol).getValues();
+      walkInValues = readSheetValuesCached_('walkins', walkInSheet);
     }
   }
   var payload = computeOrderSummaryFromValues_(values, dates, MENU_ITEM_COLUMNS, new Date(), walkInValues);
@@ -2324,6 +2442,7 @@ function putStockCache_(payload) {
 }
 
 function invalidateStockCache_() {
+  invalidateSheetValuesCache_();
   var cache = getScriptCacheSafe_();
   if (!cache) return;
   try {
@@ -2858,6 +2977,17 @@ function addPickupDateColumn_(parsed) {
   return 'added';
 }
 
+/**
+ * Simple trigger: a hand edit in the Sheet (an order, a status, a walk-in, a Stock
+ * cell) must show up on the staff phones and dashboards at once, so drop the
+ * cached copies. Failures are swallowed: a trigger must never throw.
+ */
+function onEdit(e) {
+  try { invalidateSheetValuesCache_(); } catch (err1) {}
+  try { invalidateSummaryCache_(); } catch (err2) {}
+  try { invalidateStockCache_(); } catch (err3) {}
+}
+
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Cake Sale')
@@ -3330,7 +3460,7 @@ function staffListOrders_(data) {
   var lastRow = orders.getLastRow();
   var lastCol = orders.getLastColumn();
   var values = lastRow >= 1 && lastCol >= 1
-    ? orders.getRange(1, 1, lastRow, lastCol).getValues()
+    ? readSheetValuesCached_('orders', orders)
     : [['Timestamp']];
   return staffOrdersFromValues_(values, {
     pickupDate: data && (data.pickupDate || data.date) || '',
@@ -3656,7 +3786,7 @@ function staffListWalkIns_(data) {
   var lastRow = tab.getLastRow();
   var lastCol = tab.getLastColumn();
   var values = lastRow >= 1 && lastCol >= 1
-    ? tab.getRange(1, 1, lastRow, lastCol).getValues()
+    ? readSheetValuesCached_('walkins', tab)
     : [WALKIN_HEADERS.slice()];
   return staffWalkInsFromValues_(values, {
     date: data && (data.date || data.pickupDate) || '',
