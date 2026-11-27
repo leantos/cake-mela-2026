@@ -9,7 +9,7 @@
 import { getStore } from '@netlify/blobs';
 import {
   STORE_NAME, blobsConsistency, acceptOrder, forwardOrder, countPending, appsScriptUrl,
-  fetchStock, stockShortfalls, noteOrderInStockCache
+  stockForOrderCheck, stockShortfalls, noteOrderInStockCache
 } from '../lib/orders.mjs';
 
 const JSON_HEADERS = {
@@ -47,7 +47,8 @@ export default async (req, context) => {
     // Fails open: if the stock can't be read, the order is accepted.
     const url = appsScriptUrl({ APPS_SCRIPT_URL: process.env.APPS_SCRIPT_URL });
     result = await acceptOrder(store, raw, {
-      stockCheck: async (order) => stockShortfalls(order, await fetchStock({ url }))
+      // Live stock, else a snapshot under 5 minutes old, else fail open.
+      stockCheck: async (order) => stockShortfalls(order, await stockForOrderCheck(store, { url }))
     });
     if (result.status === 200 && result.body.status === 'queued' && result.record) {
       noteOrderInStockCache(result.record.order);

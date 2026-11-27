@@ -199,6 +199,66 @@ export async function fetchStock(opts = {}) {
   }
 }
 
+/* ---------- durable stock snapshot (so nobody waits on Apps Script) ---------- */
+
+export const STOCK_SNAPSHOT_KEY = 'stock/latest';
+/** Older than this and /api/stock refreshes the snapshot in the background. */
+export const STOCK_STALE_MS = 10000;
+/** An order check may lean on a snapshot this young when the live fetch fails. */
+export const STOCK_SNAPSHOT_ORDER_MAX_AGE_MS = 5 * 60 * 1000;
+
+/** {at, data} or null. Never throws. */
+export async function readStockSnapshot(store) {
+  try {
+    const v = await store.get(STOCK_SNAPSHOT_KEY, { type: 'json' });
+    if (v && v.data && Array.isArray(v.data.dates) && Number.isFinite(Number(v.at))) {
+      return { at: Number(v.at), data: v.data };
+    }
+  } catch (err) { /* treat as no snapshot */ }
+  return null;
+}
+
+/** Best effort. Returns true when written. */
+export async function writeStockSnapshot(store, data, now = Date.now) {
+  try {
+    await store.setJSON(STOCK_SNAPSHOT_KEY, { at: now(), data });
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * Fetch the live stock (bypassing the in-memory cache) and store it as the
+ * snapshot. Returns the data, or null when Apps Script didn't answer in time.
+ */
+export async function refreshStockSnapshot(store, opts = {}) {
+  const data = await fetchStock({
+    url: opts.url,
+    fetch: opts.fetch,
+    now: opts.now,
+    timeoutMs: opts.timeoutMs || 4000,
+    ttlMs: 0
+  });
+  if (!data) return null;
+  await writeStockSnapshot(store, data, opts.now || Date.now);
+  return data;
+}
+
+/**
+ * Stock for an order check: live (2s cap, 15s memory cache), else a snapshot
+ * younger than 5 minutes, else null (the caller then fails open).
+ */
+export async function stockForOrderCheck(store, opts = {}) {
+  const live = await fetchStock({ url: opts.url, fetch: opts.fetch, now: opts.now });
+  if (live) return live;
+  const snap = await readStockSnapshot(store);
+  const now = (opts.now || Date.now)();
+  const maxAge = opts.maxAgeMs == null ? STOCK_SNAPSHOT_ORDER_MAX_AGE_MS : opts.maxAgeMs;
+  if (snap && now - snap.at >= 0 && now - snap.at < maxAge) return snap.data;
+  return null;
+}
+
 /** Names of order lines that exceed the date's remaining stock. null / missing = unlimited. */
 export function stockShortfalls(order, stock) {
   if (!stock || !Array.isArray(stock.dates)) return [];

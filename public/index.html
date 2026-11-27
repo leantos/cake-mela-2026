@@ -243,12 +243,17 @@
      * A date stays available until closesAt (default 8:30 AM IST that
      * morning). label is the chip text and the short date.
      */
-    const PICKUP_DATES = [
+    // The single source is SITE_CONFIG.pickupDates (public/site-config.js); this
+    // short list is only a last-resort fallback if the config is missing. The page
+    // paints these dates synchronously, so nothing waits on the backend.
+    const PICKUP_DATES = (SITE_CONFIG.pickupDates && SITE_CONFIG.pickupDates.length ? SITE_CONFIG.pickupDates : [
       { id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30' },
       { id: '2026-12-06', label: 'Sun, 6 Dec', closesAt: '2026-12-06T08:30:00+05:30' },
       { id: '2026-12-13', label: 'Sun, 13 Dec', closesAt: '2026-12-13T08:30:00+05:30' },
       { id: '2026-12-20', label: 'Sun, 20 Dec', closesAt: '2026-12-20T08:30:00+05:30' }
-    ];
+    ]).map(function (d) {
+      return { id: d.id, label: d.label, shortLabel: d.shortLabel || d.label, closesAt: d.closesAt || (d.id + 'T08:30:00+05:30') };
+    });
 
     /**
      * Opening planned quantities (optional, informational). Live limits

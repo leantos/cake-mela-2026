@@ -249,12 +249,12 @@ const justBefore = new Date('2026-11-29T08:29:59.999+05:30');
 const atCutoff = new Date('2026-11-29T08:30:00+05:30');
 assert('29 Nov open at 8:29 AM IST', w.isPickupDateOpen('2026-11-29', justBefore) === true);
 assert('29 Nov closed at 8:30 AM IST', w.isPickupDateOpen('2026-11-29', atCutoff) === false);
-assert('all 4 dates open on 23 Nov', w.getOpenPickupDates(new Date('2026-11-23T12:00:00+05:30')).length === 4,
+assert('all 9 built-in dates open on 23 Nov', w.getOpenPickupDates(new Date('2026-11-23T12:00:00+05:30')).length === 9,
   String(w.getOpenPickupDates(new Date('2026-11-23T12:00:00+05:30')).length));
-assert('none open after last Mass', w.getOpenPickupDates(new Date('2026-12-20T08:30:00+05:30')).length === 0);
+assert('none open after the last pickup date closes', w.getOpenPickupDates(new Date('2026-12-25T08:30:00+05:30')).length === 0);
 
 const chips = [...document.querySelectorAll('.date-chip')];
-assert('renders 4 date chips on 23 Nov', chips.length === 4, chips.length);
+assert('renders 9 date chips on 23 Nov', chips.length === 9, chips.length);
 assert('defaults to first date with stock (29 Nov)', document.getElementById('pickup-date').value === '2026-11-29',
   document.getElementById('pickup-date').value);
 assert('29 Nov chip is enabled', chips[0].disabled === false && !chips[0].classList.contains('sold-out'));
@@ -952,12 +952,12 @@ assert('confirmation uses the Friday short label', document.getElementById('conf
 }
 w.hideOrderConfirmation();
 
-// fetch fail restores the fallback catalog, not the live Friday date
+// fetch fail restores the built-in catalog (SITE_CONFIG.pickupDates)
 w.__setStockForTest({}, 'error');
 const fallbackChips = [...document.querySelectorAll('.date-chip')];
-assert('fetch fail uses fallback date list', fallbackChips.length === 4, fallbackChips.map((c) => c.dataset.id).join(','));
+assert('fetch fail uses the built-in date list', fallbackChips.length === 9, fallbackChips.map((c) => c.dataset.id).join(','));
 assert('fetch fail starts at 29 Nov', fallbackChips[0].dataset.id === '2026-11-29');
-assert('fetch fail does not keep the Friday date', fallbackChips.every((c) => c.dataset.id !== '2026-12-25'));
+assert('fetch fail shows exactly the dates in SITE_CONFIG.pickupDates', fallbackChips.map((c) => c.dataset.id).join(',') === window.SITE_CONFIG.pickupDates.map((d) => d.id).join(','));
 
 // invalid_date: a pickup date not on the listed catalog is rejected client-side
 w.__setSheetsUrlForTest('https://script.google.com/macros/s/TEST/exec');
@@ -987,7 +987,7 @@ w.__setStockForTest(nov29Remaining(15), 'ok', null);
 window.__TEST_NOW = new Date('2026-11-23T12:00:00+05:30');
 
 // Pre-orders closed after the last 8:30 AM IST
-window.__TEST_NOW = new Date('2026-12-20T08:30:00+05:30');
+window.__TEST_NOW = new Date('2026-12-25T08:30:00+05:30');
 w.renderPickupDates();
 assert('no chips when all dates have passed', document.querySelectorAll('.date-chip').length === 0);
 assert('pre-orders closed banner shown', document.getElementById('preorders-closed').classList.contains('visible'));
@@ -1520,6 +1520,70 @@ assert('rename: the title, meta tags and heading do not mention WhatsApp',
     mixed.totalItems === 50 && mixed.subtotal === mixedSub && mixed.discountAmount === Math.round(mixedSub * 0.1) && mixed.totalAmount === mixedSub - Math.round(mixedSub * 0.1),
     JSON.stringify({ n: mixed.totalItems, s: mixed.subtotal, d: mixed.discountAmount, t: mixed.totalAmount }));
   clearCart();
+}
+
+// ---- first paint never waits on the backend; the backend list reconciles it ----
+{
+  const NOW = new Date('2026-11-27T12:00:00+05:30');
+  const open = (fetchImpl) => new JSDOM(html.replace(TAILWIND_LINK, ''), {
+    url: 'https://example.com/index.html',
+    runScripts: 'dangerously',
+    pretendToBeVisual: true,
+    beforeParse(win) { win.__TEST_NOW = NOW; win.fetch = fetchImpl; }
+  });
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const chipIds = (d) => [...d.querySelectorAll('.date-chip')].map((c) => c.dataset.id);
+  const configIds = (win) => win.SITE_CONFIG.pickupDates.map((d) => d.id);
+
+  // 1. a fetch that never answers must not stop the chips or the selected date
+  const hung = open(() => new Promise(() => {}));
+  const hd = hung.window.document;
+  assert('first paint: chips and a selected date exist synchronously, before any network answer',
+    chipIds(hd).length === 9 && hd.getElementById('pickup-date').value === '2026-11-29', chipIds(hd).length + ' ' + hd.getElementById('pickup-date').value);
+  assert('first paint: the built-in list is SITE_CONFIG.pickupDates (9 dates incl. 21-25 Dec)',
+    chipIds(hd).join() === configIds(hung.window).join() && chipIds(hd).includes('2026-12-25') && chipIds(hd).includes('2026-12-21'), chipIds(hd).join());
+  await wait(400);
+  assert('first paint: a hung backend leaves the chips and the selection alone',
+    chipIds(hd).length === 9 && hd.getElementById('pickup-date').value === '2026-11-29' && !hd.getElementById('place-order-btn').disabled);
+  hung.window.close();
+
+  // 2. the backend list replaces the built-in one, keeping the selection and the cart
+  const payload = {
+    ok: true,
+    dates: [
+      { id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30', remaining: { 'Dates & Carrot Pudding (700g)': 1 } },
+      { id: '2026-12-06', label: 'Sun, 6 Dec', closesAt: '2026-12-06T08:30:00+05:30', remaining: {} },
+      { id: '2027-01-03', label: 'Sun, 3 Jan', closesAt: '2027-01-03T08:30:00+05:30', remaining: {} }
+    ]
+  };
+  const answering = open(async () => { await wait(150); return { ok: true, status: 200, json: async () => payload }; });
+  const ad = answering.window.document;
+  assert('reconcile: before the backend answers the built-in dates are already showing', chipIds(ad).length === 9);
+  ad.querySelector('.date-chip[data-id="2026-12-06"]').click();
+  const plus = ad.querySelector('.menu-card .plus');
+  plus.click(); plus.click();
+  assert('reconcile: set up a picked date and two cakes', ad.getElementById('pickup-date').value === '2026-12-06' && ad.querySelector('.menu-card .qty').textContent === '2');
+  await wait(500);
+  assert('reconcile: the backend list wins (dates added and removed)', chipIds(ad).join() === payload.dates.map((d) => d.id).join(), chipIds(ad).join());
+  assert('reconcile: the picked date and the cart survive', ad.getElementById('pickup-date').value === '2026-12-06' && ad.querySelector('.menu-card .qty').textContent === '2');
+  answering.window.close();
+
+  // 3. a picked date the backend no longer lists moves to the first open date; the cart stays
+  const dropped = open(async () => { await wait(150); return { ok: true, status: 200, json: async () => payload }; });
+  const dd = dropped.window.document;
+  dd.querySelector('.date-chip[data-id="2026-12-25"]').click();
+  dd.querySelector('.menu-card .plus').click();
+  await wait(500);
+  assert('reconcile: a date the backend dropped falls back to the first open date and keeps the cart',
+    dd.getElementById('pickup-date').value === '2026-11-29' && dd.querySelector('.menu-card .qty').textContent === '1', dd.getElementById('pickup-date').value);
+  dropped.window.close();
+
+  // 4. an unreachable backend (fetch rejects) leaves the built-in list in place
+  const down = open(async () => { throw new Error('offline'); });
+  await wait(400);
+  assert('unreachable backend: the built-in dates stay and ordering is not blocked',
+    chipIds(down.window.document).length === 9 && !down.window.document.getElementById('place-order-btn').disabled);
+  down.window.close();
 }
 
 const failed = results.filter((r) => !r.ok);

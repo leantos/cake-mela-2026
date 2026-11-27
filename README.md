@@ -7,12 +7,16 @@ public/                 ← published site (Netlify "publish" dir)
   index.html            customer order page
   orders.html           order dashboard at /orders, behind the staff PIN (totals + pending orders list; /admin redirects here)
   staff.html            PIN-protected staff tools (status, walk-ins)
-  site-config.js        ★ ONE settings file: poster, call contacts,
-                          bulk discount (50+ cakes = 10% off), Apps Script URL
+  site-config.js        ★ ONE settings file: poster, call contacts, the
+                          built-in pickup dates (shown instantly), bulk
+                          discount (50+ cakes = 10% off), Apps Script URL
   poster.jpg / .webp, logo.png
 netlify/functions/
   order.mjs             POST /api/order  (GET = pending count)
-  sweep-orders.mjs      every 5 min: re-send anything not yet in the Sheet
+  stock.mjs             GET /api/stock: dates + remaining stock, served from a
+                          Blobs snapshot so it never waits on Apps Script
+  sweep-orders.mjs      every 5 min: re-send anything not yet in the Sheet and
+                          refresh the stock snapshot
 netlify/lib/orders.mjs  validation, Blobs storage, forwarding
 apps-script/Code.gs     paste into the Sheet's Apps Script editor
 scripts/                update-poster.py, make-drop-zip.mjs, mock-apps-script.mjs, e2e-preview.mjs

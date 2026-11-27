@@ -31,7 +31,7 @@ process.env.NETLIFY_BLOBS_CONTEXT = Buffer.from(JSON.stringify({
 const sheetRows = new Map();
 let sheetMode = 'ok'; // ok | fail | invalid_date
 const sheetHits = [];
-let stockMode = 'ok'; // ok | fail | slow
+let stockMode = 'ok'; // ok | fail | slow (3.5s) | hang (4.8s, past the 4s cap)
 let stockDates = []; // [{id, label, closesAt, remaining}]
 let stockGets = 0;
 const mock = http.createServer((req, res) => {
@@ -44,6 +44,7 @@ const mock = http.createServer((req, res) => {
       if (stockMode === 'fail') { res.statusCode = 500; return res.end('{"ok":false}'); }
       const payload = JSON.stringify({ ok: true, version: 'test', dates: stockDates });
       if (stockMode === 'slow') return setTimeout(() => res.end(payload), 3500);
+      if (stockMode === 'hang') return setTimeout(() => res.end(payload), 4800);
       return res.end(payload);
     }
     const data = JSON.parse(body || '{}');
@@ -383,9 +384,11 @@ assert('the contact/alternation helpers are gone',
   lib.resetStockCache();
 }
 
-// ---- /api/stock (CDN-cached stock for the order page) ----
+// ---- /api/stock (durable snapshot: the order page never waits on Apps Script) ----
 {
-  const getStockApi = (qs = '', method = 'GET') => stockFn(new Request('http://localhost/api/stock' + qs, { method }));
+  const clearSnapshot = () => store.delete(lib.STOCK_SNAPSHOT_KEY);
+  const getStockApi = (qs = '', method = 'GET', ctx) => stockFn(new Request('http://localhost/api/stock' + qs, { method }), ctx);
+  await clearSnapshot(); // an earlier sweep test stored one; the first call below must find none
   assert('config: stock function path is /api/stock', stockCfg.path === '/api/stock');
 
   stockDates = [{ id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30', remaining: { 'Rich Plum Cake (400g)': 0, 'Rich Plum Cake (800g)': null } }];
@@ -409,6 +412,7 @@ assert('the contact/alternation helpers are gone',
     b2.dates[0].remaining['Rich Plum Cake (400g)'] === 7 && /no-store/.test(s2.headers.get('cache-control') || '') && !s2.headers.get('netlify-cdn-cache-control'),
     JSON.stringify(b2) + ' ' + s2.headers.get('cache-control'));
 
+  await clearSnapshot();
   stockMode = 'fail'; lib.resetStockCache();
   const s3 = await getStockApi();
   const b3 = await s3.json();
@@ -417,6 +421,121 @@ assert('the contact/alternation helpers are gone',
   const s4 = await getStockApi('', 'POST');
   assert('stock api: POST is 405', s4.status === 405);
 
+  // ---- the snapshot: instant, stale-refresh, fresh fallback ----
+  const PLUMK = 'Rich Plum Cake (400g)';
+  const datesWith = (n) => [{ id: '2026-11-29', label: 'Sun, 29 Nov', closesAt: '2026-11-29T08:30:00+05:30', remaining: { [PLUMK]: n } }];
+  const snapshotWith = async (n, ageMs) => lib.writeStockSnapshot(store, { ok: true, version: 'snap', dates: datesWith(n) }, () => Date.now() - ageMs);
+
+  // first-ever call fetches live and stores the snapshot
+  await clearSnapshot();
+  stockMode = 'ok'; stockDates = datesWith(9); lib.resetStockCache();
+  const gFirst = stockGets;
+  const f1 = await getStockApi();
+  const f1b = await f1.json();
+  assert('snapshot: the first-ever call fetches live once and answers', f1.status === 200 && stockGets - gFirst === 1 && f1b.dates[0].remaining[PLUMK] === 9 && f1.headers.get('x-stock-age') === '0', String(stockGets - gFirst));
+  const stored = await lib.readStockSnapshot(store);
+  assert('snapshot: that live answer was stored in Blobs', !!stored && stored.data.dates[0].remaining[PLUMK] === 9, JSON.stringify(stored));
+
+  // instant even while Apps Script hangs
+  await snapshotWith(4, 2000);
+  stockMode = 'slow'; lib.resetStockCache();
+  const gInstant = stockGets;
+  const t0 = Date.now();
+  const i1 = await getStockApi();
+  const i1b = await i1.json();
+  assert('snapshot: served instantly while Apps Script is slow, with no live fetch',
+    Date.now() - t0 < 600 && stockGets === gInstant && i1b.dates[0].remaining[PLUMK] === 4, (Date.now() - t0) + 'ms');
+  assert('snapshot: reports its age and is not stale when young',
+    Number(i1.headers.get('x-stock-age')) >= 1 && Number(i1.headers.get('x-stock-age')) <= 5 && !i1.headers.get('x-stock-stale') && /s-maxage=10/.test(i1.headers.get('netlify-cdn-cache-control') || ''),
+    i1.headers.get('x-stock-age') + ' ' + i1.headers.get('x-stock-stale'));
+
+  // stale: answered instantly with the old numbers, refresh runs in the background
+  await snapshotWith(4, 30000);
+  stockMode = 'ok'; stockDates = datesWith(1); lib.resetStockCache();
+  const waits = [];
+  const t1 = Date.now();
+  const st = await getStockApi('', 'GET', { waitUntil: (p) => waits.push(p) });
+  const stb = await st.json();
+  assert('snapshot: a stale one is still answered at once with the old numbers',
+    Date.now() - t1 < 600 && stb.dates[0].remaining[PLUMK] === 4 && st.headers.get('x-stock-stale') === '1' && Number(st.headers.get('x-stock-age')) >= 29,
+    st.headers.get('x-stock-age') + ' ' + st.headers.get('x-stock-stale'));
+  assert('snapshot: a stale one kicks off exactly one background refresh', waits.length === 1, String(waits.length));
+  await Promise.all(waits);
+  const refreshed = await lib.readStockSnapshot(store);
+  assert('snapshot: the background refresh stored the new numbers for the next caller',
+    refreshed.data.dates[0].remaining[PLUMK] === 1 && Date.now() - refreshed.at < 5000, JSON.stringify(refreshed));
+  const next = await getStockApi();
+  assert('snapshot: the next caller gets the refreshed numbers and no stale flag', (await next.json()).dates[0].remaining[PLUMK] === 1 && !next.headers.get('x-stock-stale'));
+
+  // a failing refresh leaves the old snapshot alone
+  await snapshotWith(4, 30000);
+  stockMode = 'fail'; lib.resetStockCache();
+  const waits2 = [];
+  await getStockApi('', 'GET', { waitUntil: (p) => waits2.push(p) });
+  await Promise.all(waits2);
+  assert('snapshot: a failed background refresh keeps the old snapshot', (await lib.readStockSnapshot(store)).data.dates[0].remaining[PLUMK] === 4);
+
+  // ?fresh=1: live when it can, the snapshot when it can't
+  await snapshotWith(4, 60000);
+  stockMode = 'ok'; stockDates = datesWith(2); lib.resetStockCache();
+  const waits3 = [];
+  const fr = await getStockApi('?fresh=1&t=1', 'GET', { waitUntil: (p) => waits3.push(p) });
+  assert('fresh: waits for the live numbers, never cached, and updates the snapshot',
+    (await fr.json()).dates[0].remaining[PLUMK] === 2 && /no-store/.test(fr.headers.get('cache-control') || '') && !fr.headers.get('x-stock-fallback') && waits3.length === 1);
+  await Promise.all(waits3);
+  assert('fresh: the live numbers are now the snapshot', (await lib.readStockSnapshot(store)).data.dates[0].remaining[PLUMK] === 2);
+
+  await snapshotWith(5, 20000);
+  stockMode = 'fail'; lib.resetStockCache();
+  const fb = await getStockApi('?fresh=1&t=2');
+  const fbb = await fb.json();
+  assert('fresh: when Apps Script fails it serves the snapshot and says so',
+    fb.status === 200 && fbb.dates[0].remaining[PLUMK] === 5 && fb.headers.get('x-stock-fallback') === '1' && /no-store/.test(fb.headers.get('cache-control') || '') && Number(fb.headers.get('x-stock-age')) >= 19);
+  stockMode = 'hang'; lib.resetStockCache();
+  const t2 = Date.now();
+  const fb2 = await getStockApi('?fresh=1&t=3');
+  assert('fresh: when Apps Script hangs it gives up at 4s and serves the snapshot',
+    fb2.status === 200 && fb2.headers.get('x-stock-fallback') === '1' && Date.now() - t2 < 4600, (Date.now() - t2) + 'ms');
+  await clearSnapshot();
+  stockMode = 'fail'; lib.resetStockCache();
+  const none = await getStockApi('?fresh=1&t=4');
+  assert('fresh: with no snapshot and no Apps Script it is a 502', none.status === 502);
+
+  // ---- keep it warm: the 5-minute sweep refreshes the snapshot ----
+  await clearSnapshot();
+  stockMode = 'ok'; stockDates = datesWith(6); lib.resetStockCache();
+  await sweepFn();
+  assert('sweep: also refreshes the stock snapshot', (await lib.readStockSnapshot(store))?.data.dates[0].remaining[PLUMK] === 6);
+  await snapshotWith(7, 1000);
+  stockMode = 'fail'; lib.resetStockCache();
+  let sweepThrew = false;
+  try { await sweepFn(); } catch (e) { sweepThrew = true; }
+  assert('sweep: a stock failure never fails the sweep and keeps the old snapshot', !sweepThrew && (await lib.readStockSnapshot(store)).data.dates[0].remaining[PLUMK] === 7);
+
+  // ---- order check: lean on a young snapshot when live stock fails ----
+  const plumOrder = (qty) => order({
+    items: [{ id: 'rich-plum-cake-400', name: PLUMK, qty, price: 320, lineTotal: qty * 320 }],
+    totalItems: qty, totalAmount: lib.priceOrder(qty * 320, qty).totalAmount
+  });
+  await snapshotWith(0, 60 * 1000);
+  stockMode = 'fail'; lib.resetStockCache();
+  const young = await call(plumOrder(2)); await young.settle();
+  assert('order check: live stock fails but a 1-minute-old snapshot says sold out -> rejected',
+    young.status === 409 && young.json.error === 'out_of_stock' && young.json.items.includes(PLUMK), JSON.stringify(young.json));
+  await snapshotWith(0, 10 * 60 * 1000);
+  lib.resetStockCache();
+  const old = await call(plumOrder(2)); await old.settle();
+  assert('order check: a 10-minute-old snapshot is ignored and the order fails open', old.status === 200 && old.json.ok, JSON.stringify(old.json));
+  await snapshotWith(10, 60 * 1000);
+  lib.resetStockCache();
+  const enough = await call(plumOrder(2)); await enough.settle();
+  assert('order check: a young snapshot with enough stock lets the order through', enough.status === 200 && enough.json.ok, JSON.stringify(enough.json));
+  await clearSnapshot();
+  lib.resetStockCache();
+  const noSnap = await call(plumOrder(2)); await noSnap.settle();
+  assert('order check: no snapshot and no live stock fails open', noSnap.status === 200 && noSnap.json.ok, JSON.stringify(noSnap.json));
+
+  await clearSnapshot();
   stockMode = 'ok'; stockDates = []; lib.resetStockCache();
 }
 
